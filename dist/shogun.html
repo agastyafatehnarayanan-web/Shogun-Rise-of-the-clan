@@ -1,0 +1,3619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shōgun: Rise of the Clans</title>
+<style>
+/* =====================================================================
+ * SHŌGUN: RISE OF THE CLANS — styling. Sumi-e ink, washi paper, gold,
+ * vermilion. One deliberate immersive look.
+ * ===================================================================== */
+:root{
+  --ink:#211a12; --ink2:#4a3d2c; --washi:#efe4cb; --washi2:#e4d6b6;
+  --paper-line:#cbb98f; --sea:#20313b; --sea2:#16242c; --land:#3a4a3d;
+  --vermilion:#b0281f; --vermilion2:#8f1d16; --gold:#c9a227; --gold2:#a5811a;
+  --good:#3f7d4e; --bad:#a5352a; --shadow:rgba(0,0,0,.35);
+  --font-h:"Hiragino Mincho ProN","Yu Mincho",Georgia,"Times New Roman",serif;
+  --font-b:"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:var(--font-b); color:var(--ink); background:#14100c;
+  overflow:hidden;
+}
+button{font-family:var(--font-b);cursor:pointer}
+.hidden{display:none !important}
+
+/* screens */
+.screen{position:fixed;inset:0;display:none;flex-direction:column}
+.screen.active{display:flex}
+
+/* ---------- TITLE SCREEN ---------- */
+#title-screen{
+  align-items:center;justify-content:center;overflow:auto;
+  background:
+    radial-gradient(1200px 700px at 50% -10%, #3a2c20 0%, rgba(58,44,32,0) 60%),
+    radial-gradient(900px 900px at 90% 110%, #2a1c16 0%, rgba(0,0,0,0) 60%),
+    linear-gradient(160deg,#1c140e,#0e0a07);
+}
+.title-wrap{max-width:760px;width:94%;text-align:center;padding:32px 10px 48px;position:relative}
+.kanji-mark{
+  font-family:var(--font-h);font-size:120px;color:var(--vermilion);
+  line-height:1;opacity:.9;text-shadow:0 4px 18px rgba(0,0,0,.6);
+  margin-bottom:-6px;letter-spacing:8px;
+}
+#title-screen h1{
+  font-family:var(--font-h);font-size:66px;letter-spacing:16px;margin:6px 0 0;
+  color:var(--washi);text-indent:16px;text-shadow:0 2px 10px #000;
+}
+#title-screen h2{
+  font-family:var(--font-h);font-weight:400;font-size:24px;letter-spacing:8px;
+  margin:2px 0 14px;color:var(--gold);
+}
+.tagline{color:#c9bda3;max-width:560px;margin:0 auto 22px;line-height:1.55;font-size:14.5px}
+.credit{color:#7d7159;font-size:12px;margin-top:26px}
+
+.setup{
+  background:var(--washi);border:1px solid var(--paper-line);border-radius:10px;
+  padding:20px 22px;text-align:left;box-shadow:0 18px 50px var(--shadow);
+  background-image:linear-gradient(var(--washi),var(--washi2));
+}
+.setup-row{margin-bottom:16px}
+.setup-row.two-col{display:flex;gap:26px;flex-wrap:wrap}
+.setup label{display:block;font-family:var(--font-h);font-size:13px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--ink2);margin-bottom:8px}
+.mode-desc{font-size:13px;color:var(--ink2);line-height:1.5;margin:-6px 0 16px;min-height:34px}
+
+.btn-group{display:inline-flex;border:1px solid var(--ink2);border-radius:8px;overflow:hidden}
+.btn-group .opt{background:transparent;border:none;padding:9px 15px;font-size:13px;color:var(--ink2);
+  border-right:1px solid #c7b58c}
+.btn-group .opt:last-child{border-right:none}
+.btn-group .opt.active{background:var(--ink);color:var(--washi)}
+
+.clan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.clan-card{
+  background:#f6eed9;border:1.5px solid var(--paper-line);border-radius:8px;padding:9px 10px;
+  display:flex;gap:9px;align-items:center;text-align:left;transition:.12s;
+}
+.clan-card:hover{border-color:var(--gold)}
+.clan-card.sel{border-color:var(--vermilion);box-shadow:0 0 0 2px rgba(176,40,31,.25) inset}
+.clan-card .cc-crest{width:34px;height:34px;border-radius:6px;display:flex;align-items:center;
+  justify-content:center;font-family:var(--font-h);font-size:20px;color:#fff;flex:0 0 auto}
+.clan-card .cc-name{font-family:var(--font-h);font-size:15px;font-weight:700}
+.clan-card .cc-lean{font-size:11px;color:var(--ink2)}
+
+.setup-actions{display:flex;gap:12px;align-items:center;margin-top:6px}
+button.primary{background:linear-gradient(var(--vermilion),var(--vermilion2));color:#fff;border:1px solid #6e1610;
+  border-radius:8px;padding:11px 20px;font-size:14px;letter-spacing:1px;box-shadow:0 3px 0 #5e120d}
+button.primary:hover{filter:brightness(1.07)}
+button.primary:active{transform:translateY(2px);box-shadow:0 1px 0 #5e120d}
+button.primary.big{padding:13px 26px;font-size:15px}
+button.ghost{background:transparent;border:1px solid var(--ink2);color:var(--ink2);border-radius:8px;padding:10px 16px;font-size:13px}
+button.ghost:hover{background:rgba(0,0,0,.05)}
+button:disabled{opacity:.45;cursor:not-allowed}
+
+/* ---------- GAME SCREEN ---------- */
+#game-screen{background:linear-gradient(160deg,#1c140e,#0e0a07)}
+#topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:8px 16px;background:linear-gradient(#241a12,#1a120c);
+  border-bottom:2px solid var(--gold2);color:var(--washi);flex:0 0 auto;
+}
+.tb-left{display:flex;align-items:center;gap:10px;min-width:170px}
+.crest{width:38px;height:38px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-h);font-size:22px;color:#fff;box-shadow:0 2px 6px #000}
+#tb-clan-name{font-family:var(--font-h);font-size:17px;letter-spacing:1px}
+.sub{font-size:11.5px;color:#b7a988}
+.tb-center{text-align:center}
+#season-badge{font-family:var(--font-h);font-size:17px;letter-spacing:2px;color:var(--gold)}
+.tb-right{display:flex;gap:16px;min-width:170px;justify-content:flex-end}
+.res{display:flex;align-items:center;gap:5px;font-size:15px}
+.res .ri{font-size:15px;width:18px;text-align:center}
+.res .ri.koban{color:var(--gold)}
+.res .ri.honour{font-family:var(--font-h);color:#dcae3c}
+.res .ri.prestige{color:#e8d27a}
+.res .rl{font-size:10.5px;color:#b7a988;letter-spacing:.5px}
+
+#board{flex:1;display:flex;min-height:0}
+#map-wrap{flex:1;position:relative;min-width:0;background:
+  radial-gradient(1000px 700px at 40% 30%, #26404b 0%, #17262e 70%, #0e181d 100%)}
+#map{width:100%;height:100%;display:block}
+#map-legend{position:absolute;left:10px;bottom:10px;background:rgba(20,16,12,.72);
+  border:1px solid var(--gold2);border-radius:7px;padding:7px 10px;color:#d8c9a6;font-size:11px;line-height:1.7;max-width:230px}
+#map-legend b{color:var(--gold)}
+
+/* SVG map elements */
+.prov-link{stroke:#3d5561;stroke-width:2;opacity:.5}
+.prov-link.sea{stroke-dasharray:4 5;stroke:#4a6b74}
+.prov{cursor:pointer}
+.prov .pbody{stroke:#00000055;stroke-width:1.5;transition:.12s}
+.prov:hover .pbody{stroke:#fff}
+.prov.sel .pbody{stroke:var(--gold);stroke-width:3.5}
+.prov.reach .pbody{stroke:#ffe08a;stroke-width:3;stroke-dasharray:3 3}
+.prov .pname{font-family:var(--font-h);font-size:12.5px;fill:#fff;text-anchor:middle;pointer-events:none;
+  paint-order:stroke;stroke:#000;stroke-width:2.4px;stroke-linejoin:round;font-weight:700}
+.prov .pinfo{font-size:10px;fill:#f2ead3;text-anchor:middle;pointer-events:none;
+  paint-order:stroke;stroke:#000;stroke-width:2px}
+.prov .pcastle{font-size:10px;fill:#ffd98a;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:#000;stroke-width:2px}
+.prov .pkyoto{fill:#ffe9a8}
+.siege-ring{fill:none;stroke:#e8b53a;stroke-width:2.5;stroke-dasharray:5 4}
+.feat-dot{font-size:11px;pointer-events:none}
+
+/* ---------- SIDE PANEL ---------- */
+#side{width:340px;flex:0 0 340px;background:var(--washi);border-left:2px solid var(--gold2);
+  display:flex;flex-direction:column;min-height:0;background-image:linear-gradient(var(--washi),var(--washi2))}
+#tabs{display:flex;flex-wrap:wrap;background:#dfcea6;border-bottom:1px solid var(--paper-line);flex:0 0 auto}
+.tab{background:transparent;border:none;padding:8px 9px;font-size:11.5px;color:var(--ink2);
+  border-right:1px solid #cdbb90;border-bottom:2px solid transparent;letter-spacing:.3px}
+.tab.active{background:var(--washi);color:var(--vermilion);border-bottom-color:var(--vermilion);font-weight:700}
+#tab-body{flex:1;overflow-y:auto;padding:14px}
+
+.panel h3{font-family:var(--font-h);font-size:16px;margin:0 0 3px;letter-spacing:1px}
+.panel .psub{font-size:11.5px;color:var(--ink2);margin-bottom:10px}
+.divider{height:1px;background:var(--paper-line);margin:12px 0}
+.kv{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px dotted #d3c298}
+.kv .k{color:var(--ink2)}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;background:#e6d7b3;
+  border:1px solid var(--paper-line);color:var(--ink2);margin:2px 3px 2px 0}
+.tag.feat{background:#f0e3c1;border-color:var(--gold2);color:#7a5c12}
+.tag.status-occupied{background:#efd0c6;border-color:#b06a5a;color:#7a2c1c}
+.tag.status-pacifying{background:#efe2c0;border-color:#b39a4a;color:#7a5c12}
+.tag.status-pacified,.tag.status-home{background:#d6e6cf;border-color:#7fa579;color:#2e5227}
+
+.unit-row{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:3px 0}
+.unit-glyph{font-family:var(--font-h);width:20px;height:20px;border-radius:4px;display:inline-flex;
+  align-items:center;justify-content:center;color:#fff;font-size:12px;flex:0 0 auto}
+
+.act-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:6px}
+.act{background:#f6eed9;border:1px solid var(--paper-line);border-radius:7px;padding:8px 6px;font-size:12px;
+  color:var(--ink);text-align:center;transition:.1s}
+.act:hover:not(:disabled){border-color:var(--vermilion);background:#fff}
+.act .ai{display:block;font-size:16px;margin-bottom:2px}
+.act.full{grid-column:1/3}
+
+.clan-list-row{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid #d9c99f;font-size:12.5px}
+.clan-list-row .mini-crest{width:22px;height:22px;border-radius:4px;color:#fff;display:flex;align-items:center;
+  justify-content:center;font-family:var(--font-h);font-size:12px;flex:0 0 auto}
+.clan-list-row .cln{flex:1;font-family:var(--font-h)}
+.clan-list-row .clv{font-weight:700}
+.bar{height:6px;background:#d8c79e;border-radius:4px;overflow:hidden;margin-top:3px}
+.bar > i{display:block;height:100%;background:var(--vermilion)}
+
+.list-btn{width:100%;text-align:left;background:#f6eed9;border:1px solid var(--paper-line);border-radius:7px;
+  padding:9px 11px;font-size:12.5px;margin-bottom:7px;color:var(--ink)}
+.list-btn:hover:not(:disabled){border-color:var(--vermilion);background:#fff}
+.list-btn .lb-t{font-weight:700;font-family:var(--font-h);font-size:13px}
+.list-btn .lb-d{font-size:11.5px;color:var(--ink2);margin-top:2px}
+.small{font-size:11.5px;color:var(--ink2)}
+.warn{color:var(--bad)}
+.okc{color:var(--good)}
+
+/* log */
+.log-entry{font-size:12px;padding:6px 8px;border-radius:6px;margin-bottom:5px;background:#f4ecd6;border-left:3px solid #c7b58c}
+.log-entry .lt{font-size:10px;color:#9a8a63;letter-spacing:.5px}
+.log-entry.season{background:#e9dcbd;border-left-color:var(--gold);font-family:var(--font-h)}
+.log-entry.event{border-left-color:#8a6cb0}
+.log-entry.good{border-left-color:var(--good)}
+.log-entry.bad{border-left-color:var(--bad)}
+.log-entry.econ{border-left-color:#b8912e}
+.log-entry.spy{border-left-color:#6d6d6d}
+
+/* ---------- BOTTOM BAR ---------- */
+#bottombar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 16px;
+  background:linear-gradient(#1a120c,#241a12);border-top:2px solid var(--gold2);color:var(--washi);flex:0 0 auto}
+#hint{font-size:13px;color:#d8c9a6}
+.bb-actions{display:flex;gap:10px}
+
+/* ---------- MODALS ---------- */
+#modal-layer{position:fixed;inset:0;background:rgba(8,6,4,.66);display:flex;align-items:center;
+  justify-content:center;z-index:50;padding:16px}
+#modal-layer.hidden{display:none}
+#modal-card{background:var(--washi);background-image:linear-gradient(var(--washi),var(--washi2));
+  border:1px solid var(--gold2);border-radius:12px;max-width:620px;width:100%;max-height:88vh;display:flex;
+  flex-direction:column;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+#modal-head{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;border-bottom:1px solid var(--paper-line)}
+#modal-title{font-family:var(--font-h);font-size:19px;letter-spacing:1px}
+.modal-x{background:transparent;border:none;font-size:17px;color:var(--ink2)}
+#modal-body{padding:16px 18px;overflow-y:auto}
+#modal-foot{padding:12px 18px;border-top:1px solid var(--paper-line);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+
+.field{margin-bottom:12px}
+.field > label{display:block;font-size:12px;color:var(--ink2);margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#f6eed9;border:1px solid var(--paper-line);border-radius:20px;padding:6px 12px;font-size:12.5px}
+.chip.sel{background:var(--ink);color:var(--washi);border-color:var(--ink)}
+.chip.dis{opacity:.4}
+.unit-pick{display:flex;flex-wrap:wrap;gap:6px}
+.upick{display:flex;align-items:center;gap:5px;background:#f6eed9;border:1px solid var(--paper-line);
+  border-radius:6px;padding:5px 9px;font-size:12px}
+.upick.sel{border-color:var(--vermilion);background:#fff}
+
+/* battle report */
+.battle-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.bh-side{flex:1;text-align:center}
+.bh-side .bhn{font-family:var(--font-h);font-size:15px}
+.bh-side.att .bhn{color:var(--vermilion)}
+.bh-vs{font-family:var(--font-h);color:var(--ink2)}
+.round-line{font-size:12.5px;padding:5px 8px;border-radius:6px;background:#f4ecd6;margin-bottom:4px;
+  border-left:3px solid #c7b58c;opacity:0;animation:fadein .35s forwards}
+.round-line.ambush{border-left-color:var(--vermilion)}
+@keyframes fadein{to{opacity:1}}
+.outcome{font-family:var(--font-h);font-size:17px;text-align:center;padding:10px;border-radius:8px;margin-top:8px}
+.outcome.win{background:#d6e6cf;color:#2e5227}
+.outcome.lose{background:#efd0c6;color:#7a2c1c}
+.mbar{display:flex;gap:8px;font-size:11px;color:var(--ink2);justify-content:center;margin-top:2px}
+
+/* scoring / game over */
+.score-row{display:flex;align-items:center;gap:9px;padding:8px 6px;border-bottom:1px solid var(--paper-line)}
+.score-row.win{background:#e9dcbd}
+.score-row .sr-rank{font-family:var(--font-h);font-size:18px;width:26px;color:var(--gold2)}
+.score-row .sr-name{flex:1;font-family:var(--font-h)}
+.score-row .sr-total{font-weight:700;font-size:16px}
+.score-detail{font-size:11px;color:var(--ink2)}
+.you-badge{font-size:10px;background:var(--vermilion);color:#fff;border-radius:10px;padding:1px 7px;margin-left:6px}
+
+@media (max-width:920px){
+  #side{width:290px;flex-basis:290px}
+  #title-screen h1{font-size:48px;letter-spacing:10px}
+  .kanji-mark{font-size:88px}
+}
+@media (max-width:720px){
+  #board{flex-direction:column}
+  #side{width:100%;flex-basis:auto;max-height:44%}
+  .clan-grid{grid-template-columns:repeat(2,1fr)}
+  .tb-right{gap:10px}
+  .res .rl{display:none}
+}
+#toast{position:fixed;bottom:66px;left:50%;transform:translateX(-50%);background:rgba(20,16,12,.95);
+  color:var(--washi);padding:10px 18px;border-radius:8px;border:1px solid var(--gold2);font-size:13px;
+  z-index:60;opacity:0;transition:.25s;pointer-events:none;max-width:80%}
+#toast.show{opacity:1}
+
+</style>
+</head>
+<body>
+<!-- ======================= TITLE SCREEN ======================= -->
+<div id="title-screen" class="screen active">
+  <div class="title-wrap">
+    <div class="kanji-mark">将軍</div>
+    <h1>SHŌGUN</h1>
+    <h2>Rise of the Clans</h2>
+    <p class="tagline">A grand-strategy game of the Sengoku period — war, trade, diplomacy, honour, and intrigue in the struggle to rule Japan.</p>
+
+    <div class="setup">
+      <div class="setup-row">
+        <label>Game Mode</label>
+        <div class="btn-group" id="mode-group">
+          <button class="opt active" data-mode="A">The Warring Clans</button>
+          <button class="opt" data-mode="B">The House Divided</button>
+        </div>
+      </div>
+      <p class="mode-desc" id="mode-desc">You lead a rival daimyō on the national map. Defeat five AI clans across six roads to victory — conquest, wealth, culture, honour, legitimacy, or the shadow war.</p>
+
+      <div class="setup-row" id="clan-row">
+        <label id="clan-label">Choose your Clan</label>
+        <div class="clan-grid" id="clan-grid"></div>
+      </div>
+
+      <div class="setup-row two-col">
+        <div>
+          <label>Game Length</label>
+          <div class="btn-group" id="length-group">
+            <button class="opt" data-len="4">4 yrs</button>
+            <button class="opt active" data-len="6">6 yrs</button>
+            <button class="opt" data-len="8">8 yrs</button>
+          </div>
+        </div>
+        <div id="retainers-wrap" style="display:none">
+          <label>Retainers</label>
+          <div class="btn-group" id="retainers-group">
+            <button class="opt" data-ret="4">4</button>
+            <button class="opt active" data-ret="5">5</button>
+            <button class="opt" data-ret="6">6</button>
+            <button class="opt" data-ret="7">7</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="setup-actions">
+        <button id="start-btn" class="primary big">Begin the Campaign</button>
+        <button id="help-btn" class="ghost">How to Play</button>
+      </div>
+    </div>
+    <p class="credit">A playable digital adaptation of the tabletop rulebook “Shōgun: Rise of the Clans, v1.0”.</p>
+  </div>
+</div>
+
+<!-- ======================= GAME SCREEN ======================= -->
+<div id="game-screen" class="screen">
+  <header id="topbar">
+    <div class="tb-left">
+      <span id="clan-crest" class="crest"></span>
+      <div class="tb-clan">
+        <div id="tb-clan-name">—</div>
+        <div id="tb-clan-sub" class="sub">—</div>
+      </div>
+    </div>
+    <div class="tb-center">
+      <div id="season-badge"><span id="season-name">Spring</span> · <span id="year-name">Year 1</span></div>
+      <div id="weather-line" class="sub"></div>
+    </div>
+    <div class="tb-right">
+      <div class="res"><span class="ri koban">◍</span><span id="r-koban">0</span><span class="rl">koban</span></div>
+      <div class="res"><span class="ri rice">🌾</span><span id="r-rice">0</span><span class="rl">rice</span></div>
+      <div class="res"><span class="ri honour">誉</span><span id="r-honour">0</span><span class="rl" id="r-honour-band">—</span></div>
+      <div class="res"><span class="ri prestige">★</span><span id="r-prestige">0</span><span class="rl">prestige</span></div>
+    </div>
+  </header>
+
+  <main id="board">
+    <div id="map-wrap">
+      <svg id="map" viewBox="0 0 1000 720" preserveAspectRatio="xMidYMid meet"></svg>
+      <div id="map-legend"></div>
+    </div>
+
+    <aside id="side">
+      <nav id="tabs">
+        <button class="tab active" data-tab="province">Province</button>
+        <button class="tab" data-tab="clans">Powers</button>
+        <button class="tab" data-tab="diplo">Diplomacy</button>
+        <button class="tab" data-tab="spy">Shadow</button>
+        <button class="tab" data-tab="court">Court</button>
+        <button class="tab" data-tab="ambition" id="tab-ambition" style="display:none">Ambition</button>
+        <button class="tab" data-tab="log">Chronicle</button>
+      </nav>
+      <div id="tab-body"></div>
+    </aside>
+  </main>
+
+  <footer id="bottombar">
+    <div id="hint">Select a province to begin.</div>
+    <div class="bb-actions">
+      <button id="objectives-btn" class="ghost">Objectives</button>
+      <button id="end-season-btn" class="primary">End Season ▸</button>
+    </div>
+  </footer>
+</div>
+
+<!-- ======================= MODAL LAYER ======================= -->
+<div id="modal-layer" class="hidden">
+  <div id="modal-card">
+    <div id="modal-head"><span id="modal-title"></span><button id="modal-x" class="modal-x">✕</button></div>
+    <div id="modal-body"></div>
+    <div id="modal-foot"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+/* =====================================================================
+ * SHŌGUN: RISE OF THE CLANS  —  Static game data
+ * Provinces, clans, unit types, buildings, events.
+ * Numbers follow the rulebook (v1.0) with light tuning for a 16-province
+ * "tighter game" as suggested in Appendix B.
+ * ===================================================================== */
+
+const DATA = {};
+
+/* ---------------------------------------------------------------------
+ * TERRAIN — sets battle frontage (how many units can fight at once) and
+ * a small defensive character. Narrow terrain lets a few hold a pass;
+ * plains let numbers tell.
+ * ------------------------------------------------------------------- */
+DATA.terrain = {
+  Plains:   { frontage: 99, cavalry: 1.0,  defBonus: 0,  label: "Plains" },
+  Hills:    { frontage: 5,  cavalry: 0.7,  defBonus: 2,  label: "Hills" },
+  Mountain: { frontage: 3,  cavalry: 0.4,  defBonus: 4,  label: "Mountain" },
+  Forest:   { frontage: 4,  cavalry: 0.5,  defBonus: 3,  label: "Forest" },
+  Coast:    { frontage: 7,  cavalry: 0.9,  defBonus: 1,  label: "Coast" },
+  River:    { frontage: 4,  cavalry: 0.7,  defBonus: 2,  label: "River" },
+};
+
+/* ---------------------------------------------------------------------
+ * UNIT TYPES — physical characteristics, not counter-tables.
+ * cost: koban / rice.  upkeep: rice per season.
+ * ------------------------------------------------------------------- */
+DATA.units = {
+  ashigaru: {
+    name: "Ashigaru", short: "足", atk: 2, def: 3, move: 1, upkeep: 1,
+    cost: { koban: 1, rice: 1 }, glyph: "足",
+    tags: ["cheap", "deep"],
+    desc: "Peasant levy. Cheap; can form a Deep line that soaks up a charge — but slow and narrow.",
+  },
+  samurai: {
+    name: "Samurai", short: "侍", atk: 4, def: 4, move: 1, upkeep: 1,
+    cost: { koban: 3, rice: 1 }, glyph: "侍",
+    tags: ["morale"],
+    desc: "Warrior nobility. High value, steadies morale, strong in a long grind.",
+  },
+  cavalry: {
+    name: "Cavalry", short: "騎", atk: 5, def: 3, move: 2, upkeep: 2,
+    cost: { koban: 4 }, glyph: "騎", needs: "horse",
+    tags: ["shock", "fast"],
+    desc: "Mounted shock. Huge on first contact, then spent. Deadly in the open, wasted in a pass.",
+  },
+  archers: {
+    name: "Archers", short: "弓", atk: 3, def: 2, move: 1, upkeep: 1,
+    cost: { koban: 2 }, glyph: "弓",
+    tags: ["ranged"],
+    desc: "Yumi. Ranged pre-fire every round, high rate.",
+  },
+  teppo: {
+    name: "Teppō", short: "鉄", atk: 6, def: 2, move: 1, upkeep: 1,
+    cost: { koban: 3 }, glyph: "鉄", needs: "gun",
+    tags: ["ranged", "volley"],
+    desc: "Matchlock guns. Devastating volley every other round; useless in rain/snow.",
+  },
+  warship: {
+    name: "Warship", short: "船", atk: 4, def: 4, move: 3, upkeep: 1,
+    cost: { koban: 4 }, glyph: "船", needs: "sea",
+    tags: ["naval"],
+    desc: "Controls sea, bombards shore, ferries troops. Sinks in a typhoon.",
+  },
+  siege: {
+    name: "Siege Train", short: "砲", atk: 1, def: 1, move: 1, upkeep: 1,
+    cost: { koban: 3 }, glyph: "砲",
+    tags: ["siege"],
+    desc: "+4 vs castle. Batters castle levels down over a season or two.",
+  },
+};
+
+/* ---------------------------------------------------------------------
+ * BUILDINGS
+ * ------------------------------------------------------------------- */
+DATA.buildings = {
+  irrigation: { name: "Irrigation", cost: 2, koku: 1, prestige: 0, honour: 0,
+    desc: "+1 koku from this province each harvest." },
+  market:     { name: "Market", cost: 2, koban: 2, prestige: 1, trade: true,
+    desc: "Trade income; lets you sell rice for koban." },
+  port:       { name: "Port", cost: 3, koban: 2, prestige: 1, needsCoast: true,
+    desc: "Sea trade income; naval supply & transport." },
+  mine:       { name: "Mine Works", cost: 3, koban: 2, prestige: 2, needsMineral: true,
+    desc: "Required to work a silver/gold feature (+2 koban/yr)." },
+  temple:     { name: "Temple", cost: 3, prestige: 2, honour: 1, pacify: 1,
+    desc: "+2 Prestige, +1 Honour when built; aids pacification." },
+  shrine:     { name: "Grand Shrine", cost: 5, prestige: 3, honour: 2, pacify: 2, unique: true,
+    desc: "+3 Prestige, +2 Honour; strong pacification aid." },
+  academy:    { name: "Academy", cost: 3, prestige: 2, culture: true,
+    desc: "+2 Prestige (the Culture path)." },
+};
+
+/* ---------------------------------------------------------------------
+ * PROVINCES (16) — a tightened map evoking central Japan, SW → NE.
+ * koku: rice/harvest · terrain · castle: base level · feature key.
+ * x,y: layout on a 1000x720 board.
+ * ------------------------------------------------------------------- */
+DATA.provinces = {
+  satsuma:  { name: "Satsuma", koku: 2, terrain: "Coast",    castle: 2, feature: "foreign_trade",
+              capital: true,  x: 95,  y: 632, adj: ["aki"] },
+  aki:      { name: "Aki", koku: 2, terrain: "Coast",        castle: 2, feature: "naval_base",
+              capital: true,  x: 205, y: 548, adj: ["satsuma", "iwami", "bizen"] },
+  iwami:    { name: "Iwami", koku: 1, terrain: "Mountain",   castle: 1, feature: "silver",
+              x: 250, y: 440, adj: ["aki", "izumo"] },
+  izumo:    { name: "Izumo", koku: 2, terrain: "Hills",      castle: 1, feature: null,
+              x: 350, y: 392, adj: ["iwami", "bizen", "kaga"] },
+  bizen:    { name: "Bizen", koku: 3, terrain: "Plains",     castle: 1, feature: null,
+              x: 360, y: 520, adj: ["aki", "izumo", "settsu"] },
+  settsu:   { name: "Settsu", koku: 3, terrain: "Coast",     castle: 1, feature: "free_port",
+              capital: true,  x: 452, y: 500, adj: ["bizen", "yamashiro", "omi"] },
+  yamashiro:{ name: "Yamashiro", koku: 2, terrain: "Plains", castle: 2, feature: "capital",
+              capital: true, kyoto: true, x: 524, y: 438, adj: ["settsu", "omi", "kaga"] },
+  omi:      { name: "Ōmi", koku: 4, terrain: "Plains",       castle: 2, feature: "crossroads",
+              capital: true,  x: 566, y: 372, adj: ["settsu", "yamashiro", "kaga", "owari"] },
+  kaga:     { name: "Kaga", koku: 3, terrain: "Plains",      castle: 1, feature: "ikko",
+              x: 500, y: 296, adj: ["izumo", "yamashiro", "omi", "echigo"] },
+  owari:    { name: "Owari", koku: 5, terrain: "Plains",     castle: 2, feature: "teppo_farm",
+              capital: true,  x: 636, y: 440, adj: ["omi", "mikawa", "kai", "shinano"] },
+  mikawa:   { name: "Mikawa", koku: 3, terrain: "Hills",     castle: 1, feature: null,
+              x: 706, y: 476, adj: ["owari", "kai", "sagami"] },
+  kai:      { name: "Kai", koku: 1, terrain: "Mountain",     castle: 2, feature: "horse",
+              capital: true,  x: 766, y: 402, adj: ["owari", "mikawa", "shinano", "sagami"] },
+  shinano:  { name: "Shinano", koku: 2, terrain: "Mountain", castle: 1, feature: null,
+              x: 700, y: 330, adj: ["owari", "kai", "echigo"] },
+  sagami:   { name: "Sagami", koku: 3, terrain: "Plains",    castle: 3, feature: "great_castle",
+              capital: true,  x: 836, y: 448, adj: ["mikawa", "kai", "mutsu"] },
+  echigo:   { name: "Echigo", koku: 3, terrain: "Mountain",  castle: 3, feature: "snowbound",
+              capital: true,  x: 724, y: 232, adj: ["kaga", "shinano", "mutsu"] },
+  mutsu:    { name: "Mutsu", koku: 1, terrain: "Hills",      castle: 1, feature: "gold",
+              x: 866, y: 182, adj: ["sagami", "echigo"] },
+};
+
+/* ---------------------------------------------------------------------
+ * FEATURES — descriptive text + mechanical hooks read by the engine.
+ * ------------------------------------------------------------------- */
+DATA.features = {
+  capital:       { name: "The Capital", desc: "Hosts the Imperial Court; +5 Prestige to its holder." },
+  teppo_farm:    { name: "Rich Farmland & Sakai", desc: "Bountiful rice; grants gun access (may raise Teppō)." },
+  horse:         { name: "Horse Country", desc: "May raise Cavalry; Cavalry cost −1." },
+  snowbound:     { name: "Snowbound", desc: "Sealed off every Winter; breeds elite infantry." },
+  great_castle:  { name: "The Great Castle", desc: "Defends at level 3; +1 to your sieges elsewhere." },
+  naval_base:    { name: "Naval Base", desc: "Warship cost −1; controls Inland Sea supply." },
+  free_port:     { name: "Free Merchant Port", desc: "Large Koban income; grants gun access." },
+  crossroads:    { name: "Crossroads", desc: "Trade income + fast-movement hub near Kyoto." },
+  silver:        { name: "Silver Mine", desc: "+2 Koban/year once Mine Works are built." },
+  gold:          { name: "Gold Mine", desc: "+2 Koban/year with Mine Works; also breeds horses." },
+  foreign_trade: { name: "Foreign Trade", desc: "Early Teppō + Koban; grants gun & horse-free gun access." },
+  ikko:          { name: "Ikkō-ikki Country", desc: "Fiercely independent — very hard to pacify." },
+};
+
+/* ---------------------------------------------------------------------
+ * CLANS — homes, daimyō, identity units, colours.
+ * ------------------------------------------------------------------- */
+DATA.clans = {
+  takeda:  { name: "Takeda", homes: ["kai", "shinano"], daimyo: "Takeda Shingen",
+    command: 3, trait: "Cavalry", identity: "cavalry", lean: "Conquest",
+    strength: "Elite cavalry, mountain forts", weakness: "Food-poor, landlocked",
+    color: "#c0392b", color2: "#7b1e17", crest: "菱" },
+  uesugi:  { name: "Uesugi", homes: ["echigo"], daimyo: "Uesugi Kenshin",
+    command: 3, trait: "Morale", identity: "samurai", lean: "Conquest / Honour",
+    strength: "Superb warriors, winter fortress", weakness: "Snow-locked half the year",
+    color: "#2980b9", color2: "#1b5680", crest: "毘" },
+  oda:     { name: "Oda", homes: ["owari"], daimyo: "Oda Nobunaga",
+    command: 2, trait: "Economy", identity: "teppo", lean: "Any",
+    strength: "Rich, flexible, early guns", weakness: "Everyone's target",
+    color: "#8e44ad", color2: "#5b2c6f", crest: "木" },
+  hojo:    { name: "Hōjō", homes: ["sagami"], daimyo: "Hōjō Ujiyasu",
+    command: 2, trait: "Siege & Defence", identity: "siege", lean: "Wealth / Culture",
+    strength: "Odawara super-castle, solid economy", weakness: "Slow, defensive",
+    color: "#16a085", color2: "#0e6a58", crest: "鱗" },
+  mori:    { name: "Mōri", homes: ["aki"], daimyo: "Mōri Motonari",
+    command: 3, trait: "Naval & Diplomacy", identity: "warship", lean: "Wealth / Diplomacy",
+    strength: "Dominant navy, Inland Sea trade", weakness: "Weak on open land",
+    color: "#27ae60", color2: "#1a7a42", crest: "一" },
+  shimazu: { name: "Shimazu", homes: ["satsuma"], daimyo: "Shimazu Yoshihisa",
+    command: 2, trait: "Infantry", identity: "ashigaru", lean: "Conquest / Trade",
+    strength: "Fierce infantry, foreign guns", weakness: "Remote from Kyoto",
+    color: "#d35400", color2: "#8a3600", crest: "丸" },
+};
+
+/* Honour bands (0-20). */
+DATA.honourBands = [
+  { name: "Infamous",  min: 0,  max: 4,  endScore: -5, revolt: 2,  color: "#7b241c" },
+  { name: "Low",       min: 5,  max: 8,  endScore: 0,  revolt: 1,  color: "#a04000" },
+  { name: "Respected", min: 9,  max: 12, endScore: 4,  revolt: 0,  color: "#7d6608" },
+  { name: "Honoured",  min: 13, max: 16, endScore: 8,  revolt: -1, color: "#1e6b52" },
+  { name: "Paragon",   min: 17, max: 20, endScore: 12, revolt: -2, color: "#1a5276" },
+];
+
+/* Court ranks. */
+DATA.courtRanks = [
+  { rank: 1, name: "Provincial Title", cost: 4,  honour: 9,  provinces: 0, kyoto: false, prestige: 2 },
+  { rank: 2, name: "High Court Rank",  cost: 8,  honour: 9,  provinces: 5, kyoto: false, prestige: 4 },
+  { rank: 3, name: "Sei-i Taishōgun",  cost: 12, honour: 13, provinces: 8, kyoto: true,  prestige: 8 },
+];
+
+/* Seasons. */
+DATA.seasons = ["Spring", "Summer", "Autumn", "Winter"];
+
+/* Event deck — drawn each season for flavour and swing. */
+DATA.events = [
+  { id: "good_harvest", name: "Bountiful Harvest", season: "Autumn",
+    text: "Warm rains swelled the paddies. Every province yields +1 koku this harvest.",
+    effect: (S, api) => api.eachOwned(S, S.humanClan, p => { p._bonusKoku = (p._bonusKoku||0)+1; }) },
+  { id: "famine", name: "Famine", season: "any",
+    text: "A cold snap ruins stores across the land. All clans lose 2 rice.",
+    effect: (S, api) => api.allClans(S, c => { c.rice = Math.max(0, c.rice - 2); }) },
+  { id: "plague", name: "Plague", season: "any",
+    text: "Disease sweeps the camps. The clan with the largest army loses a unit to sickness.",
+    effect: (S, api) => api.plague(S) },
+  { id: "ronin", name: "Masterless Ronin", season: "any",
+    text: "Wandering warriors offer their swords. You gain 1 free Samurai at your capital.",
+    effect: (S, api) => api.grantUnit(S, S.humanClan, "samurai") },
+  { id: "typhoon", name: "Great Typhoon", season: "Summer",
+    text: "A kamikaze wind lashes the coasts — warships at sea are in peril this season.",
+    effect: (S, api) => { S.weather.typhoon = true; } },
+  { id: "bandits", name: "Bandit Uprising", season: "any",
+    text: "Brigands stir the countryside; a random unrest province grows more restless.",
+    effect: (S, api) => api.raiseRandomUnrest(S) },
+  { id: "merchants", name: "Merchant Caravans", season: "any",
+    text: "The roads are busy. Every Market and Port earns +1 koban this season.",
+    effect: (S, api) => api.tradeWindfall(S) },
+  { id: "ikko", name: "Ikkō-ikki Fervour", season: "any",
+    text: "The warrior-monks preach rebellion. Occupied provinces grow harder to pacify this year.",
+    effect: (S, api) => { S.flags.ikkoYear = S.year; } },
+  { id: "court_favor", name: "Imperial Favour", season: "any",
+    text: "The Court smiles on the honourable. The highest-Honour clan gains +1 Honour.",
+    effect: (S, api) => api.rewardHonour(S) },
+  { id: "envoys", name: "Peace Envoys", season: "any",
+    text: "Emissaries cross the land; diplomacy is cheaper and warmer this season.",
+    effect: (S, api) => { S.flags.peaceSeason = true; } },
+  { id: "quiet", name: "A Quiet Season", season: "any",
+    text: "The land holds its breath. Nothing stirs beyond the ordinary turning of the year.",
+    effect: () => {} },
+  { id: "gunships", name: "Nanban Traders", season: "any",
+    text: "Foreign ships reach the southern ports; clans with gun access recruit Teppō at −1 koban this season.",
+    effect: (S, api) => { S.flags.cheapGuns = true; } },
+];
+
+if (typeof module !== "undefined") module.exports = DATA;
+
+
+/* =====================================================================
+ * State: new-game construction + shared helper functions.
+ * A single global `SR` namespace holds runtime helpers; `DATA` is static.
+ * ===================================================================== */
+
+const SR = {};
+SR.state = null;          // the live game state
+let _uid = 1;
+SR.uid = () => _uid++;
+
+/* ---- tiny utilities ------------------------------------------------ */
+SR.rint = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;      // inclusive
+SR.chance = (p) => Math.random() < p;
+SR.pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+SR.clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+SR.sum = (arr, f) => arr.reduce((a, x) => a + (f ? f(x) : x), 0);
+SR.shuffle = (arr) => { for (let i = arr.length - 1; i > 0; i--) { const j = SR.rint(0, i); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+
+/* ---- unit factory -------------------------------------------------- */
+SR.mkUnit = (type) => ({ uid: SR.uid(), type });
+
+/* ---------------------------------------------------------------------
+ * NEW GAME (Mode A) — the standard rival-warlords game.
+ * opts: { clan, lengthYears }
+ * ------------------------------------------------------------------- */
+SR.newGameA = function (opts) {
+  const S = {
+    mode: "A",
+    year: 1, seasonIdx: 0, lengthYears: opts.lengthYears || 6,
+    weather: { winter: false, typhoon: false, rain: false },
+    flags: {},
+    provinces: {}, clans: {},
+    humanClan: opts.clan,
+    order: [], shogun: null,
+    log: [], eventCard: null,
+    selected: null, gameOver: false, winner: null,
+    turnClan: null, actionsThisSeason: 0,
+    movedUnits: {},          // uid -> true, reset each season
+  };
+
+  // Build province states.
+  for (const id in DATA.provinces) {
+    const p = DATA.provinces[id];
+    S.provinces[id] = {
+      id, owner: null, castle: p.castle, units: [], buildings: {},
+      status: "neutral", unrest: 0, pacifying: false, pacifyCost: 0,
+      razed: false, siege: null, hasMine: false, bonusKoku: 0,
+    };
+  }
+
+  // Build clans.
+  for (const cid in DATA.clans) {
+    const c = DATA.clans[cid];
+    S.clans[cid] = {
+      id: cid, name: c.name, color: c.color, color2: c.color2, crest: c.crest,
+      daimyo: c.daimyo, command: c.command, trait: c.trait, lean: c.lean, identity: c.identity,
+      isHuman: cid === opts.clan, isNeutral: false, alive: true,
+      koban: 6, rice: 12, honour: 10, prestige: 0, courtRank: 0,
+      agents: [], spymaster: false,
+      daimyoLoc: c.homes[0], daimyoAlive: true,
+      relations: {}, marriages: [], vassals: [], overlord: null, treachery: 0,
+      standing: 0, ambition: null, isRetainer: false, defected: false,
+    };
+    // give home provinces
+    c.homes.forEach((h, i) => {
+      const ps = S.provinces[h];
+      ps.owner = cid; ps.status = "pacified"; ps.unrest = 0;
+    });
+  }
+  // relations default
+  for (const a in S.clans) for (const b in S.clans) if (a !== b)
+    S.clans[a].relations[b] = { pact: "none", years: 0, attitude: 0 };
+
+  // Starting forces per clan.
+  for (const cid in DATA.clans) {
+    const c = DATA.clans[cid];
+    const home = S.provinces[c.homes[0]];
+    const force = ["ashigaru", "ashigaru", "ashigaru", "samurai", c.identity];
+    force.forEach(t => home.units.push(SR.mkUnit(t)));
+    // second home (Takeda Shinano) gets a small garrison
+    if (c.homes[1]) S.provinces[c.homes[1]].units.push(SR.mkUnit("ashigaru"));
+  }
+
+  // Independent / rebel garrisons on neutral provinces (minor clans).
+  for (const id in S.provinces) {
+    const ps = S.provinces[id]; const pd = DATA.provinces[id];
+    if (ps.owner) continue;
+    ps.status = "neutral";
+    const n = 2 + ps.castle + (pd.kyoto ? 2 : 0);
+    for (let i = 0; i < n; i++) ps.units.push(SR.mkUnit(i === 0 && pd.kyoto ? "samurai" : "ashigaru"));
+    if (pd.kyoto) ps.units.push(SR.mkUnit("samurai"));
+    ps.unrest = 0;
+  }
+
+  // Initiative: random for year 1.
+  S.order = SR.shuffle(Object.keys(S.clans));
+  SR.state = S;
+  SR.applyMineFlags(S);
+  return S;
+};
+
+/* ---------------------------------------------------------------------
+ * HELPERS shared by engine / battle / ai / ui.
+ * ------------------------------------------------------------------- */
+SR.stat = (id) => DATA.provinces[id];
+
+SR.clanProvinces = (S, cid) =>
+  Object.keys(S.provinces).filter(id => S.provinces[id].owner === cid);
+
+SR.pacifiedProvinces = (S, cid) =>
+  SR.clanProvinces(S, cid).filter(id => S.provinces[id].status === "pacified");
+
+SR.honourBand = (h) => DATA.honourBands.find(b => h >= b.min && h <= b.max) || DATA.honourBands[0];
+
+/* Access checks based on controlled provinces + clan identity. */
+SR.hasGunAccess = function (S, cid) {
+  if (cid === "oda" || cid === "shimazu") return true;
+  return SR.clanProvinces(S, cid).some(id => {
+    const f = SR.stat(id).feature;
+    return f === "free_port" || f === "foreign_trade" || f === "teppo_farm";
+  });
+};
+SR.hasHorseAccess = function (S, cid) {
+  if (cid === "takeda") return true;
+  return SR.clanProvinces(S, cid).some(id => {
+    const f = SR.stat(id).feature; return f === "horse" || f === "gold";
+  });
+};
+SR.provinceHasSea = (id) => ["Coast"].includes(SR.stat(id).terrain);
+SR.hasSeaAccess = function (S, cid) {
+  return SR.clanProvinces(S, cid).some(id => SR.provinceHasSea(id) &&
+    (S.provinces[id].buildings.port || SR.stat(id).feature === "naval_base" ||
+     SR.stat(id).feature === "free_port" || SR.stat(id).feature === "foreign_trade"));
+};
+
+/* Can this clan recruit `type`? returns {ok, reason}. */
+SR.canRecruit = function (S, cid, type) {
+  const u = DATA.units[type];
+  if (u.needs === "gun" && !SR.hasGunAccess(S, cid)) return { ok: false, reason: "No gun access (need a port / foreign-trade / Owari)." };
+  if (u.needs === "horse" && !SR.hasHorseAccess(S, cid)) return { ok: false, reason: "No horse country (need Kai / a gold province)." };
+  if (u.needs === "sea" && !SR.hasSeaAccess(S, cid)) return { ok: false, reason: "No naval base / port with sea access." };
+  return { ok: true };
+};
+
+/* Adjusted recruit cost (koban/rice) accounting for features & events. */
+SR.recruitCost = function (S, cid, type) {
+  const base = DATA.units[type].cost;
+  const cost = { koban: base.koban || 0, rice: base.rice || 0 };
+  const provs = SR.clanProvinces(S, cid);
+  if (type === "cavalry" && provs.some(id => SR.stat(id).feature === "horse")) cost.koban -= 1;
+  if (type === "warship" && provs.some(id => SR.stat(id).feature === "naval_base")) cost.koban -= 1;
+  if (type === "teppo" && S.flags.cheapGuns) cost.koban -= 1;
+  cost.koban = Math.max(0, cost.koban);
+  return cost;
+};
+
+/* Total rice upkeep of a clan's armies (per season, doubled in winter). */
+SR.upkeep = function (S, cid) {
+  let up = 0;
+  for (const id of SR.clanProvinces(S, cid))
+    for (const u of S.provinces[id].units) up += DATA.units[u.type].upkeep;
+  // besieging armies sitting in enemy provinces still cost upkeep
+  for (const id in S.provinces) {
+    const ps = S.provinces[id];
+    if (ps.siege && ps.siege.by === cid)
+      for (const u of ps.siege.army || []) up += DATA.units[u.type].upkeep;
+  }
+  if (S.weather.winter) up *= 2;
+  return up;
+};
+
+/* Rough army power for AI / display. */
+SR.armyPower = function (units, role) {
+  return SR.sum(units, u => {
+    const d = DATA.units[u.type];
+    return role === "def" ? d.def : role === "atk" ? d.atk : (d.atk + d.def) / 2;
+  });
+};
+
+SR.daimyoCommand = function (S, cid, provId) {
+  const c = S.clans[cid];
+  if (c && c.daimyoAlive && c.daimyoLoc === provId) return c.command;
+  return 1; // a lesser general
+};
+
+/* Supply BFS: is `provId` (holding a `cid` army) in supply?
+ * Trace ≤4 steps through owned/allied provinces to a supply source
+ * (pacified province with market/port/castle≥1). */
+SR.inSupply = function (S, provId, cid) {
+  const ps = S.provinces[provId];
+  const isSource = (id) => {
+    const q = S.provinces[id];
+    if (!q) return false;
+    if (q.owner !== cid && !SR.allied(S, cid, q.owner)) return false;
+    if (q.status !== "pacified" && q.status !== "home") return false;
+    return q.buildings.market || q.buildings.port || q.castle >= 1;
+  };
+  const passable = (id) => {
+    const q = S.provinces[id];
+    return q.owner === cid || SR.allied(S, cid, q.owner);
+  };
+  if (isSource(provId)) return true;
+  const seen = { [provId]: 0 };
+  const queue = [provId];
+  while (queue.length) {
+    const cur = queue.shift();
+    const dist = seen[cur];
+    if (dist >= 4) continue;
+    for (const nb of SR.stat(cur).adj) {
+      if (nb in seen) continue;
+      if (!passable(nb)) continue;
+      seen[nb] = dist + 1;
+      if (isSource(nb)) return true;
+      queue.push(nb);
+    }
+  }
+  return false;
+};
+
+SR.allied = function (S, a, b) {
+  if (!a || !b || a === b) return a === b;
+  const r = S.clans[a] && S.clans[a].relations[b];
+  return r && (r.pact === "alliance" || r.pact === "marriage");
+};
+SR.atPeace = function (S, a, b) {
+  if (!a || !b) return false;
+  const r = S.clans[a] && S.clans[a].relations[b];
+  return r && ["nap", "alliance", "marriage", "trade"].includes(r.pact);
+};
+
+/* Set hasMine flags where a mine works building sits on a mineral feature. */
+SR.applyMineFlags = function (S) {
+  for (const id in S.provinces) {
+    const f = SR.stat(id).feature;
+    S.provinces[id].hasMine = !!(S.provinces[id].buildings.mine &&
+      (f === "silver" || f === "gold"));
+  }
+};
+
+/* Territory / power leader (for anti-runaway + AI targeting). */
+SR.livingClans = (S) => Object.keys(S.clans).filter(c => S.clans[c].alive && !S.clans[c].isNeutral);
+SR.prestigeLeader = function (S) {
+  let best = null, bv = -1e9;
+  for (const c of SR.livingClans(S)) {
+    const v = SR.scoreTotal(S, c).total;
+    if (v > bv) { bv = v; best = c; }
+  }
+  return best;
+};
+
+/* Log helper. */
+SR.log = function (S, msg, kind) {
+  S.log.unshift({ t: `Y${S.year} ${DATA.seasons[S.seasonIdx]}`, msg, kind: kind || "info" });
+  if (S.log.length > 200) S.log.pop();
+};
+
+if (typeof module !== "undefined") module.exports = SR;
+
+
+/* =====================================================================
+ * Engine: the season clock, weather, economy, supply, pacification,
+ * court, prestige scoring, and win/lose detection.
+ * ===================================================================== */
+
+/* ---- province-level economic helpers ------------------------------ */
+SR.provKoban = function (S, id) {
+  const ps = S.provinces[id], f = SR.stat(id).feature;
+  let k = 1; // base tax
+  const b = ps.buildings;
+  if (b.market) k += 2;
+  if (b.port) k += 2;
+  if (ps.hasMine) k += 2;
+  if (f === "free_port") k += 4;
+  if (f === "crossroads") k += 2;
+  if (f === "foreign_trade") k += 2;
+  if (f === "naval_base") k += 1;
+  return k;
+};
+SR.provKoku = function (S, id) {
+  const ps = S.provinces[id];
+  let k = SR.stat(id).koku + (ps.buildings.irrigation ? 1 : 0) + (ps.bonusKoku || 0);
+  return k;
+};
+SR.cultureCount = (S, cid) => SR.sum(SR.clanProvinces(S, cid), id => {
+  const b = S.provinces[id].buildings; return (b.temple ? 1 : 0) + (b.shrine ? 1 : 0) + (b.academy ? 1 : 0);
+});
+SR.portMarketCount = (S, cid) => SR.sum(SR.clanProvinces(S, cid), id => {
+  const b = S.provinces[id].buildings; return (b.port ? 1 : 0) + (b.market ? 1 : 0);
+});
+SR.kokuIncome = (S, cid) => SR.sum(SR.pacifiedProvinces(S, cid), id => SR.provKoku(S, id));
+
+/* ---------------------------------------------------------------------
+ * BEGIN SEASON — the whole upkeep pipeline before the human acts.
+ * ------------------------------------------------------------------- */
+SR.beginSeason = function (S) {
+  const season = DATA.seasons[S.seasonIdx];
+  // reset transient
+  S.movedUnits = {};
+  S.weather = { winter: season === "Winter", typhoon: false,
+                rain: (season === "Summer" || season === "Winter") && SR.chance(0.25) };
+  S.flags.peaceSeason = false; S.flags.cheapGuns = false;
+  for (const id in S.provinces) S.provinces[id].bonusKoku = 0;
+
+  SR.log(S, `— ${season}, Year ${S.year} —`, "season");
+
+  // 1. Event
+  SR.drawEvent(S);
+
+  // 2. Income & upkeep
+  SR.processIncomeUpkeep(S);
+  if (SR.diplomacyIncome) SR.diplomacyIncome(S);
+
+  // 3. Supply attrition (field armies out of supply)
+  SR.processSupply(S);
+
+  // 4. Sieges tick
+  SR.processSieges(S);
+
+  // 5. Revolt & pacification
+  SR.processUnrest(S);
+
+  // housekeeping: alive status, court host, shogun validity, daimyo respawn
+  SR.refreshPolitics(S);
+
+  S.phase = "action"; S.turnClan = S.humanClan;
+};
+
+/* Draw and apply one event card (season-appropriate). */
+SR.drawEvent = function (S) {
+  const season = DATA.seasons[S.seasonIdx];
+  const pool = DATA.events.filter(e => e.season === "any" || e.season === season);
+  const ev = SR.pick(pool);
+  S.eventCard = ev;
+  const api = SR.eventAPI;
+  try { ev.effect(S, api); } catch (e) { /* ignore */ }
+  SR.log(S, `Event — ${ev.name}: ${ev.text}`, "event");
+};
+
+/* Event helper callbacks. */
+SR.eventAPI = {
+  eachOwned: (S, cid, fn) => SR.clanProvinces(S, cid).forEach(id => fn(S.provinces[id])),
+  allClans: (S, fn) => SR.livingClans(S).forEach(c => fn(S.clans[c])),
+  plague: (S) => {
+    let big = null, bn = -1;
+    for (const c of SR.livingClans(S)) {
+      const n = SR.sum(SR.clanProvinces(S, c), id => S.provinces[id].units.length);
+      if (n > bn) { bn = n; big = c; }
+    }
+    if (big) {
+      const provs = SR.clanProvinces(S, big).filter(id => S.provinces[id].units.length);
+      if (provs.length) { const p = S.provinces[SR.pick(provs)]; p.units.pop(); }
+    }
+  },
+  grantUnit: (S, cid, type) => {
+    const home = SR.clanProvinces(S, cid)[0];
+    if (home) S.provinces[home].units.push(SR.mkUnit(type));
+  },
+  raiseRandomUnrest: (S) => {
+    const occ = [];
+    for (const id in S.provinces) if (["occupied", "pacifying"].includes(S.provinces[id].status)) occ.push(id);
+    if (occ.length) S.provinces[SR.pick(occ)].unrest += 2;
+  },
+  tradeWindfall: (S) => SR.livingClans(S).forEach(c =>
+    S.clans[c].koban += SR.portMarketCount(S, c)),
+  rewardHonour: (S) => {
+    let best = null, bh = -1;
+    for (const c of SR.livingClans(S)) if (S.clans[c].honour > bh) { bh = S.clans[c].honour; best = c; }
+    if (best) S.clans[best].honour = SR.clamp(S.clans[best].honour + 1, 0, 20);
+  },
+};
+
+/* Harvest, koban, and pay upkeep; unsupplied armies starve. */
+SR.processIncomeUpkeep = function (S) {
+  const season = DATA.seasons[S.seasonIdx];
+  for (const cid of SR.livingClans(S)) {
+    const c = S.clans[cid];
+    // Steady seasonal supply: each pacified province forages koku + 1 rice.
+    const supply = SR.sum(SR.pacifiedProvinces(S, cid), id => SR.provKoku(S, id) + 1);
+    c.rice += supply;
+    if (season === "Autumn") {
+      // The harvest: a bonus of rice AND the year's koban (taxes, mines, trade).
+      const harvest = SR.sum(SR.pacifiedProvinces(S, cid), id => SR.provKoku(S, id));
+      const koban = SR.sum(SR.pacifiedProvinces(S, cid), id => SR.provKoban(S, id));
+      c.rice += harvest; c.koban += koban;
+      if (cid === S.humanClan) SR.log(S, `Autumn harvest: +${harvest} bonus rice, +${koban} koban.`, "econ");
+    }
+    // pay upkeep in rice
+    const up = SR.upkeep(S, cid);
+    c.rice -= up;
+    if (c.rice < 0) {
+      let starve = -c.rice; c.rice = 0;
+      // starving armies lose units
+      const provs = SR.clanProvinces(S, cid).filter(id => S.provinces[id].units.length);
+      while (starve > 0 && provs.length) {
+        const id = SR.pick(provs); const p = S.provinces[id];
+        if (p.units.length) { p.units.pop(); starve -= 1; }
+        if (!p.units.length) provs.splice(provs.indexOf(id), 1);
+      }
+      if (cid === S.humanClan) SR.log(S, `Your stores ran dry — troops desert from hunger!`, "bad");
+    }
+  }
+};
+
+/* Out-of-supply field armies take attrition. */
+SR.processSupply = function (S) {
+  for (const id in S.provinces) {
+    const ps = S.provinces[id];
+    if (!ps.owner || !ps.units.length) continue;
+    // armies in your own pacified/home land are always supplied
+    if (ps.status === "pacified" || ps.status === "home") continue;
+    if (!SR.inSupply(S, id, ps.owner)) {
+      const loss = S.weather.winter ? 2 : 1;
+      for (let i = 0; i < loss && ps.units.length; i++) ps.units.pop();
+      if (ps.owner === S.humanClan) SR.log(S, `${SR.stat(id).name}: army out of supply — attrition losses.`, "bad");
+    }
+  }
+};
+
+/* Revolt & pacification each season. */
+SR.processUnrest = function (S) {
+  for (const id in S.provinces) {
+    const ps = S.provinces[id]; const pd = SR.stat(id);
+    if (!ps.owner) continue;
+    if (ps.status === "pacified" || ps.status === "home") continue;
+    const c = S.clans[ps.owner];
+    const garrison = ps.units.length;
+    const band = SR.honourBand(c.honour);
+    const temple = (ps.buildings.temple ? 1 : 0) + (ps.buildings.shrine ? 2 : 0);
+    const ikko = pd.feature === "ikko" || ps.razed;
+
+    if (ps.status === "pacifying") {
+      let rate = 1 + Math.floor(garrison / 2) - band.revolt + temple;
+      if (ikko) rate = Math.max(1, rate - 1);
+      rate = Math.max(1, rate);
+      ps.unrest -= rate;
+      if (ps.unrest <= 0) {
+        ps.unrest = 0; ps.status = "pacified"; ps.pacifying = false;
+        if (ps.owner === S.humanClan) SR.log(S, `${pd.name} is pacified — it is now yours.`, "good");
+      }
+    } else if (ps.status === "occupied") {
+      // unpaid occupation: risk of revolt grows
+      const risk = 0.10 + ps.unrest * 0.03 + band.revolt * 0.04 - garrison * 0.03 - temple * 0.05;
+      if (garrison === 0 || SR.chance(SR.clamp(risk, 0.02, 0.7))) {
+        SR.revolt(S, id);
+      }
+    }
+  }
+};
+
+SR.revolt = function (S, id) {
+  const ps = S.provinces[id]; const pd = SR.stat(id);
+  const owner = ps.owner;
+  // rebels rise: province becomes neutral, spawns defenders, garrison scattered
+  const rebels = 2 + ps.castle;
+  ps.units = [];
+  for (let i = 0; i < rebels; i++) ps.units.push(SR.mkUnit("ashigaru"));
+  ps.owner = null; ps.status = "neutral"; ps.unrest = 0; ps.pacifying = false; ps.siege = null;
+  if (owner === S.humanClan) SR.log(S, `REVOLT! ${pd.name} has thrown off your rule.`, "bad");
+  else SR.log(S, `${pd.name} revolts against the ${S.clans[owner].name}.`, "info");
+};
+
+/* Siege ticks — reduce castle, starve garrison, resolve assaults. */
+SR.processSieges = function (S) {
+  for (const id in S.provinces) {
+    const ps = S.provinces[id];
+    if (!ps.siege) continue;
+    SR.siegeTick(S, id);
+  }
+};
+
+/* ---------------------------------------------------------------------
+ * Politics housekeeping: eliminate dead clans, set court host, validate
+ * the Shōgun, respawn fallen daimyō as heirs each Spring.
+ * ------------------------------------------------------------------- */
+SR.refreshPolitics = function (S) {
+  for (const cid in S.clans) {
+    const c = S.clans[cid];
+    if (c.isNeutral) continue;
+    const provs = SR.clanProvinces(S, cid);
+    const anyArmy = provs.some(id => S.provinces[id].units.length) ||
+      Object.values(S.provinces).some(p => p.siege && p.siege.by === cid && (p.siege.army || []).length);
+    if (c.alive && provs.length === 0 && !anyArmy) {
+      c.alive = false;
+      SR.log(S, `The ${c.name} clan is extinguished.`, "bad");
+    }
+    // daimyo respawn as heir each Spring
+    if (c.alive && !c.daimyoAlive && DATA.seasons[S.seasonIdx] === "Spring") {
+      const loc = provs[0];
+      if (loc) { c.daimyoAlive = true; c.daimyoLoc = loc;
+        if (cid === S.humanClan) SR.log(S, `A new heir takes up the ${c.name} banner at ${SR.stat(loc).name}.`, "info"); }
+    }
+  }
+  // court host
+  const kyoto = S.provinces.yamashiro;
+  S.courtHost = (kyoto.owner && kyoto.status === "pacified") ? kyoto.owner : null;
+  // shogun validity
+  if (S.shogun) {
+    const c = S.clans[S.shogun];
+    if (!c || !c.alive || S.courtHost !== S.shogun || c.honour < 13) {
+      if (c) c.courtRank = Math.min(c.courtRank, 2);
+      SR.log(S, `The Shōgun appointment lapses.`, "info");
+      S.shogun = null;
+    }
+  }
+};
+
+/* ---------------------------------------------------------------------
+ * COURT — climb ranks at Kyoto.
+ * ------------------------------------------------------------------- */
+SR.courtEligible = function (S, cid) {
+  const c = S.clans[cid];
+  const next = DATA.courtRanks[c.courtRank];
+  if (!next) return { ok: false, reason: "Already at the highest rank." };
+  const prov = SR.pacifiedProvinces(S, cid).length;
+  if (c.honour < next.honour) return { ok: false, reason: `Need Honour ≥ ${next.honour} (${SR.honourBand(next.honour).name}).` };
+  if (prov < next.provinces) return { ok: false, reason: `Need ≥ ${next.provinces} provinces (you hold ${prov}).` };
+  if (next.kyoto && S.courtHost !== cid) return { ok: false, reason: "Must control Kyoto (Yamashiro)." };
+  if (next.rank === 3 && S.shogun && S.shogun !== cid) return { ok: false, reason: "Another clan already holds the Shōgunate." };
+  if (c.koban < next.cost) return { ok: false, reason: `Need ${next.cost} koban.` };
+  return { ok: true, next };
+};
+SR.doCourt = function (S, cid) {
+  const e = SR.courtEligible(S, cid);
+  if (!e.ok) return e;
+  const c = S.clans[cid];
+  c.koban -= e.next.cost; c.courtRank = e.next.rank;
+  c.prestige += e.next.prestige;
+  if (e.next.rank === 3) { S.shogun = cid; c.honour = SR.clamp(c.honour + 1, 0, 20); }
+  SR.log(S, `${c.name} attains ${e.next.name}! (+${e.next.prestige} Prestige)`, "good");
+  return { ok: true };
+};
+
+/* ---------------------------------------------------------------------
+ * SCORING
+ * ------------------------------------------------------------------- */
+SR.provincePrestige = function (id) {
+  const pd = SR.stat(id);
+  if (pd.kyoto) return 5;
+  if (pd.capital) return 2;
+  return 1;
+};
+SR.buildingPrestige = function (ps) {
+  const b = ps.buildings; let p = 0;
+  if (b.temple) p += 2; if (b.shrine) p += 3; if (b.academy) p += 2;
+  if (b.market) p += 1; if (b.port) p += 1; if (b.mine) p += 2;
+  return p;
+};
+SR.scoreStanding = function (S, cid) {
+  const c = S.clans[cid];
+  let terr = 0, castles = 0, builds = 0;
+  for (const id of SR.pacifiedProvinces(S, cid)) {
+    terr += SR.provincePrestige(id);
+    castles += S.provinces[id].castle;
+    builds += SR.buildingPrestige(S.provinces[id]);
+  }
+  const marriages = c.marriages.length * 2;
+  const vassals = c.vassals.length * 2;
+  const court = c.courtRank ? DATA.courtRanks[c.courtRank - 1].prestige : 0;
+  return { terr, castles, builds, marriages, vassals, court,
+    total: terr + castles + builds + marriages + vassals + court };
+};
+SR.majorities = function (S) {
+  const clans = SR.livingClans(S);
+  const bonus = {}; clans.forEach(c => bonus[c] = 0);
+  const award = (metric, pts) => {
+    let best = -Infinity, winners = [];
+    clans.forEach(c => { const v = metric(c); if (v > best) { best = v; winners = [c]; } else if (v === best) winners.push(c); });
+    if (best > 0 && winners.length === 1) bonus[winners[0]] += pts;
+  };
+  award(c => SR.pacifiedProvinces(S, c).length, 5);          // most territory
+  award(c => S.clans[c].koban, 5);                            // richest
+  award(c => SR.kokuIncome(S, c), 3);                         // most koku income
+  award(c => SR.cultureCount(S, c), 5);                       // most culture
+  award(c => S.clans[c].honour, 3);                           // highest honour
+  award(c => S.clans[c].agents.length, 5);                    // largest spy network
+  return bonus;
+};
+SR.scoreTotal = function (S, cid) {
+  const c = S.clans[cid];
+  const st = SR.scoreStanding(S, cid);
+  const band = SR.honourBand(c.honour);
+  const maj = SR.majorities(S)[cid] || 0;
+  const total = c.prestige + st.total + band.endScore + maj;
+  return { banked: c.prestige, standing: st.total, honour: band.endScore, majorities: maj,
+    total, band: band.name, breakdown: st };
+};
+
+/* ---------------------------------------------------------------------
+ * YEAR-END + WIN/LOSE
+ * ------------------------------------------------------------------- */
+SR.checkVictory = function (S) {
+  const totalProv = Object.keys(S.provinces).length;
+  // sudden conquest
+  for (const cid of SR.livingClans(S)) {
+    const pac = SR.pacifiedProvinces(S, cid).length;
+    const kyoto = S.provinces.yamashiro.owner === cid && S.provinces.yamashiro.status === "pacified";
+    if (kyoto && pac / totalProv >= 0.55) {
+      return SR.endGame(S, cid, `${S.clans[cid].name} holds Kyoto and ${Math.round(pac / totalProv * 100)}% of Japan — the realm is united by the sword!`);
+    }
+    // sudden wealth
+    if (S.clans[cid].koban >= 60 && SR.portMarketCount(S, cid) >= 3) {
+      return SR.endGame(S, cid, `${S.clans[cid].name}'s coffers overflow and its markets dominate the land — a Merchant Prince's triumph!`);
+    }
+  }
+  return false;
+};
+
+SR.endGame = function (S, forcedWinner, reason) {
+  S.gameOver = true;
+  // final scores
+  const scores = SR.livingClans(S).map(c => ({ cid: c, ...SR.scoreTotal(S, c) }));
+  scores.sort((a, b) => b.total - a.total || S.clans[b.cid].honour - S.clans[a.cid].honour);
+  S.finalScores = scores;
+  S.winner = forcedWinner || (scores[0] && scores[0].cid);
+  S.endReason = reason || `Year ${S.lengthYears} closes. The tallies are made.`;
+  SR.log(S, `GAME OVER — ${S.clans[S.winner].name} wins. ${S.endReason}`, "season");
+  return true;
+};
+
+/* ---------------------------------------------------------------------
+ * PLAYER ECONOMIC ACTIONS — recruit, build, sell rice.
+ * ------------------------------------------------------------------- */
+SR.canBuildHere = function (S, cid, id) {
+  const ps = S.provinces[id];
+  return ps.owner === cid && (ps.status === "pacified" || ps.status === "home");
+};
+SR.doRecruit = function (S, cid, id, type) {
+  const c = S.clans[cid];
+  if (!SR.canBuildHere(S, cid, id)) return { ok: false, reason: "Recruit only in a pacified province you hold." };
+  const acc = SR.canRecruit(S, cid, type);
+  if (!acc.ok) return acc;
+  const cost = SR.recruitCost(S, cid, type);
+  if (c.koban < (cost.koban || 0)) return { ok: false, reason: `Need ${cost.koban} koban.` };
+  if (c.rice < (cost.rice || 0)) return { ok: false, reason: `Need ${cost.rice} rice.` };
+  c.koban -= cost.koban || 0; c.rice -= cost.rice || 0;
+  const u = SR.mkUnit(type);
+  S.provinces[id].units.push(u);
+  S.movedUnits[u.uid] = true;               // newly raised, can't march this season
+  SR.log(S, `${c.name} raises ${DATA.units[type].name} at ${SR.stat(id).name}.`, "econ");
+  return { ok: true };
+};
+SR.doBuild = function (S, cid, id, key) {
+  const c = S.clans[cid]; const ps = S.provinces[id]; const b = DATA.buildings[key];
+  if (key === "castle") {
+    if (!SR.canBuildHere(S, cid, id)) return { ok: false, reason: "Build only in a pacified province you hold." };
+    if (ps.castle >= 4) return { ok: false, reason: "Castle already at maximum." };
+    if (c.koban < 4) return { ok: false, reason: "Need 4 koban." };
+    c.koban -= 4; ps.castle += 1;
+    SR.log(S, `${c.name} upgrades the castle at ${SR.stat(id).name} to level ${ps.castle}.`, "econ");
+    return { ok: true };
+  }
+  if (!b) return { ok: false, reason: "Unknown building." };
+  if (!SR.canBuildHere(S, cid, id)) return { ok: false, reason: "Build only in a pacified province you hold." };
+  if (ps.buildings[key]) return { ok: false, reason: "Already built here." };
+  if (b.needsCoast && SR.stat(id).terrain !== "Coast") return { ok: false, reason: "Ports need a Coast province." };
+  if (b.needsMineral && !["silver", "gold"].includes(SR.stat(id).feature)) return { ok: false, reason: "Mine Works need a silver/gold feature." };
+  if (b.unique && SR.clanProvinces(S, cid).some(p => S.provinces[p].buildings[key])) return { ok: false, reason: "You may build only one Grand Shrine." };
+  if (c.koban < b.cost) return { ok: false, reason: `Need ${b.cost} koban.` };
+  c.koban -= b.cost; ps.buildings[key] = true;
+  if (b.honour) c.honour = SR.clamp(c.honour + b.honour, 0, 20);
+  SR.applyMineFlags(S);
+  SR.log(S, `${c.name} builds a ${b.name} at ${SR.stat(id).name}.`, "econ");
+  return { ok: true };
+};
+SR.doSellRice = function (S, cid, amount) {
+  const c = S.clans[cid];
+  const hasMarket = SR.clanProvinces(S, cid).some(id => S.provinces[id].buildings.market || SR.stat(id).feature === "free_port");
+  if (!hasMarket) return { ok: false, reason: "Need a Market or free port to trade rice." };
+  amount = Math.min(amount, c.rice);
+  if (amount < 2) return { ok: false, reason: "Need at least 2 rice to sell." };
+  const koban = Math.floor(amount / 2);
+  c.rice -= koban * 2; c.koban += koban;
+  SR.log(S, `${c.name} sells ${koban * 2} rice for ${koban} koban at market.`, "econ");
+  return { ok: true };
+};
+
+/* Advance the clock after the AI phase. Returns true if game ended. */
+SR.advanceSeason = function (S) {
+  // year-end checks happen at the close of Winter
+  if (DATA.seasons[S.seasonIdx] === "Winter") {
+    if (SR.checkVictory(S)) return true;
+    if (S.year >= S.lengthYears) { SR.endGame(S, null, null); return true; }
+    S.year += 1; S.seasonIdx = 0;
+  } else {
+    S.seasonIdx += 1;
+  }
+  // lose check: human eliminated
+  if (!S.clans[S.humanClan].alive) { SR.endGame(S, SR.prestigeLeader(S), `The ${S.clans[S.humanClan].name} clan has fallen.`); return true; }
+  return false;
+};
+
+if (typeof module !== "undefined") module.exports = SR;
+
+
+/* =====================================================================
+ * Battle & siege: engagement, the field of battle (frontage, shock,
+ * ranged, posture, reserves, fatigue, morale, rout), leader fate,
+ * sieges and assaults, movement, and pacification.
+ * ===================================================================== */
+
+SR.unitBase = (type) => { const u = DATA.units[type]; return (u.atk + u.def) / 2; };
+
+SR.frontage = function (terrainName, posture) {
+  const T = DATA.terrain[terrainName];
+  let f = T.frontage;
+  if (posture === "Deep") f = Math.max(1, f - 1);
+  if (posture === "Wide") f = f + 2;
+  return f;
+};
+
+/* Count of a unit type in a token list. */
+SR.countType = (units, type) => units.filter(u => u.type === type).length;
+
+/* ---------------------------------------------------------------------
+ * simulateBattle(ctx) — pure round-by-round resolution.
+ * ctx: {
+ *   attUnits, defUnits,            // token arrays (copied here)
+ *   attCmd, defCmd,                // command ratings
+ *   attTrait, defTrait,           // clan trait strings
+ *   terrain, weather, surprise,
+ *   postureA, postureD,
+ *   castleBonus,                   // defender castle defensive bonus (assault)
+ *   assault,                      // storming walls?
+ * }
+ * returns { winner:'att'|'def', rounds:[...lines], attLosses, defLosses,
+ *           attSurv, defSurv, routed:'att'|'def'|null }
+ * ------------------------------------------------------------------- */
+SR.simulateBattle = function (ctx) {
+  const T = DATA.terrain[ctx.terrain];
+  const A = ctx.attUnits.map(u => ({ ...u }));
+  const D = ctx.defUnits.map(u => ({ ...u }));
+  const rounds = [];
+  const wet = ctx.weather && (ctx.weather.rain || ctx.weather.winter);
+
+  const traitBonus = (trait, units, role) => {
+    let b = 0;
+    if (trait === "Morale") b += 2;
+    if (trait === "Infantry") b += 0.5 * (SR.countType(units, "ashigaru") + SR.countType(units, "samurai"));
+    if (trait === "Siege & Defence" && role === "def") b += 2;
+    return b;
+  };
+
+  let mA = 10 + Math.min(3, SR.countType(A, "samurai")) + ctx.attCmd + traitBonus(ctx.attTrait, A, "att");
+  let mD = 10 + Math.min(3, SR.countType(D, "samurai")) + ctx.defCmd + traitBonus(ctx.defTrait, D, "def")
+           + (ctx.castleBonus || 0) * 1.5;
+  const mA0 = mA, mD0 = mD;
+
+  const frontA = SR.frontage(ctx.terrain, ctx.postureA);
+  const frontD = SR.frontage(ctx.terrain, ctx.postureD);
+
+  const engagedPower = (units, front, role, posture, round, trait, enemyPosture) => {
+    // sort by base value desc; the frontage best fight, rest are reserve (10%)
+    const sorted = [...units].sort((a, b) => SR.unitBase(b.type) - SR.unitBase(a.type));
+    const eng = sorted.slice(0, front), res = sorted.slice(front);
+    let p = 0;
+    for (const u of eng) {
+      const d = DATA.units[u.type];
+      let v = SR.unitBase(u.type);
+      if (role === "def") v += T.defBonus * 0.5;
+      // shock (round 1 only, terrain-damped)
+      if (round === 1 && d.tags.includes("shock")) v += 3 * T.cavalry * (trait === "Cavalry" ? 1.3 : 1);
+      // ranged pre-fire
+      if (d.tags.includes("ranged") && !(d.tags.includes("volley"))) v += 2;                 // archers every round
+      if (d.tags.includes("volley") && !wet && round % 2 === 1) {                             // teppo odd rounds, dry
+        v += 4 + (enemyPosture === "Deep" ? 1 : 0);
+      }
+      p += v;
+    }
+    // reserves add a fraction
+    p += SR.sum(res, u => SR.unitBase(u.type)) * 0.15;
+    p += traitBonus(trait, units, role);
+    // posture
+    if (posture === "Wide") p += 2;
+    if (posture === "Deep") p -= 1;
+    return p;
+  };
+
+  const applyCasualties = (units, n, posture) => {
+    // Deep posture soaks a hit
+    if (posture === "Deep") n = Math.max(0, n - 1);
+    const removed = [];
+    // lowest-value (ashigaru) die first — the shield of the line
+    const order = [...units].sort((a, b) => SR.unitBase(a.type) - SR.unitBase(b.type));
+    for (let i = 0; i < n && order.length; i++) {
+      const u = order.shift(); const idx = units.indexOf(u);
+      if (idx >= 0) { units.splice(idx, 1); removed.push(u); }
+    }
+    return removed;
+  };
+
+  const lossesA = [], lossesD = [];
+  let round = 0;
+
+  // Surprise ambush: a free preliminary round against a disordered foe.
+  if (ctx.surprise) {
+    const dmg = Math.max(1, Math.round(SR.armyPower(A, "atk") / 8));
+    const rem = applyCasualties(D, dmg, ctx.postureD);
+    rem.forEach(u => lossesD.push(u)); mD -= dmg * 1.5 + 2;
+    rounds.push({ n: "Ambush", att: 0, def: 0, text: `Surprise! A dawn ambush cuts down ${dmg} defending unit(s) before they form ranks.` });
+  }
+
+  const cap = (units) => Math.max(1, Math.ceil(units.length / 3) + 1);
+
+  while (round < 7 && A.length && D.length && mA > 0 && mD > 0) {
+    round++;
+    let pA = engagedPower(A, frontA, "att", ctx.postureA, round, ctx.attTrait, ctx.postureD);
+    let pD = engagedPower(D, frontD, "def", ctx.postureD, round, ctx.defTrait, ctx.postureA);
+    // fatigue
+    pA *= (1 - Math.min(0.4, (round - 1) * 0.08));
+    pD *= (1 - Math.min(0.4, (round - 1) * 0.08));
+    // friction — the chaos of the field. Wide enough that a small edge is an
+    // advantage, not a certainty; a large edge still tells.
+    pA *= 0.68 + Math.random() * 0.64;
+    pD *= 0.68 + Math.random() * 0.64;
+
+    const diff = Math.abs(pA - pD);
+    // The round-loser takes casualties scaled to the gap; morale erosion is
+    // what actually breaks an army. The winner bleeds after the loop (a grind
+    // cost), so a hard-fought victory still thins your ranks.
+    let casL = SR.clamp(Math.round(diff / 4), 0, 99);
+    const winner = pA >= pD ? "att" : "def";
+    let rA = [], rD = [];
+    if (winner === "att") {
+      casL = Math.min(casL, cap(D));
+      rD = applyCasualties(D, casL, ctx.postureD);
+      mD -= casL * 1.4 + 1.2 + diff * 0.2; mA -= 0.3;
+    } else {
+      casL = Math.min(casL, cap(A));
+      rA = applyCasualties(A, casL, ctx.postureA);
+      mA -= casL * 1.4 + 1.2 + diff * 0.2; mD -= 0.3;
+    }
+    rA.forEach(u => lossesA.push(u)); rD.forEach(u => lossesD.push(u));
+
+    rounds.push({
+      n: String(round),
+      att: Math.round(pA), def: Math.round(pD),
+      text: `Round ${round}: attacker ${Math.round(pA)} vs defender ${Math.round(pD)} — ` +
+            `${winner === "att" ? "defenders" : "attackers"} lose ${winner === "att" ? rD.length : rA.length}` +
+            `${(winner === "att" ? rA.length : rD.length) ? `, ${winner === "att" ? "attackers" : "defenders"} ${winner === "att" ? rA.length : rD.length}` : ""}.`,
+      mA: Math.round(mA), mD: Math.round(mD),
+    });
+  }
+
+  // Determine outcome
+  let winner, routed = null;
+  if (!D.length) { winner = "att"; routed = "def"; }
+  else if (!A.length) { winner = "def"; routed = "att"; }
+  else if (mD <= 0) { winner = "att"; routed = "def"; }
+  else if (mA <= 0) { winner = "def"; routed = "att"; }
+  else {
+    // no rout after the last round: the fresher, higher-morale army holds the
+    // ground; the defender wins a true tie (the attacker failed to break them).
+    winner = mA > mD + 0.5 ? "att" : "def";
+  }
+
+  // Grind cost: a long, contested fight thins even the victor's ranks.
+  const grind = Math.floor(round / 3);
+  if (grind > 0) {
+    if (winner === "att" && A.length > 1) applyCasualties(A, Math.min(grind, A.length - 1), ctx.postureA).forEach(u => lossesA.push(u));
+    if (winner === "def" && D.length > 1) applyCasualties(D, Math.min(grind, D.length - 1), ctx.postureD).forEach(u => lossesD.push(u));
+  }
+  // Rout & pursuit — a broken army flees, losing some more but leaving a remnant.
+  if (routed === "def" && D.length > 1) applyCasualties(D, Math.ceil(D.length * 0.2), ctx.postureD).forEach(u => lossesD.push(u));
+  if (routed === "att" && A.length > 1) applyCasualties(A, Math.ceil(A.length * 0.2), ctx.postureA).forEach(u => lossesA.push(u));
+
+  return { winner, routed, rounds, attLosses: lossesA, defLosses: lossesD,
+    attSurv: A, defSurv: D, mA: Math.round(mA), mD: Math.round(mD) };
+};
+
+/* ---------------------------------------------------------------------
+ * MOVEMENT & ATTACK VALIDATION
+ * ------------------------------------------------------------------- */
+SR.movableUnits = (S, id) => S.provinces[id].units.filter(u => !S.movedUnits[u.uid]);
+
+SR.canReach = function (S, fromId, toId, cid) {
+  if (!SR.stat(fromId).adj.includes(toId)) return { ok: false, reason: "Not adjacent." };
+  const ps = S.provinces[fromId];
+  if (ps.owner !== cid) return { ok: false, reason: "You don't hold that province." };
+  if (SR.movableUnits(S, fromId).length === 0) return { ok: false, reason: "No units left to move here this season." };
+  // snowbound provinces sealed in winter
+  if (S.weather.winter && (SR.stat(fromId).feature === "snowbound" || SR.stat(toId).feature === "snowbound"))
+    return { ok: false, reason: "Snowbound passes are sealed in Winter." };
+  return { ok: true };
+};
+
+SR.isHostile = function (S, toId, cid) {
+  const ps = S.provinces[toId];
+  if (!ps.owner) return ps.units.length > 0 || true;      // neutral provinces are taken by force
+  if (ps.owner === cid) return false;
+  if (SR.allied(S, cid, ps.owner)) return false;
+  return true;
+};
+
+/* Move (no combat) — used when destination is friendly or an empty neutral. */
+SR.performMove = function (S, fromId, toId, uids, cid) {
+  const from = S.provinces[fromId], to = S.provinces[toId];
+  const moving = from.units.filter(u => uids.includes(u.uid));
+  from.units = from.units.filter(u => !uids.includes(u.uid));
+  moving.forEach(u => { to.units.push(u); S.movedUnits[u.uid] = true; });
+  // daimyo follows if he was here and everything moved / opted
+  return moving;
+};
+
+/* ---------------------------------------------------------------------
+ * DEFENDER RESPONSE (AI heuristic)
+ * ------------------------------------------------------------------- */
+SR.chooseDefenderResponse = function (S, defId, attArmy, attCid) {
+  const ps = S.provinces[defId];
+  const defArmy = ps.units;
+  const defPow = SR.armyPower(defArmy), attPow = SR.armyPower(attArmy);
+  if (ps.castle >= 1 && defPow < attPow * 0.9) return "fortify";
+  if (defArmy.length === 0 && ps.castle >= 1) return "fortify";
+  if (defPow < attPow * 0.5 && defArmy.length) {
+    // try to retreat to an adjacent friendly/neutral province
+    const escape = SR.stat(defId).adj.find(a => {
+      const q = S.provinces[a];
+      return (q.owner === ps.owner) || (!q.owner && q.units.length === 0);
+    });
+    if (escape) return "retreat:" + escape;
+  }
+  return "stand";
+};
+
+/* ---------------------------------------------------------------------
+ * EXECUTE ATTACK — the master orchestrator.
+ * opts: { surprise, postureA, response, postureD, bringDaimyo }
+ * Any missing field is decided by the engine (AI).
+ * Returns a report the UI can render; results are already applied.
+ * ------------------------------------------------------------------- */
+SR.executeAttack = function (S, fromId, toId, uids, attCid, opts) {
+  opts = opts || {};
+  const from = S.provinces[fromId], to = S.provinces[toId];
+  const attArmy = from.units.filter(u => uids.includes(u.uid));
+  const defCid = to.owner;                       // may be null (neutral)
+  const bringDaimyo = !!opts.bringDaimyo && S.clans[attCid].daimyoLoc === fromId && S.clans[attCid].daimyoAlive;
+  const attCmd = bringDaimyo ? S.clans[attCid].command : 1;
+  const attTrait = S.clans[attCid].trait;
+
+  // honour cost for aggression against a pact partner / surprise
+  const report = { fromId, toId, attCid, defCid, lines: [], surprise: !!opts.surprise };
+  SR.applyAggressionHonour(S, attCid, defCid, !!opts.surprise, report);
+
+  // defender response
+  let response = opts.response || SR.chooseDefenderResponse(S, toId, attArmy, attCid);
+  // surprise blocks fortify (unless a readiness check passes)
+  if (opts.surprise && response === "fortify" && !SR.chance(0.3)) response = "stand";
+
+  report.response = response.split(":")[0];
+
+  if (response.startsWith("retreat")) {
+    const dest = response.split(":")[1];
+    // move defenders away, attacker occupies (pursuit chance)
+    const defArmy = to.units.slice();
+    const pursue = attArmy.some(u => DATA.units[u.type].tags.includes("fast")) && SR.chance(0.6);
+    if (pursue && defArmy.length) {
+      report.pursued = true;
+      // disordered field battle, attacker free round
+      return SR.resolveField(S, fromId, toId, attArmy, attCid, defCid, {
+        surprise: true, postureA: opts.postureA || "Line", postureD: "Line",
+        attCmd, attTrait, retreatDest: dest, report, occupyOnWin: true,
+      });
+    }
+    // clean retreat
+    S.provinces[dest].units.push(...defArmy);
+    to.units = [];
+    SR.occupy(S, toId, attArmy, attCid, fromId, bringDaimyo);
+    report.outcome = "occupied"; report.text = `The defenders abandon ${SR.stat(toId).name}; your army marches in unopposed.`;
+    SR.log(S, `${S.clans[attCid].name} occupies ${SR.stat(toId).name} (defenders withdrew).`, attCid === S.humanClan ? "good" : "info");
+    return report;
+  }
+
+  if (response === "fortify") {
+    // siege begins; attacker army becomes besieger
+    from.units = from.units.filter(u => !uids.includes(u.uid));
+    to.siege = { by: attCid, army: attArmy, turns: 0, fromId, bringDaimyo };
+    if (bringDaimyo) S.clans[attCid].daimyoLoc = toId;
+    report.outcome = "siege"; report.text = `${S.clans[defCid ? defCid : "neutral"] ? S.clans[defCid].name + " withdraws" : "The garrison withdraws"} behind the walls of ${SR.stat(toId).name}. Lay siege!`;
+    SR.log(S, `${S.clans[attCid].name} lays siege to ${SR.stat(toId).name}.`, attCid === S.humanClan ? "info" : "info");
+    return report;
+  }
+
+  // stand → field battle
+  return SR.resolveField(S, fromId, toId, attArmy, attCid, defCid, {
+    surprise: !!opts.surprise, postureA: opts.postureA || "Line", postureD: opts.postureD || "Line",
+    attCmd, attTrait, report, occupyOnWin: true, bringDaimyo,
+  });
+};
+
+/* Resolve a field of battle and apply everything. */
+SR.resolveField = function (S, fromId, toId, attArmy, attCid, defCid, o) {
+  const to = S.provinces[toId], from = S.provinces[fromId];
+  const defArmy = to.units.slice();
+  const defDaimyoHere = defCid && S.clans[defCid].daimyoAlive && S.clans[defCid].daimyoLoc === toId;
+  const defCmd = defDaimyoHere ? S.clans[defCid].command : 1;
+  const defTrait = defCid ? S.clans[defCid].trait : "";
+  const report = o.report || { lines: [] };
+
+  const res = SR.simulateBattle({
+    attUnits: attArmy, defUnits: defArmy,
+    attCmd: o.attCmd, defCmd,
+    attTrait: o.attTrait, defTrait,
+    terrain: SR.stat(toId).terrain, weather: S.weather,
+    surprise: o.surprise, postureA: o.postureA, postureD: o.postureD,
+    castleBonus: o.assault ? to.castle : 0, assault: !!o.assault,
+  });
+
+  report.sim = res; report.terrain = SR.stat(toId).terrain;
+  report.attStart = attArmy.length; report.defStart = defArmy.length;
+
+  // remove attacker's committed units from origin (they marched)
+  from.units = from.units.filter(u => !attArmy.some(a => a.uid === u.uid));
+
+  const survA = res.attSurv, survD = res.defSurv;
+
+  if (res.winner === "att") {
+    report.outcome = "attWin";
+    // prestige
+    S.clans[attCid].prestige += res.routed === "def" ? 2 : 1;
+    if (attArmy.length < defArmy.length) S.clans[attCid].honour = SR.clamp(S.clans[attCid].honour + 1, 0, 20); // won outnumbered
+    // defender leader fate
+    if (defDaimyoHere && res.routed === "def") SR.generalFate(S, defCid, attCid, report, false);
+    // defenders wiped or routed
+    to.units = survD;   // survivors (garrison) remain if any
+    if (to.castle >= 1 && (survD.length > 0 || defCid)) {
+      // survivors fall back into the castle → siege
+      to.units = survD;
+      to.siege = { by: attCid, army: survA, turns: 0, fromId, bringDaimyo: o.bringDaimyo };
+      if (o.bringDaimyo) S.clans[attCid].daimyoLoc = toId;
+      report.postText = `The field is won, but ${SR.stat(toId).name}'s castle (level ${to.castle}) still stands. Your army invests the walls.`;
+      SR.log(S, `${S.clans[attCid].name} wins the field at ${SR.stat(toId).name}; siege begins.`, attCid === S.humanClan ? "good" : "info");
+    } else {
+      // occupy
+      to.units = [];
+      SR.occupy(S, toId, survA, attCid, fromId, o.bringDaimyo);
+      report.postText = `${SR.stat(toId).name} falls! Garrison it and pay to pacify the province.`;
+      SR.log(S, `${S.clans[attCid].name} takes ${SR.stat(toId).name} in the field.`, attCid === S.humanClan ? "good" : "info");
+    }
+  } else {
+    report.outcome = "defWin";
+    if (defCid) S.clans[defCid].prestige += res.routed === "att" ? 2 : 1;
+    if (defCid && defArmy.length < attArmy.length) S.clans[defCid].honour = SR.clamp(S.clans[defCid].honour + 1, 0, 20);
+    // attacker leader fate
+    if (o.bringDaimyo && res.routed === "att") SR.generalFate(S, attCid, defCid, report, true);
+    // survivors retreat home
+    to.units = survD;
+    survA.forEach(u => { from.units.push(u); });
+    report.postText = `Your assault is thrown back. The survivors limp home to ${SR.stat(fromId).name}.`;
+    SR.log(S, `${defCid ? S.clans[defCid].name : "The defenders"} hold ${SR.stat(toId).name} against ${S.clans[attCid].name}.`,
+      defCid === S.humanClan ? "good" : (attCid === S.humanClan ? "bad" : "info"));
+  }
+  return report;
+};
+
+/* Occupy a captured province. */
+SR.occupy = function (S, id, army, cid, fromId, bringDaimyo) {
+  const ps = S.provinces[id]; const pd = SR.stat(id);
+  ps.owner = cid; ps.units = army; ps.siege = null;
+  ps.status = "occupied";
+  ps.unrest = SR.stat(id).koku + (pd.feature === "ikko" ? 2 : 0) + (ps.razed ? 2 : 0);
+  const band = SR.honourBand(S.clans[cid].honour);
+  ps.unrest += Math.max(0, band.revolt);
+  ps.pacifying = false;
+  if (bringDaimyo) S.clans[cid].daimyoLoc = id;
+  army.forEach(u => S.movedUnits[u.uid] = true);
+};
+
+/* Leader capture / death / seppuku. For the human, sets a pending choice. */
+SR.generalFate = function (S, loserCid, winnerCid, report, wasAttacker) {
+  const c = S.clans[loserCid];
+  const roll = Math.random();
+  if (roll < 0.45) { report.generalFate = "escape";
+    SR.log(S, `${c.daimyo} escapes the rout.`, loserCid === S.humanClan ? "info" : "info"); return; }
+  // capture or death — human gets a seppuku choice
+  if (loserCid === S.humanClan) {
+    report.pendingSeppuku = { loserCid, winnerCid };
+    return;
+  }
+  // AI: choose seppuku if honourable
+  if (SR.honourBand(c.honour).min >= 13 && SR.chance(0.5)) {
+    SR.resolveSeppuku(S, loserCid, winnerCid, true, report);
+  } else if (roll < 0.72) {
+    c.daimyoAlive = false; report.generalFate = "captured";
+    SR.log(S, `${c.daimyo} is captured!`, "info");
+  } else {
+    c.daimyoAlive = false; report.generalFate = "slain";
+    SR.log(S, `${c.daimyo} is slain in the rout.`, "info");
+  }
+};
+SR.resolveSeppuku = function (S, loserCid, winnerCid, doSeppuku, report) {
+  const c = S.clans[loserCid];
+  if (doSeppuku) {
+    c.daimyoAlive = false; c.honour = SR.clamp(c.honour + 1, 0, 20);
+    if (report) report.generalFate = "seppuku";
+    SR.log(S, `${c.daimyo} commits seppuku, denying the enemy the capture (+1 Honour).`, loserCid === S.humanClan ? "info" : "info");
+  } else {
+    // taken alive
+    c.daimyoAlive = false;
+    if (report) report.generalFate = "captured";
+    SR.log(S, `${c.daimyo} is taken captive.`, "info");
+    // captor may spare (honour) or execute — AI captor decides
+    if (winnerCid && winnerCid !== S.humanClan) {
+      if (SR.chance(0.5)) S.clans[winnerCid].honour = SR.clamp(S.clans[winnerCid].honour + 2, 0, 20); // spare/ransom
+      else S.clans[winnerCid].honour = SR.clamp(S.clans[winnerCid].honour - 2, 0, 20); // execute
+    }
+  }
+};
+
+/* ---------------------------------------------------------------------
+ * HONOUR for aggression.
+ * ------------------------------------------------------------------- */
+SR.applyAggressionHonour = function (S, attCid, defCid, surprise, report) {
+  const c = S.clans[attCid];
+  if (surprise) { c.honour = SR.clamp(c.honour - 2, 0, 20); report.honourNote = "Surprise attack: −2 Honour."; }
+  if (defCid && SR.atPeace(S, attCid, defCid)) {
+    // breaking a pact
+    const leader = SR.prestigeLeader(S);
+    const cost = (defCid === leader) ? 2 : 4;         // anti-runaway: half cost vs the leader
+    c.honour = SR.clamp(c.honour - cost, 0, 20); c.treachery += 1;
+    const r = c.relations[defCid]; if (r) { r.pact = "none"; r.attitude -= 40; }
+    const r2 = S.clans[defCid].relations[attCid]; if (r2) { r2.pact = "none"; r2.attitude -= 60; }
+    report.honourNote = (report.honourNote ? report.honourNote + " " : "") + `Broke a pact: −${cost} Honour (Treachery).`;
+    SR.log(S, `${c.name} breaks its pact with ${S.clans[defCid].name}! (−${cost} Honour)`, "bad");
+  }
+};
+
+/* ---------------------------------------------------------------------
+ * SIEGES
+ * ------------------------------------------------------------------- */
+SR.siegeTick = function (S, id) {
+  const ps = S.provinces[id]; const sg = ps.siege;
+  if (!sg) return;
+  const attCid = sg.by;
+  if (!S.clans[attCid] || !S.clans[attCid].alive || !(sg.army && sg.army.length)) {
+    SR.log(S, `The siege of ${SR.stat(id).name} is lifted.`, "info"); ps.siege = null; return;
+  }
+  sg.turns += 1;
+  const siegeTrains = SR.countType(sg.army, "siege");
+  const greatCastle = SR.stat(id).feature === "great_castle";
+  const hojoDef = ps.owner === "hojo";
+  const attackerHasGreat = SR.clanProvinces(S, attCid).some(p => SR.stat(p).feature === "great_castle");
+
+  if (siegeTrains > 0) {
+    let reduce = 1;
+    if ((greatCastle || hojoDef) && sg.turns % 2 === 0) reduce = 1; else if (greatCastle || hojoDef) reduce = 0;
+    if (attackerHasGreat) reduce += (sg.turns % 2 === 1 ? 1 : 0);
+    if (reduce > 0) { ps.castle = Math.max(0, ps.castle - reduce);
+      SR.log(S, `Siege guns batter ${SR.stat(id).name}: castle now level ${ps.castle}.`,
+        attCid === S.humanClan ? "info" : "info"); }
+  } else {
+    // starvation — cut supply garrison wastes away
+    if (!SR.inSupply(S, id, ps.owner)) {
+      if (ps.units.length) { ps.units.pop(); SR.log(S, `${SR.stat(id).name}'s garrison starves (a unit lost).`, "info"); }
+      else ps.castle = Math.max(0, ps.castle - 1);
+    }
+  }
+  // besiegers take mild attrition in winter
+  if (S.weather.winter && sg.army.length && SR.chance(0.4)) sg.army.pop();
+
+  if (ps.castle <= 0) SR.siegeAssault(S, id, false);
+};
+
+/* Storm the walls (or automatic when castle hits 0). Returns report. */
+SR.siegeAssault = function (S, id, forced) {
+  const ps = S.provinces[id]; const sg = ps.siege;
+  if (!sg) return null;
+  const attCid = sg.by; const defCid = ps.owner;
+  const attArmy = sg.army; const defArmy = ps.units.slice();
+  const defDaimyoHere = defCid && S.clans[defCid].daimyoAlive && S.clans[defCid].daimyoLoc === id;
+  const res = SR.simulateBattle({
+    attUnits: attArmy, defUnits: defArmy,
+    attCmd: sg.bringDaimyo ? S.clans[attCid].command : 1,
+    defCmd: defDaimyoHere ? S.clans[defCid].command : 1,
+    attTrait: S.clans[attCid].trait, defTrait: defCid ? S.clans[defCid].trait : "",
+    terrain: SR.stat(id).terrain, weather: S.weather,
+    surprise: false, postureA: "Line", postureD: "Deep",
+    castleBonus: ps.castle, assault: true,
+  });
+  const report = { outcome: "", sim: res, terrain: SR.stat(id).terrain, toId: id,
+    attCid, defCid, attStart: attArmy.length, defStart: defArmy.length, assault: true };
+  if (res.winner === "att") {
+    S.clans[attCid].prestige += 2;   // major siege
+    if (defDaimyoHere) SR.generalFate(S, defCid, attCid, report, false);
+    ps.siege = null; ps.units = [];
+    SR.occupy(S, id, res.attSurv, attCid, sg.fromId, sg.bringDaimyo);
+    report.outcome = "attWin";
+    report.postText = `${SR.stat(id).name} is stormed and taken! Pay to pacify it.`;
+    SR.log(S, `${S.clans[attCid].name} storms ${SR.stat(id).name}!`, attCid === S.humanClan ? "good" : "info");
+  } else {
+    ps.units = res.defSurv; sg.army = res.attSurv;
+    report.outcome = "defWin";
+    report.postText = `The assault on ${SR.stat(id).name} is repulsed — the siege drags on.`;
+    if (!sg.army.length) { ps.siege = null; SR.log(S, `The siege of ${SR.stat(id).name} collapses.`, "info"); }
+    else SR.log(S, `The garrison of ${SR.stat(id).name} throws back the assault.`, defCid === S.humanClan ? "good" : "info");
+  }
+  return report;
+};
+
+/* Lift your own siege (recall the army to its origin). */
+SR.liftSiege = function (S, id) {
+  const ps = S.provinces[id]; const sg = ps.siege; if (!sg) return;
+  const home = S.provinces[sg.fromId];
+  if (home && home.owner === sg.by) home.units.push(...sg.army);
+  ps.siege = null;
+  SR.log(S, `${S.clans[sg.by].name} lifts the siege of ${SR.stat(id).name}.`, "info");
+};
+
+/* ---------------------------------------------------------------------
+ * PACIFY / RAZE
+ * ------------------------------------------------------------------- */
+SR.pacifyCost = function (S, id) {
+  const pd = SR.stat(id); const ps = S.provinces[id];
+  let cost = SR.stat(id).koku;
+  if (pd.feature === "ikko" || ps.razed) cost *= 2;
+  return cost;
+};
+SR.doPacify = function (S, id, cid) {
+  const ps = S.provinces[id];
+  if (ps.owner !== cid || ps.status !== "occupied") return { ok: false, reason: "Nothing to pacify here." };
+  if (ps.units.length === 0) return { ok: false, reason: "Leave a garrison (≥1 unit) first." };
+  const cost = SR.pacifyCost(S, id);
+  if (S.clans[cid].koban < cost) return { ok: false, reason: `Need ${cost} koban to pacify.` };
+  S.clans[cid].koban -= cost;
+  ps.status = "pacifying"; ps.pacifying = true;
+  if (ps.unrest <= 0) ps.unrest = 1;
+  SR.log(S, `${S.clans[cid].name} begins to pacify ${SR.stat(id).name} (${cost} koban).`, cid === S.humanClan ? "info" : "info");
+  return { ok: true };
+};
+SR.doRaze = function (S, id, cid) {
+  const ps = S.provinces[id];
+  if (ps.owner !== cid) return { ok: false, reason: "Not yours." };
+  ps.razed = true; ps.buildings = {}; ps.castle = Math.max(0, ps.castle - 1);
+  S.clans[cid].honour = SR.clamp(S.clans[cid].honour - 3, 0, 20);
+  SR.applyMineFlags(S);
+  SR.log(S, `${S.clans[cid].name} razes ${SR.stat(id).name}! (−3 Honour)`, "bad");
+  return { ok: true };
+};
+
+if (typeof module !== "undefined") module.exports = SR;
+
+
+/* =====================================================================
+ * Espionage: the hidden layer. Recruit Shinobi, embed them, and run ops.
+ * Op strength = embedded agents + koban committed + Spymaster.
+ * Target defence = counter-intel + security + alertness.
+ * ===================================================================== */
+
+SR.absSeason = (S) => S.year * 4 + S.seasonIdx;
+
+SR.AGENT_COST = 3;
+SR.SPYMASTER_COST = 5;
+
+SR.ops = {
+  recon:      { name: "Reconnaissance", koban: 1, sec: 0, risk: false,
+    desc: "Reveal the true strength & composition of an enemy province's army." },
+  sabotage:   { name: "Sabotage", koban: 2, sec: 2, risk: false,
+    desc: "Wreck a building or slight a castle wall in a target province." },
+  incite:     { name: "Incite Revolt", koban: 2, sec: 2, risk: false,
+    desc: "Stir unrest in an enemy's occupied province, risking open revolt." },
+  assassinate:{ name: "Assassination", koban: 3, sec: 5, risk: true,
+    desc: "Attempt to kill a rival's daimyō. High reward, high blowback." },
+};
+
+SR.recruitAgent = function (S, cid) {
+  const c = S.clans[cid];
+  if (c.koban < SR.AGENT_COST) return { ok: false, reason: `Need ${SR.AGENT_COST} koban.` };
+  c.koban -= SR.AGENT_COST;
+  c.agents.push({ uid: SR.uid(), target: null, embedAbs: null });
+  SR.log(S, `${c.name} recruits a Shinobi.`, "spy");
+  return { ok: true };
+};
+
+SR.hireSpymaster = function (S, cid) {
+  const c = S.clans[cid];
+  if (c.spymaster) return { ok: false, reason: "You already keep a Spymaster." };
+  if (c.koban < SR.SPYMASTER_COST) return { ok: false, reason: `Need ${SR.SPYMASTER_COST} koban.` };
+  c.koban -= SR.SPYMASTER_COST; c.spymaster = true;
+  SR.log(S, `${c.name} retains a Spymaster (boosts all ops & counter-intel).`, "spy");
+  return { ok: true };
+};
+
+/* Deploy a free agent onto a target (province id). Embeds after 1 season. */
+SR.deployAgent = function (S, cid, agentUid, targetProv) {
+  const a = S.clans[cid].agents.find(x => x.uid === agentUid);
+  if (!a) return { ok: false, reason: "No such agent." };
+  a.target = targetProv; a.embedAbs = SR.absSeason(S) + 1;
+  SR.log(S, `${S.clans[cid].name} inserts an agent into ${SR.stat(targetProv).name}.`, "spy");
+  return { ok: true };
+};
+
+SR.embeddedOn = function (S, cid, targetProv) {
+  const now = SR.absSeason(S);
+  return S.clans[cid].agents.filter(a => a.target === targetProv && a.embedAbs !== null && a.embedAbs <= now).length;
+};
+SR.agentsOn = function (S, cid, targetProv) {
+  return S.clans[cid].agents.filter(a => a.target === targetProv);
+};
+
+/* Run an operation. targetProv is a province id; op-specific effects. */
+SR.runOp = function (S, cid, opKey, targetProv, kobanCommit) {
+  const c = S.clans[cid]; const op = SR.ops[opKey];
+  if (!op) return { ok: false, reason: "Unknown op." };
+  const embedded = SR.embeddedOn(S, cid, targetProv);
+  if (embedded === 0 && SR.agentsOn(S, cid, targetProv).length === 0)
+    return { ok: false, reason: "Place an agent on the target first (it embeds after a season)." };
+  kobanCommit = SR.clamp(kobanCommit || 0, 0, c.koban);
+  const need = op.koban + kobanCommit;
+  if (c.koban < need) return { ok: false, reason: `Need ${need} koban.` };
+  c.koban -= need;
+
+  const targetClan = S.provinces[targetProv].owner;
+  const targetIsClan = targetClan && !S.clans[targetClan].isNeutral;
+
+  const opStrength = embedded * 3 + kobanCommit + (c.spymaster ? 3 : 0) + SR.rint(0, 3) + 1;
+  const security = op.sec + S.provinces[targetProv].castle
+    + (targetIsClan && S.clans[targetClan].spymaster ? 3 : 0)
+    + (S.provinces[targetProv].units.length > 4 ? 1 : 0) + SR.rint(0, 3);
+
+  const success = opStrength >= security;
+  const exposed = !success ? SR.chance(0.5) : (op.risk ? SR.chance(0.35) : SR.chance(0.1));
+
+  const report = { ok: true, opKey, targetProv, success, exposed, opStrength, security, lines: [] };
+
+  if (success) {
+    switch (opKey) {
+      case "recon":
+        S.provinces[targetProv]._revealed = SR.absSeason(S) + 4;
+        report.lines.push(`Your agents map ${SR.stat(targetProv).name}: its garrison is laid bare.`);
+        break;
+      case "sabotage": {
+        const ps = S.provinces[targetProv];
+        const bks = Object.keys(ps.buildings);
+        if (bks.length && SR.chance(0.6)) { const k = SR.pick(bks); delete ps.buildings[k];
+          report.lines.push(`Saboteurs burn the ${DATA.buildings[k] ? DATA.buildings[k].name : k} at ${SR.stat(targetProv).name}.`); }
+        else if (ps.castle > 0) { ps.castle -= 1;
+          report.lines.push(`Agents slight a wall of ${SR.stat(targetProv).name} — castle now level ${ps.castle}.`); }
+        else report.lines.push(`Stores are put to the torch at ${SR.stat(targetProv).name}.`);
+        SR.applyMineFlags(S);
+        c.prestige += 1;
+        break;
+      }
+      case "incite":
+        S.provinces[targetProv].unrest += 3;
+        if (["occupied", "pacifying"].includes(S.provinces[targetProv].status) && SR.chance(0.4)) SR.revolt(S, targetProv);
+        report.lines.push(`Agitators inflame ${SR.stat(targetProv).name} — unrest surges.`);
+        c.prestige += 1;
+        break;
+      case "assassinate":
+        if (targetIsClan && S.clans[targetClan].daimyoAlive && S.clans[targetClan].daimyoLoc === targetProv) {
+          S.clans[targetClan].daimyoAlive = false; c.prestige += 3;
+          report.lines.push(`${S.clans[targetClan].daimyo} is assassinated! (+3 Prestige)`);
+        } else {
+          report.lines.push(`The blade finds a lesser general; the daimyō was elsewhere.`);
+          c.prestige += 1;
+        }
+        break;
+    }
+    SR.log(S, `${c.name}'s ${op.name} on ${SR.stat(targetProv).name} succeeds.`, "spy");
+  } else {
+    // burn an agent on failure
+    const a = S.clans[cid].agents.find(x => x.target === targetProv);
+    if (a) S.clans[cid].agents.splice(S.clans[cid].agents.indexOf(a), 1);
+    report.lines.push(`The operation fails; an agent is lost.`);
+    SR.log(S, `${c.name}'s ${op.name} on ${SR.stat(targetProv).name} fails.`, "spy");
+  }
+
+  if (exposed && targetIsClan) {
+    const cost = op.risk ? 4 : 2;
+    c.honour = SR.clamp(c.honour - cost, 0, 20);
+    S.clans[targetClan].relations[cid].attitude -= 40;
+    c.relations[targetClan] && (c.relations[targetClan].pact = "none");
+    S.clans[targetClan].relations[cid] && (S.clans[targetClan].relations[cid].pact = "none");
+    if (targetClan === S.humanClan) c.prestige -= 1;
+    report.lines.push(`Your hand is exposed! −${cost} Honour, and ${S.clans[targetClan].name} now has a casus belli.`);
+    SR.log(S, `${c.name}'s spy is exposed by ${S.clans[targetClan].name} (−${cost} Honour).`, "bad");
+    S.clans[targetClan].prestige += 1;   // exposing an agent
+  }
+  return report;
+};
+
+/* Counter-intel op strength for a defender (used by AI evaluations). */
+SR.counterIntel = (S, cid) => (S.clans[cid].spymaster ? 3 : 0) + 1;
+
+if (typeof module !== "undefined") module.exports = SR;
+
+
+/* =====================================================================
+ * Diplomacy: pacts (NAP / trade / alliance / marriage / vassalage),
+ * honour-gated trust, and AI acceptance. Anti-runaway is handled in
+ * battle.js (half honour cost to break pacts against the leader).
+ * ===================================================================== */
+
+SR.PACTS = {
+  nap:      { name: "Non-Aggression Pact", binding: false, gift: 0,  years: 3 },
+  trade:    { name: "Trade Agreement",     binding: false, gift: 0,  years: 0 },
+  alliance: { name: "Alliance",            binding: true,  gift: 1,  years: 0 },
+  marriage: { name: "Marriage Alliance",   binding: true,  gift: 2,  years: 0 },
+  vassal:   { name: "Vassalage",           binding: true,  gift: 0,  years: 0 },
+};
+
+SR.relPower = function (S, cid) {
+  return SR.pacifiedProvinces(S, cid).length * 2 +
+    SR.sum(SR.clanProvinces(S, cid), id => SR.armyPower(S.provinces[id].units)) / 3;
+};
+
+/* Can `a` legally offer `type` to `b`? (trust gate) */
+SR.canOfferPact = function (S, a, b, type) {
+  const P = SR.PACTS[type];
+  if (!P) return { ok: false, reason: "Unknown pact." };
+  const ra = S.clans[a].relations[b];
+  if (ra && ["alliance", "marriage", "vassal"].includes(ra.pact))
+    return { ok: false, reason: "You already share a binding pact." };
+  if (P.binding) {
+    // both must be at least "Low" honour to form binding pacts
+    if (SR.honourBand(S.clans[a].honour).name === "Infamous")
+      return { ok: false, reason: "Infamous clans can form no binding pacts — restore your name first." };
+    if (SR.honourBand(S.clans[b].honour).name === "Infamous")
+      return { ok: false, reason: `${S.clans[b].name} is Infamous — no one will bind to them.` };
+  }
+  if (S.clans[a].koban < P.gift) return { ok: false, reason: `Need ${P.gift} koban as a gift.` };
+  return { ok: true };
+};
+
+/* AI decides whether to accept an offer from `from`. */
+SR.aiAcceptPact = function (S, ai, from, type) {
+  const rel = S.clans[ai].relations[from];
+  const attitude = rel ? rel.attitude : 0;
+  const powFrom = SR.relPower(S, from), powAi = SR.relPower(S, ai);
+  const leader = SR.prestigeLeader(S);
+  let score = attitude + SR.honourBand(S.clans[from].honour).endScore * 2;
+  if (S.flags.peaceSeason) score += 15;
+  if (from === leader) score -= 25;                 // wary of the front-runner
+  switch (type) {
+    case "nap": score += 20; break;
+    case "trade": score += 25; break;
+    case "alliance": score += 5 - Math.abs(powFrom - powAi); break;
+    case "marriage": score += 10; break;
+    case "vassal": score += (powFrom > powAi * 1.8 ? 25 : -40); break;   // submit only if far weaker
+  }
+  return score > 15;
+};
+
+/* Form the pact (mutually). Applies costs / prestige / honour. */
+SR.formPact = function (S, a, b, type) {
+  const P = SR.PACTS[type];
+  S.clans[a].koban -= P.gift;
+  const setRel = (x, y) => { const r = S.clans[x].relations[y]; if (r) { r.pact = type; r.years = P.years; r.attitude += 30; } };
+  if (type === "vassal") {
+    // b becomes vassal of a
+    S.clans[b].overlord = a; if (!S.clans[a].vassals.includes(b)) S.clans[a].vassals.push(b);
+    setRel(a, b); setRel(b, a);
+    SR.log(S, `${S.clans[b].name} submits as a vassal of ${S.clans[a].name}.`, "info");
+  } else {
+    setRel(a, b); setRel(b, a);
+    if (type === "marriage") {
+      if (!S.clans[a].marriages.includes(b)) S.clans[a].marriages.push(b);
+      if (!S.clans[b].marriages.includes(a)) S.clans[b].marriages.push(a);
+      S.clans[a].honour = SR.clamp(S.clans[a].honour + 1, 0, 20);
+      S.clans[b].honour = SR.clamp(S.clans[b].honour + 1, 0, 20);
+      S.clans[a].prestige += 2; S.clans[b].prestige += 2;
+    }
+    SR.log(S, `${S.clans[a].name} and ${S.clans[b].name} conclude a ${P.name}.`, "info");
+  }
+};
+
+/* Player proposes; returns {ok, accepted, reason}. */
+SR.proposePact = function (S, from, to, type) {
+  const chk = SR.canOfferPact(S, from, to, type);
+  if (!chk.ok) return { ok: false, reason: chk.reason };
+  const accepted = SR.aiAcceptPact(S, to, from, type);
+  if (accepted) { SR.formPact(S, from, to, type); return { ok: true, accepted: true }; }
+  // failed offer still costs goodwill nudge
+  const r = S.clans[to].relations[from]; if (r) r.attitude -= 5;
+  SR.log(S, `${S.clans[to].name} rebuffs the ${SR.PACTS[type].name} offered by ${S.clans[from].name}.`, "info");
+  return { ok: true, accepted: false, reason: `${S.clans[to].name} declines.` };
+};
+
+/* Per-season diplomacy income (trade agreements, vassal tribute). */
+SR.diplomacyIncome = function (S) {
+  for (const a of SR.livingClans(S)) {
+    for (const b in S.clans[a].relations) {
+      const r = S.clans[a].relations[b];
+      if (r.pact === "trade") S.clans[a].koban += 1;
+    }
+  }
+  // vassal tribute once per year (Spring)
+  if (DATA.seasons[S.seasonIdx] === "Spring") {
+    for (const a of SR.livingClans(S)) {
+      for (const v of S.clans[a].vassals) {
+        if (S.clans[v] && S.clans[v].alive) {
+          const t = Math.min(2, S.clans[v].koban);
+          S.clans[v].koban -= t; S.clans[a].koban += t;
+        }
+      }
+    }
+  }
+};
+
+/* Light AI-to-AI diplomacy: gang up on the leader, seek useful pacts. */
+SR.aiDiplomacyTurn = function (S, ai) {
+  if (SR.chance(0.5)) return;
+  const leader = SR.prestigeLeader(S);
+  const others = SR.livingClans(S).filter(c => c !== ai);
+  // ally against the leader
+  if (leader && leader !== ai) {
+    const cand = others.find(c => c !== leader && S.clans[ai].relations[c].pact === "none" &&
+      SR.honourBand(S.clans[ai].honour).name !== "Infamous" && SR.honourBand(S.clans[c].honour).name !== "Infamous");
+    if (cand && SR.chance(0.4)) {
+      if (SR.aiAcceptPact(S, cand, ai, "alliance")) SR.formPact(S, ai, cand, "alliance");
+      return;
+    }
+  }
+  // otherwise seek a NAP with a strong neighbour
+  const strong = others.filter(c => SR.relPower(S, c) > SR.relPower(S, ai))
+    .find(c => S.clans[ai].relations[c].pact === "none");
+  if (strong && SR.aiAcceptPact(S, strong, ai, "nap")) SR.formPact(S, ai, strong, "nap");
+};
+
+if (typeof module !== "undefined") module.exports = SR;
+
+
+/* =====================================================================
+ * AI: heuristic daimyō. Each AI clan runs economy, pacification, court,
+ * espionage, diplomacy, then military moves. Attacks on the human are
+ * deferred into S.pendingDefenses so the player can choose a response.
+ * ===================================================================== */
+
+SR.aiPhase = function (S) {
+  S.pendingDefenses = [];
+  // ascending prestige order — trailing clans act first (anti-runaway)
+  const order = SR.livingClans(S).filter(c => c !== S.humanClan)
+    .sort((a, b) => SR.scoreTotal(S, a).total - SR.scoreTotal(S, b).total);
+  for (const cid of order) {
+    if (!S.clans[cid].alive) continue;
+    try { SR.aiClanTurn(S, cid); } catch (e) { console.warn("AI error", cid, e); }
+  }
+  return S.pendingDefenses;
+};
+
+SR.aiClanTurn = function (S, cid) {
+  const c = S.clans[cid];
+
+  // 1. Pacify occupied provinces
+  for (const id of SR.clanProvinces(S, cid)) {
+    const ps = S.provinces[id];
+    if (ps.status === "occupied" && ps.units.length >= 1 && c.koban >= SR.pacifyCost(S, id))
+      SR.doPacify(S, id, cid);
+  }
+
+  // 2. Court
+  if (S.courtHost === cid) { const e = SR.courtEligible(S, cid); if (e.ok) SR.doCourt(S, cid); }
+
+  // 3. Economy — buildings then units, keeping a reserve
+  SR.aiBuild(S, cid);
+  SR.aiRecruit(S, cid);
+
+  // 4. Espionage (occasional)
+  if (SR.chance(0.35)) SR.aiEspionage(S, cid);
+
+  // 5. Diplomacy
+  SR.aiDiplomacyTurn(S, cid);
+
+  // 6. Military
+  SR.aiMilitary(S, cid);
+};
+
+SR.aiBuild = function (S, cid) {
+  const c = S.clans[cid];
+  let budget = Math.floor(c.koban * 0.5);
+  const provs = SR.pacifiedProvinces(S, cid);
+  // mine works on mineral features (best ROI)
+  for (const id of provs) {
+    const f = SR.stat(id).feature;
+    if ((f === "silver" || f === "gold") && !S.provinces[id].buildings.mine && budget >= 3) {
+      if (SR.doBuild(S, cid, id, "mine").ok) budget -= 3;
+    }
+  }
+  // markets / ports for income
+  for (const id of provs) {
+    if (budget < 2) break;
+    if (!S.provinces[id].buildings.market && SR.chance(0.5)) { if (SR.doBuild(S, cid, id, "market").ok) budget -= 2; continue; }
+    if (SR.stat(id).terrain === "Coast" && !S.provinces[id].buildings.port && budget >= 3 && SR.chance(0.5)) { if (SR.doBuild(S, cid, id, "port").ok) budget -= 3; }
+  }
+  // irrigation on the richest field
+  const rich = provs.filter(id => !S.provinces[id].buildings.irrigation).sort((a, b) => SR.stat(b).koku - SR.stat(a).koku)[0];
+  if (rich && budget >= 2 && SR.chance(0.5)) { if (SR.doBuild(S, cid, rich, "irrigation").ok) budget -= 2; }
+  // temple if honour is slipping or unrest is high
+  if (c.honour < 9 && budget >= 3) { const id = provs[0]; if (id && SR.doBuild(S, cid, id, "temple").ok) budget -= 3; }
+  // culture/lean
+  if (c.lean && c.lean.includes("Culture") && budget >= 3) { const id = provs.find(p => !S.provinces[p].buildings.academy); if (id) SR.doBuild(S, cid, id, "academy"); }
+};
+
+SR.aiRecruit = function (S, cid) {
+  const c = S.clans[cid];
+  let reserve = 3;                                  // keep some koban for pacifying
+  const homeList = SR.pacifiedProvinces(S, cid);
+  if (!homeList.length) return;
+  const identity = S.clans[cid].identity || "ashigaru";
+  const wishlist = [identity, "samurai", "ashigaru", "ashigaru"];
+  let guard = 0;
+  while (c.koban > reserve + 1 && guard++ < 8) {
+    // pick an affordable unit, favour identity/elite when rich
+    let type = "ashigaru";
+    for (const w of wishlist) {
+      if (!SR.canRecruit(S, cid, w).ok) continue;
+      const cost = SR.recruitCost(S, cid, w);
+      if (c.koban - (cost.koban || 0) >= reserve && c.rice >= (cost.rice || 0)) { type = w; break; }
+    }
+    const target = SR.pick(homeList);
+    const r = SR.doRecruit(S, cid, target, type);
+    if (!r.ok) break;
+  }
+};
+
+SR.aiEspionage = function (S, cid) {
+  const c = S.clans[cid];
+  if (c.agents.length === 0) { if (c.koban >= SR.AGENT_COST + 2) SR.recruitAgent(S, cid); return; }
+  // deploy idle agents onto a rival capital
+  const idle = c.agents.find(a => a.target === null);
+  if (idle) {
+    const rivals = SR.livingClans(S).filter(x => x !== cid && !SR.allied(S, cid, x));
+    if (rivals.length) { const t = SR.pick(rivals); const prov = S.clans[t].daimyoLoc; SR.deployAgent(S, cid, idle.uid, prov); }
+    return;
+  }
+  // run an op with an embedded agent
+  const emb = c.agents.find(a => a.embedAbs !== null && a.embedAbs <= SR.absSeason(S));
+  if (emb && c.koban >= 4) {
+    const opKey = c.honour < 7 ? SR.pick(["sabotage", "incite", "assassinate"]) : SR.pick(["recon", "sabotage", "incite"]);
+    SR.runOp(S, cid, opKey, emb.target, SR.rint(0, 2));
+  }
+};
+
+/* Military: each army may act once. Attack weak neighbours, else hold. */
+SR.aiMilitary = function (S, cid) {
+  const c = S.clans[cid];
+  const leader = SR.prestigeLeader(S);
+  // reinforce / attack from each province holding movable units
+  for (const fromId of SR.clanProvinces(S, cid)) {
+    const from = S.provinces[fromId];
+    const movable = SR.movableUnits(S, fromId);
+    if (movable.length === 0) continue;
+    const myPow = SR.armyPower(movable);
+
+    // candidate targets: adjacent hostile provinces
+    const targets = SR.stat(fromId).adj.filter(a => {
+      const q = S.provinces[a];
+      if (q.siege) return false;
+      if (q.owner === cid) return false;
+      if (SR.allied(S, cid, q.owner)) return false;
+      if (q.owner && SR.atPeace(S, cid, q.owner) && q.owner !== leader) return false; // respect pacts (except vs leader)
+      return true;
+    });
+    // score each target
+    let best = null, bestScore = -1e9;
+    for (const t of targets) {
+      const q = S.provinces[t];
+      const defPow = SR.armyPower(q.units) + q.castle * 2;
+      let score = myPow - defPow * 1.15;
+      if (!q.owner) score += 3;                       // neutrals are ripe
+      if (q.owner === leader) score += 4;             // gang up on the leader
+      if (SR.stat(t).kyoto) score += 6;               // Kyoto is a prize
+      score += SR.stat(t).koku;
+      if (score > bestScore) { bestScore = score; best = t; }
+    }
+
+    if (best && bestScore > 0) {
+      const toId = best; const q = S.provinces[toId];
+      const uids = movable.map(u => u.uid);
+      const bigAdv = myPow > (SR.armyPower(q.units) + q.castle * 2) * 1.6;
+      const opts = {
+        surprise: (c.honour <= 8 && q.owner && q.owner !== cid && SR.chance(0.4)) ? true : false,
+        postureA: SR.stat(toId).terrain === "Plains" ? "Wide" : "Line",
+        bringDaimyo: bigAdv && c.daimyoAlive && c.daimyoLoc === fromId,
+      };
+      if (q.owner === S.humanClan) {
+        // defer to the human to respond
+        S.pendingDefenses.push({ fromId, toId, uids, attCid: cid, opts });
+        movable.forEach(u => S.movedUnits[u.uid] = true);   // committed
+      } else {
+        SR.executeAttack(S, fromId, toId, uids, cid, opts);
+      }
+    } else {
+      // hold or shuffle toward a threatened frontier — reinforce weakest owned neighbour
+      const friendly = SR.stat(fromId).adj.filter(a => S.provinces[a].owner === cid);
+      const threatened = friendly.map(a => ({ a, threat: SR.frontierThreat(S, cid, a) }))
+        .filter(x => x.threat > SR.armyPower(S.provinces[x.a].units))
+        .sort((x, y) => y.threat - x.threat)[0];
+      if (threatened && from.status === "pacified" && movable.length > 1 && SR.chance(0.5)) {
+        // send half forward
+        const half = movable.slice(0, Math.ceil(movable.length / 2)).map(u => u.uid);
+        SR.performMove(S, fromId, threatened.a, half, cid);
+      }
+    }
+  }
+};
+
+/* How much hostile power sits next to province `id`? */
+SR.frontierThreat = function (S, cid, id) {
+  let t = 0;
+  for (const a of SR.stat(id).adj) {
+    const q = S.provinces[a];
+    if (q.owner && q.owner !== cid && !SR.allied(S, cid, q.owner)) t += SR.armyPower(q.units);
+  }
+  return t;
+};
+
+if (typeof module !== "undefined") module.exports = SR;
+
+
+/* =====================================================================
+ * Mode B — The House Divided.
+ * You and 4-7 AI retainers all serve ONE clan. You hold fiefs, a personal
+ * army & treasury, and Standing with the NPC lord. Outside rival clans
+ * (the Threat deck) press the borders; meanwhile everyone schemes for the
+ * succession, each with a secret Ambition. The lord's death is the climax.
+ * Reuses the whole engine (economy, battle, espionage) with retainer
+ * "clans" and an `invaders` pseudo-clan for external threats.
+ * ===================================================================== */
+
+DATA.retainerNames = ["Yamamoto", "Kōsaka", "Baba", "Naitō", "Anayama", "Oyamada", "Obu", "Akiyama"];
+DATA.retainerCrests = ["山", "香", "馬", "内", "穴", "小", "飫", "秋"];
+DATA.retainerColors = [
+  ["#c0392b", "#7b1e17"], ["#2980b9", "#1b5680"], ["#8e44ad", "#5b2c6f"],
+  ["#16a085", "#0e6a58"], ["#d35400", "#8a3600"], ["#7f8c8d", "#4d5657"],
+  ["#c39b16", "#8a6d0e"], ["#2c3e50", "#1a252f"],
+];
+DATA.retainerTraits = ["Morale", "Cavalry", "Infantry", "Economy", "Siege & Defence", "Naval & Diplomacy"];
+DATA.retainerIdentities = ["samurai", "cavalry", "ashigaru", "teppo", "siege", "archers"];
+
+DATA.ambitions = [
+  { key: "heir",     name: "The Heir-Maker",  hint: "Hold the most Standing at the succession.",
+    text: "Whisper in the right ears. When the lord falls, the strongest voice at court decides the heir — and it will be yours." },
+  { key: "land",     name: "The Land-Hungry", hint: "Personally hold the most valuable fief.",
+    text: "Land is the only truth. Grow your holdings until no retainer's fief rivals yours." },
+  { key: "merchant", name: "The Merchant Lord", hint: "Amass the largest personal treasury.",
+    text: "Gold outlasts steel. Let others bleed; you will simply buy the peace that follows." },
+  { key: "warlord",  name: "The Warlord",     hint: "Command the largest surviving house army.",
+    text: "Swords settle everything. Keep the mightiest army in the house and let it be seen." },
+  { key: "usurper",  name: "The Usurper (gekokujō)", hint: "Seize the lordship in the succession crisis.",
+    text: "The low overthrow the high. Take the seat itself when the old lord dies." },
+  { key: "fifth",    name: "The Fifth Column", hint: "Survive/defect intact if outsiders destroy the clan.",
+    text: "You serve no house but your own. Should the clan fall, be the one still standing." },
+  { key: "loyalist", name: "The Loyalist",    hint: "Keep the clan alive to the end AND keep high Honour.",
+    text: "Honour above ambition. Hold the house together and keep your name clean to the last." },
+];
+
+DATA.directives = [
+  { key: "koban",   text: "The lord demands koban for the war chest.", ask: 3, give: "koban" },
+  { key: "rice",    text: "The lord's armies need rice for the campaign season.", ask: 3, give: "rice" },
+  { key: "levy",    text: "The lord calls a levy — send a unit to the front.", ask: 1, give: "unit" },
+  { key: "tribute", text: "An envoy from the capital expects a generous gift.", ask: 4, give: "koban" },
+];
+
+DATA.threats = [
+  { name: "Uesugi raiders sweep down from the north", size: 4 },
+  { name: "Hōjō probe the eastern marches", size: 5 },
+  { name: "Oda vanguard tests the western border", size: 5 },
+  { name: "Ikkō-ikki zealots rise in the interior", size: 4 },
+  { name: "Tokugawa opportunists strike a border fief", size: 6 },
+];
+
+/* ---------------------------------------------------------------------
+ * NEW GAME (Mode B)
+ * ------------------------------------------------------------------- */
+SR.newGameB = function (opts) {
+  const houseClan = DATA.clans[opts.clan];
+  const nRet = SR.clamp(opts.retainers || 5, 4, 7);
+
+  const S = SR.newGameA({ clan: "takeda", lengthYears: opts.lengthYears || 6 }); // scaffold
+  S.mode = "B";
+  S.log = []; S.shogun = null;
+
+  // wipe clans; rebuild as retainers of the chosen house
+  S.clans = {};
+  const provIds = Object.keys(S.provinces);
+  SR.shuffle(provIds);
+
+  const traits = SR.shuffle(DATA.retainerTraits.slice());
+  const ids = SR.shuffle(DATA.retainerIdentities.slice());
+  const ambitions = SR.shuffle(DATA.ambitions.map(a => a.key));
+
+  const retainerIds = [];
+  for (let i = 0; i < nRet; i++) {
+    const rid = "r" + i;
+    retainerIds.push(rid);
+    S.clans[rid] = {
+      id: rid, name: DATA.retainerNames[i] + " House",
+      color: DATA.retainerColors[i][0], color2: DATA.retainerColors[i][1], crest: DATA.retainerCrests[i],
+      daimyo: DATA.retainerNames[i] + " " + SR.pick(["Masayuki", "Nobufusa", "Toramasa", "Masatoyo", "Nobukimi"]),
+      command: SR.rint(2, 3), trait: traits[i % traits.length], lean: "", identity: ids[i % ids.length],
+      isHuman: i === 0, isNeutral: false, alive: true,
+      koban: 6, rice: 14, honour: 10, prestige: 0, courtRank: 0,
+      agents: [], spymaster: false, daimyoLoc: null, daimyoAlive: true,
+      relations: {}, marriages: [], vassals: [], overlord: null, treachery: 0,
+      standing: SR.rint(1, 3), ambition: ambitions[i % ambitions.length], isRetainer: true, defected: false,
+    };
+  }
+  // invaders pseudo-clan (external threats)
+  S.clans.invaders = {
+    id: "invaders", name: "Rival Clans", color: "#3b3b3b", color2: "#1a1a1a", crest: "敵",
+    daimyo: "Warlord", command: 2, trait: "", lean: "", identity: "ashigaru",
+    isHuman: false, isNeutral: true, alive: true,
+    koban: 0, rice: 0, honour: 5, prestige: 0, courtRank: 0,
+    agents: [], spymaster: false, daimyoLoc: null, daimyoAlive: false,
+    relations: {}, marriages: [], vassals: [], overlord: null, treachery: 0,
+    standing: 0, ambition: null, isRetainer: false,
+  };
+  // relations among retainers
+  const all = retainerIds.concat(["invaders"]);
+  for (const a of all) for (const b of all) if (a !== b) S.clans[a].relations[b] = { pact: "none", years: 0, attitude: 0 };
+
+  S.humanClan = "r0";
+
+  // assign fiefs (divide all provinces among retainers)
+  for (const id in S.provinces) {
+    const ps = S.provinces[id];
+    ps.owner = null; ps.units = []; ps.status = "neutral"; ps.unrest = 0; ps.siege = null; ps.buildings = {};
+  }
+  provIds.forEach((id, i) => {
+    const rid = retainerIds[i % nRet];
+    const ps = S.provinces[id];
+    ps.owner = rid; ps.status = "pacified"; ps.unrest = 0;
+  });
+  // starting armies per fief + set daimyo location to the retainer's first fief
+  for (const rid of retainerIds) {
+    const fiefs = SR.clanProvinces(S, rid);
+    S.clans[rid].daimyoLoc = fiefs[0];
+    fiefs.forEach((id, i) => {
+      const seat = i === 0;
+      const base = seat ? ["ashigaru", "ashigaru", "samurai", S.clans[rid].identity] : ["ashigaru", "ashigaru"];
+      base.forEach(t => S.provinces[id].units.push(SR.mkUnit(t)));
+    });
+  }
+
+  // Mode B meta
+  S.modeB = {
+    house: houseClan.name, houseClan: opts.clan,
+    lordName: houseClan.daimyo, lordAlive: true,
+    lordClock: (opts.lengthYears || 6),         // natural death at the last year
+    retainers: retainerIds,
+    directive: null, directiveAsked: false,
+    threatsThisGame: 0, collapsed: false,
+  };
+
+  S.order = SR.shuffle(retainerIds.slice());
+  SR.applyMineFlags(S);
+  SR.state = S;
+  SR.log(S, `The House of ${houseClan.name} stands divided. ${nRet} retainers hold its fiefs — and each keeps a secret.`, "season");
+  return S;
+};
+
+/* ---------------------------------------------------------------------
+ * MODE B SEASON HOOKS — called by main.js around beginSeason.
+ * ------------------------------------------------------------------- */
+SR.modeBSeasonStart = function (S) {
+  const M = S.modeB;
+  // Threat each Spring (and sometimes Summer)
+  if (DATA.seasons[S.seasonIdx] === "Spring" || (DATA.seasons[S.seasonIdx] === "Summer" && SR.chance(0.4))) {
+    SR.modeBThreat(S);
+  }
+  // Lord natural death at start of the final year → succession
+  if (M.lordAlive && S.year >= M.lordClock && DATA.seasons[S.seasonIdx] === "Spring") {
+    SR.modeBLordDies(S, `${M.lordName} dies of illness after a long reign.`);
+  }
+  // Set the lord's directive for the season (if lord alive)
+  if (M.lordAlive) {
+    M.directive = SR.pick(DATA.directives);
+    M.directiveAsked = false;
+  } else {
+    M.directive = null;
+  }
+};
+
+/* Spawn an external incursion: flip a border fief to the invaders. */
+SR.modeBThreat = function (S) {
+  const M = S.modeB;
+  const th = SR.pick(DATA.threats);
+  // choose a fief held by a retainer, prefer one adjacent to an already-invaded/edge
+  const fiefs = Object.keys(S.provinces).filter(id => {
+    const o = S.provinces[id].owner; return o && S.clans[o] && S.clans[o].isRetainer;
+  });
+  if (!fiefs.length) return;
+  // prefer border fiefs (adjacent to invader/neutral)
+  fiefs.sort((a, b) => SR.borderness(S, b) - SR.borderness(S, a));
+  const target = fiefs[SR.rint(0, Math.min(2, fiefs.length - 1))];
+  const ps = S.provinces[target];
+  const size = th.size + Math.floor(S.year / 2);
+  ps.owner = "invaders"; ps.status = "occupied"; ps.units = [];
+  for (let i = 0; i < size; i++) ps.units.push(SR.mkUnit(i % 3 === 0 ? "samurai" : "ashigaru"));
+  ps.siege = null; ps.unrest = 0;
+  M.threatsThisGame += 1;
+  SR.log(S, `THREAT — ${th.name}: ${SR.stat(target).name} is overrun! The house must retake it.`, "bad");
+};
+SR.borderness = function (S, id) {
+  return SR.stat(id).adj.filter(a => {
+    const o = S.provinces[a].owner; return o === "invaders" || !o;
+  }).length;
+};
+
+/* Invaders act each season (simple aggression). Deferred vs human. */
+SR.modeBInvaderTurn = function (S) {
+  S.pendingDefenses = S.pendingDefenses || [];
+  for (const fromId of SR.clanProvinces(S, "invaders")) {
+    const movable = SR.movableUnits(S, fromId);
+    if (!movable.length) continue;
+    const myPow = SR.armyPower(movable);
+    const targets = SR.stat(fromId).adj.filter(a => {
+      const o = S.provinces[a].owner; return o && S.clans[o] && S.clans[o].isRetainer;
+    });
+    let best = null, bs = -1e9;
+    for (const t of targets) {
+      const q = S.provinces[t];
+      const sc = myPow - (SR.armyPower(q.units) + q.castle * 2) * 1.1 + SR.stat(t).koku;
+      if (sc > bs) { bs = sc; best = t; }
+    }
+    if (best && bs > -2) {
+      const uids = movable.map(u => u.uid);
+      const opts = { surprise: SR.chance(0.3), postureA: "Line" };
+      if (S.provinces[best].owner === S.humanClan) {
+        S.pendingDefenses.push({ fromId, toId: best, uids, attCid: "invaders", opts });
+        movable.forEach(u => S.movedUnits[u.uid] = true);
+      } else {
+        SR.executeAttack(S, fromId, best, uids, "invaders", opts);
+      }
+    }
+  }
+};
+
+/* Percentage of the map held by invaders (collective danger meter). */
+SR.modeBInvaderShare = function (S) {
+  const total = Object.keys(S.provinces).length;
+  return SR.clanProvinces(S, "invaders").length / total;
+};
+
+/* ---------------------------------------------------------------------
+ * DIRECTIVES — the lord asks; retainers contribute or refuse.
+ * ------------------------------------------------------------------- */
+SR.modeBContribute = function (S, rid, contribute) {
+  const M = S.modeB; const d = M.directive; if (!d) return { ok: false };
+  const c = S.clans[rid];
+  if (contribute) {
+    let paid = false;
+    if (d.give === "koban" && c.koban >= d.ask) { c.koban -= d.ask; paid = true; }
+    else if (d.give === "rice" && c.rice >= d.ask) { c.rice -= d.ask; paid = true; }
+    else if (d.give === "unit") {
+      const fief = SR.clanProvinces(S, rid).find(id => S.provinces[id].units.length > 0);
+      if (fief) { S.provinces[fief].units.pop(); paid = true; }
+    }
+    if (paid) {
+      c.standing += 2; c.honour = SR.clamp(c.honour + (SR.chance(0.4) ? 1 : 0), 0, 20);
+      if (rid === S.humanClan) SR.log(S, `You answer the lord's call (+2 Standing).`, "good");
+      return { ok: true, contributed: true };
+    }
+    // couldn't pay
+    c.standing = Math.max(0, c.standing - 1);
+    return { ok: true, contributed: false, reason: "You lacked the means — the lord notes it (−1 Standing)." };
+  } else {
+    c.standing = Math.max(0, c.standing - 2);
+    if (SR.chance(0.3)) c.honour = SR.clamp(c.honour - 1, 0, 20);
+    if (rid === S.humanClan) SR.log(S, `You refuse the lord's directive (−2 Standing, risk of disloyalty).`, "info");
+    return { ok: true, contributed: false };
+  }
+};
+/* AI retainers auto-answer the directive. */
+SR.modeBAIDirectives = function (S) {
+  const M = S.modeB; if (!M.directive) return;
+  for (const rid of M.retainers) {
+    if (rid === S.humanClan) continue;
+    const c = S.clans[rid];
+    // loyalists/heir-makers usually contribute; usurpers/fifth-column often refuse
+    let p = 0.6;
+    if (["loyalist", "heir"].includes(c.ambition)) p = 0.9;
+    if (["usurper", "fifth", "merchant"].includes(c.ambition)) p = 0.35;
+    SR.modeBContribute(S, rid, SR.chance(p));
+  }
+};
+
+/* ---------------------------------------------------------------------
+ * LORD DEATH & SUCCESSION CRISIS (the climax)
+ * ------------------------------------------------------------------- */
+SR.modeBLordDies = function (S, reason) {
+  const M = S.modeB;
+  if (!M.lordAlive) return;
+  M.lordAlive = false; M.deathReason = reason;
+  SR.log(S, `THE LORD IS DEAD — ${reason} The succession crisis begins!`, "season");
+};
+
+SR.retainerPower = function (S, rid) {
+  const army = SR.sum(SR.clanProvinces(S, rid), id => SR.armyPower(S.provinces[id].units));
+  const land = SR.sum(SR.clanProvinces(S, rid), id => SR.stat(id).koku + SR.provincePrestige(id));
+  return { army, land, standing: S.clans[rid].standing,
+    power: army + land + S.clans[rid].standing * 3 };
+};
+
+SR.modeBSuccession = function (S) {
+  const M = S.modeB;
+  const living = M.retainers.filter(r => S.clans[r].alive);
+  const ranked = living.map(r => ({ r, ...SR.retainerPower(S, r) }))
+    .sort((a, b) => b.power - a.power);
+  M.successionRank = ranked;
+  let successor, mode;
+  if (ranked.length && (ranked.length === 1 || ranked[0].power > ranked[1].power * 1.4)) {
+    successor = ranked[0].r; mode = "settlement";
+    SR.log(S, `${S.clans[successor].name} dominates the council — a negotiated settlement names them lord.`, "season");
+  } else {
+    // civil war — weighted random by power
+    const totalP = SR.sum(ranked, x => x.power);
+    let roll = Math.random() * totalP, pick = ranked[0];
+    for (const x of ranked) { roll -= x.power; if (roll <= 0) { pick = x; break; } }
+    successor = pick.r; mode = "civil war";
+    SR.log(S, `No one dominates — the house tears itself apart. ${S.clans[successor].name} emerges from the civil war as lord.`, "season");
+    // civil war casualties: losers lose some army
+    for (const x of ranked) if (x.r !== successor) {
+      const fiefs = SR.clanProvinces(S, x.r).filter(id => S.provinces[id].units.length);
+      if (fiefs.length && SR.chance(0.7)) S.provinces[SR.pick(fiefs)].units.pop();
+    }
+  }
+  M.successor = successor; M.successionMode = mode;
+  return { successor, mode, ranked };
+};
+
+/* Evaluate ambitions and produce the final ranking / winner. */
+SR.modeBResolve = function (S, collapsed) {
+  const M = S.modeB;
+  const living = M.retainers.filter(r => S.clans[r].alive);
+  if (!M.successor && !collapsed) SR.modeBSuccession(S);
+
+  // metric leaders
+  const leaderBy = (fn) => {
+    let best = -Infinity, w = null;
+    for (const r of living) { const v = fn(r); if (v > best) { best = v; w = r; } }
+    return w;
+  };
+  const standingLeader = leaderBy(r => S.clans[r].standing);
+  const landLeader = leaderBy(r => SR.sum(SR.clanProvinces(S, r), id => SR.stat(id).koku + SR.provincePrestige(id)));
+  const richLeader = leaderBy(r => S.clans[r].koban);
+  const warLeader = leaderBy(r => SR.sum(SR.clanProvinces(S, r), id => SR.armyPower(S.provinces[id].units)));
+
+  const achieved = {};
+  for (const r of M.retainers) {
+    const c = S.clans[r]; if (!c.alive && c.ambition !== "fifth") { achieved[r] = false; continue; }
+    switch (c.ambition) {
+      case "heir": achieved[r] = (standingLeader === r); break;
+      case "land": achieved[r] = (landLeader === r); break;
+      case "merchant": achieved[r] = (richLeader === r); break;
+      case "warlord": achieved[r] = (warLeader === r); break;
+      case "usurper": achieved[r] = (M.successor === r); break;
+      case "fifth": achieved[r] = collapsed && (c.alive || c.defected); break;
+      case "loyalist": achieved[r] = !collapsed && c.alive && SR.honourBand(c.honour).min >= 13; break;
+      default: achieved[r] = false;
+    }
+  }
+  M.achieved = achieved;
+
+  // rank: achieved first, then by (standing + power)
+  const scoreOf = (r) => (achieved[r] ? 1000 : 0) + S.clans[r].standing * 5 + SR.retainerPower(S, r).power +
+    (M.successor === r ? 50 : 0);
+  const ranking = M.retainers.slice().sort((a, b) => scoreOf(b) - scoreOf(a));
+  M.finalRanking = ranking.map(r => ({
+    r, name: S.clans[r].name, ambition: DATA.ambitions.find(a => a.key === S.clans[r].ambition),
+    achieved: achieved[r], standing: S.clans[r].standing, power: Math.round(SR.retainerPower(S, r).power),
+    isHuman: r === S.humanClan,
+  }));
+
+  S.gameOver = true;
+  S.winner = ranking[0];
+  S.modeBCollapsed = collapsed;
+  const human = S.clans[S.humanClan];
+  S.humanAchieved = achieved[S.humanClan];
+  S.endReason = collapsed
+    ? `The House of ${M.house} was overrun by outsiders.`
+    : `${S.clans[M.successor] ? S.clans[M.successor].name : "A new lord"} takes the seat by ${M.successionMode}.`;
+  SR.log(S, `GAME OVER — the succession is resolved.`, "season");
+  return M.finalRanking;
+};
+
+if (typeof module !== "undefined") module.exports = SR;
+
+
+/* =====================================================================
+ * UI: rendering the map, panels, tabs, and modals; player interaction.
+ * Talks to the engine (SR.*) and the flow controller (GAME.*).
+ * ===================================================================== */
+
+const UI = {
+  tab: "province", selected: null, moveMode: null,
+  setup: { mode: "A", clan: "takeda", len: 6, ret: 5 },
+};
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+const esc = (s) => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+UI.showScreen = function (id) {
+  $$(".screen").forEach(s => s.classList.remove("active"));
+  $("#" + id).classList.add("active");
+};
+
+/* ---------------------------------------------------------------------
+ * TITLE SCREEN
+ * ------------------------------------------------------------------- */
+UI.initTitle = function () {
+  // clan grid
+  const grid = $("#clan-grid");
+  grid.innerHTML = Object.keys(DATA.clans).map(cid => {
+    const c = DATA.clans[cid];
+    return `<div class="clan-card ${cid === UI.setup.clan ? "sel" : ""}" data-clan="${cid}">
+      <div class="cc-crest" style="background:${c.color}">${c.crest}</div>
+      <div><div class="cc-name">${c.name}</div><div class="cc-lean">${c.strength}</div></div>
+    </div>`;
+  }).join("");
+  grid.querySelectorAll(".clan-card").forEach(el => el.onclick = () => {
+    UI.setup.clan = el.dataset.clan;
+    grid.querySelectorAll(".clan-card").forEach(x => x.classList.remove("sel"));
+    el.classList.add("sel");
+  });
+
+  $("#mode-group").querySelectorAll(".opt").forEach(b => b.onclick = () => {
+    UI.setup.mode = b.dataset.mode;
+    $("#mode-group").querySelectorAll(".opt").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    const B = UI.setup.mode === "B";
+    $("#retainers-wrap").style.display = B ? "" : "none";
+    $("#clan-label").textContent = B ? "Choose the House" : "Choose your Clan";
+    $("#mode-desc").textContent = B
+      ? "You and up to seven AI retainers all serve ONE clan. Hold your fiefs, keep the house alive against outside rivals — and scheme for the succession. Each retainer has a secret Ambition."
+      : "You lead a rival daimyō on the national map. Defeat five AI clans across six roads to victory — conquest, wealth, culture, honour, legitimacy, or the shadow war.";
+  });
+  $("#length-group").querySelectorAll(".opt").forEach(b => b.onclick = () => {
+    UI.setup.len = +b.dataset.len;
+    $("#length-group").querySelectorAll(".opt").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+  });
+  $("#retainers-group").querySelectorAll(".opt").forEach(b => b.onclick = () => {
+    UI.setup.ret = +b.dataset.ret;
+    $("#retainers-group").querySelectorAll(".opt").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+  });
+  $("#start-btn").onclick = () => GAME.start();
+  $("#help-btn").onclick = () => UI.showHelp();
+};
+
+UI.showHelp = function () {
+  UI.modal({
+    title: "How to Play",
+    body: `<div class="small" style="font-size:13px;line-height:1.6">
+      <p><b>Goal.</b> Everything converts to <b>Prestige</b> — the most wins at the end of the final year. Or trigger a <b>sudden win</b>: hold Kyoto + 55% of Japan (conquest), or amass 60 koban with 3+ ports/markets (wealth).</p>
+      <p><b>The year</b> is four seasons: <b>Spring</b> (mobilise), <b>Summer</b> (campaign; typhoons at sea), <b>Autumn</b> (harvest — you collect rice & koban), <b>Winter</b> (½ move, double rice upkeep, no guns, snowbound provinces sealed). Feed your armies with rice every season.</p>
+      <p><b>Each season</b> you may recruit, build, march & attack, pacify, run spies, do diplomacy, and climb the Court — all free-form, limited only by resources and one move per army. Then press <b>End Season</b>.</p>
+      <p><b>War.</b> Select your province → <b>March</b> → click a neighbour. A <b>Declared</b> attack is honourable; a <b>Surprise</b> attack gives an ambush edge but costs Honour. Terrain sets how many units can fight at once; cavalry shock, guns, and reserves decide the day. Win the field, reduce the castle, then <b>garrison + pay to Pacify</b>.</p>
+      <p><b>Honour</b> (0–20) gates the Court, calms conquests, earns trust — and scores big at the end. Ruthlessness (surprise, razing, assassination) works, but it's priced.</p>
+      <p><b>The House Divided (Mode B):</b> serve one clan with rival retainers, survive outside threats, answer the lord's directives for <b>Standing</b>, and pursue your secret <b>Ambition</b> — the succession crisis decides all.</p>
+    </div>`,
+    foot: `<button class="primary" onclick="UI.closeModal()">Understood</button>`,
+  });
+};
+
+/* ---------------------------------------------------------------------
+ * TOP BAR
+ * ------------------------------------------------------------------- */
+UI.renderTop = function () {
+  const S = SR.state, c = S.clans[S.humanClan];
+  $("#clan-crest").textContent = c.crest;
+  $("#clan-crest").style.background = c.color;
+  $("#tb-clan-name").textContent = S.mode === "B" ? c.name : c.name + " Clan";
+  $("#tb-clan-sub").textContent = S.mode === "B"
+    ? `Retainer of ${S.modeB.house} · Standing ${c.standing}`
+    : `${c.daimyo}${c.daimyoAlive ? "" : " (heir pending)"}`;
+  $("#season-name").textContent = DATA.seasons[S.seasonIdx];
+  $("#year-name").textContent = `Year ${S.year} / ${S.lengthYears}`;
+  const w = [];
+  if (S.weather.winter) w.push("❄ Winter: ½ move, ×2 upkeep, no guns");
+  if (S.weather.typhoon) w.push("🌀 Typhoon at sea");
+  if (S.weather.rain) w.push("🌧 Rain: guns dampened");
+  if (S.shogun) w.push(`⛩ Shōgun: ${S.clans[S.shogun].name}`);
+  $("#weather-line").textContent = w.join("  ·  ");
+  $("#r-koban").textContent = c.koban;
+  $("#r-rice").textContent = c.rice;
+  $("#r-honour").textContent = c.honour;
+  const band = SR.honourBand(c.honour);
+  $("#r-honour-band").textContent = band.name;
+  const est = S.mode === "B" ? c.standing * 3 + Math.round(SR.retainerPower(S, S.humanClan).power) : SR.scoreTotal(S, S.humanClan).total;
+  $("#r-prestige").textContent = est;
+  $("#tab-ambition").style.display = S.mode === "B" ? "" : "none";
+};
+
+/* ---------------------------------------------------------------------
+ * MAP
+ * ------------------------------------------------------------------- */
+UI.ownerColor = function (S, owner) {
+  if (!owner) return { c: "#6b6256", c2: "#4b463c" };
+  const cl = S.clans[owner];
+  return { c: cl.color, c2: cl.color2 };
+};
+UI.renderMap = function () {
+  const S = SR.state, svg = $("#map");
+  let links = "", nodes = "";
+  const drawn = {};
+  for (const id in DATA.provinces) {
+    const p = DATA.provinces[id];
+    for (const nb of p.adj) {
+      const key = [id, nb].sort().join("|");
+      if (drawn[key]) continue; drawn[key] = 1;
+      const q = DATA.provinces[nb];
+      const sea = p.terrain === "Coast" && q.terrain === "Coast";
+      links += `<line class="prov-link ${sea ? "sea" : ""}" x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}"/>`;
+    }
+  }
+  for (const id in DATA.provinces) {
+    const p = DATA.provinces[id], ps = S.provinces[id];
+    const col = UI.ownerColor(S, ps.owner);
+    const reachable = UI.moveMode && SR.stat(UI.moveMode).adj.includes(id) &&
+      SR.canReach(S, UI.moveMode, id, S.humanClan).ok;
+    const sel = UI.selected === id;
+    const daimyoHere = ps.owner && S.clans[ps.owner].daimyoAlive && S.clans[ps.owner].daimyoLoc === id;
+    const nUnits = ps.units.length;
+    const feat = p.feature ? UI.featGlyph(p.feature) : "";
+    const w = 84, hh = 50, x0 = p.x - w / 2, y0 = p.y - hh / 2;
+    const revealed = ps._revealed && ps._revealed >= SR.absSeason(S);
+    nodes += `<g class="prov ${sel ? "sel" : ""} ${reachable ? "reach" : ""}" data-id="${id}">
+      <rect class="pbody" x="${x0}" y="${y0}" width="${w}" height="${hh}" rx="10"
+        fill="${col.c}" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))"/>
+      ${ps.siege ? `<rect class="siege-ring" x="${x0 - 4}" y="${y0 - 4}" width="${w + 8}" height="${hh + 8}" rx="13"/>` : ""}
+      <text class="pname ${p.kyoto ? "pkyoto" : ""}" x="${p.x}" y="${p.y - 9}">${p.kyoto ? "⛩ " : ""}${esc(p.name)}</text>
+      <text class="pinfo" x="${p.x}" y="${p.y + 5}">禾${SR.provKoku(S, id)} · ⚔${nUnits}${daimyoHere ? " ★" : ""}</text>
+      <text class="pcastle" x="${p.x}" y="${p.y + 18}">${"▲".repeat(ps.castle) || "—"}${feat ? "  " + feat : ""}</text>
+    </g>`;
+  }
+  svg.innerHTML = links + nodes;
+  svg.querySelectorAll(".prov").forEach(g => g.onclick = () => UI.onProvinceClick(g.dataset.id));
+
+  // legend
+  const S2 = SR.state;
+  $("#map-legend").innerHTML = `<b>禾</b> rice · <b>⚔</b> units · <b>▲</b> castle · <b>★</b> daimyō · <b>⛩</b> Kyoto
+    <br><span style="color:#e8b53a">▢ gold ring</span> = under siege`;
+};
+UI.featGlyph = function (f) {
+  return ({ capital: "⛩", teppo_farm: "🌾", horse: "🐎", snowbound: "❄", great_castle: "🏯",
+    naval_base: "⚓", free_port: "⛵", crossroads: "🛤", silver: "⚙", gold: "⚙",
+    foreign_trade: "🌐", ikko: "☸" })[f] || "";
+};
+
+/* ---------------------------------------------------------------------
+ * PROVINCE CLICK / SELECTION
+ * ------------------------------------------------------------------- */
+UI.onProvinceClick = function (id) {
+  const S = SR.state;
+  if (UI.moveMode) {
+    if (id === UI.moveMode) { UI.cancelMove(); return; }
+    if (SR.stat(UI.moveMode).adj.includes(id)) {
+      const chk = SR.canReach(S, UI.moveMode, id, S.humanClan);
+      if (!chk.ok) { UI.toast(chk.reason); return; }
+      UI.openMarch(UI.moveMode, id);
+      return;
+    }
+    UI.cancelMove();
+  }
+  UI.selectProvince(id);
+};
+UI.selectProvince = function (id) {
+  UI.selected = id; UI.tab = "province";
+  $$(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === "province"));
+  UI.render();
+};
+UI.enterMove = function (fromId) { UI.moveMode = fromId; UI.toast("Select a neighbouring province to march into."); UI.render(); $("#hint").textContent = "Marching from " + SR.stat(fromId).name + " — click a highlighted neighbour, or click the origin to cancel."; };
+UI.cancelMove = function () { UI.moveMode = null; UI.render(); };
+
+/* ---------------------------------------------------------------------
+ * TABS
+ * ------------------------------------------------------------------- */
+UI.renderTab = function () {
+  const S = SR.state, body = $("#tab-body");
+  const fn = ({ province: UI.tabProvince, clans: UI.tabClans, diplo: UI.tabDiplo,
+    spy: UI.tabSpy, court: UI.tabCourt, ambition: UI.tabAmbition, log: UI.tabLog })[UI.tab] || UI.tabProvince;
+  body.innerHTML = fn(S);
+  UI.wireTab(S);
+};
+
+UI.unitLine = function (units) {
+  const counts = {};
+  units.forEach(u => counts[u.type] = (counts[u.type] || 0) + 1);
+  if (!units.length) return `<span class="small">— no units —</span>`;
+  return Object.keys(counts).map(t => {
+    const d = DATA.units[t];
+    return `<span class="unit-row"><span class="unit-glyph" style="background:${UI.unitColor(t)}">${d.glyph}</span>${d.name} ×${counts[t]}</span>`;
+  }).join("");
+};
+UI.unitColor = (t) => ({ ashigaru: "#8a7b52", samurai: "#b0281f", cavalry: "#7d4a1f",
+  archers: "#4f6d3a", teppo: "#4a4a4a", warship: "#2f6b7d", siege: "#6b5636" }[t] || "#555");
+
+UI.tabProvince = function (S) {
+  const id = UI.selected;
+  if (!id) return `<div class="panel"><h3>The Realm</h3><p class="psub">Click a province on the map to inspect it. Your provinces glow when selected; from one of yours, use <b>March</b> to move or attack.</p>
+    <div class="divider"></div>${UI.objectivesHTML(S)}</div>`;
+  const p = DATA.provinces[id], ps = S.provinces[id];
+  const mine = ps.owner === S.humanClan;
+  const owner = ps.owner ? S.clans[ps.owner].name : "Independent";
+  const feat = p.feature ? `<div class="tag feat" title="${esc(DATA.features[p.feature].desc)}">${DATA.features[p.feature].name}</div>` : "";
+  const siegeInfo = ps.siege ? `<div class="tag status-occupied">Under siege by ${S.clans[ps.siege.by].name}</div>` : "";
+  let acts = "";
+  if (mine) acts = UI.provinceActions(S, id, ps);
+  else acts = UI.enemyProvinceActions(S, id, ps);
+
+  return `<div class="panel">
+    <h3>${p.kyoto ? "⛩ " : ""}${esc(p.name)}</h3>
+    <div class="psub">${p.terrain} · Ruled by <b>${esc(owner)}</b> · <span class="tag status-${ps.status}">${ps.status}</span></div>
+    <div style="margin-bottom:6px">${feat}${siegeInfo}</div>
+    <div class="kv"><span class="k">Rice (koku)</span><span>禾 ${SR.provKoku(S, id)}</span></div>
+    <div class="kv"><span class="k">Castle</span><span>${"▲".repeat(ps.castle) || "none"} (lvl ${ps.castle})</span></div>
+    ${ps.unrest ? `<div class="kv"><span class="k">Unrest</span><span class="warn">${ps.unrest}</span></div>` : ""}
+    ${Object.keys(ps.buildings).length ? `<div class="kv"><span class="k">Buildings</span><span>${Object.keys(ps.buildings).map(b => DATA.buildings[b] ? DATA.buildings[b].name : b).join(", ")}</span></div>` : ""}
+    <div class="divider"></div>
+    <div class="k small" style="margin-bottom:4px">Garrison ${UI.revealNote(S, id)}</div>
+    ${UI.unitVisible(S, id) ? UI.unitLine(ps.units) : `<span class="small">Unknown — scout with Reconnaissance.</span>`}
+    <div class="divider"></div>
+    ${acts}
+  </div>`;
+};
+UI.unitVisible = function (S, id) {
+  const ps = S.provinces[id];
+  if (ps.owner === S.humanClan) return true;
+  if (SR.allied(S, S.humanClan, ps.owner)) return true;
+  if (ps._revealed && ps._revealed >= SR.absSeason(S)) return true;
+  return false;
+};
+UI.revealNote = (S, id) => UI.unitVisible(S, id) ? "" : "";
+
+UI.provinceActions = function (S, id, ps) {
+  const canAct = ps.status === "pacified" || ps.status === "home";
+  const besieging = Object.keys(S.provinces).filter(pid => S.provinces[pid].siege && S.provinces[pid].siege.by === S.humanClan &&
+    SR.stat(pid).adj.includes(id));
+  let mySiege = "";
+  if (ps.siege && ps.siege.by === S.humanClan) {
+    mySiege = `<div class="act-grid" style="margin-bottom:8px">
+      <button class="act" data-a="assault" data-id="${id}"><span class="ai">🏯</span>Storm the walls</button>
+      <button class="act" data-a="lift" data-id="${id}"><span class="ai">↩</span>Lift siege</button></div>`;
+  }
+  let g = `<div class="act-grid">`;
+  g += `<button class="act" data-a="march" data-id="${id}" ${SR.movableUnits(S, id).length ? "" : "disabled"}><span class="ai">⚔</span>March / Attack</button>`;
+  g += `<button class="act" data-a="recruit" data-id="${id}" ${canAct ? "" : "disabled"}><span class="ai">🪖</span>Recruit</button>`;
+  g += `<button class="act" data-a="build" data-id="${id}" ${canAct ? "" : "disabled"}><span class="ai">🏗</span>Build</button>`;
+  if (ps.status === "occupied") g += `<button class="act" data-a="pacify" data-id="${id}"><span class="ai">🕊</span>Pacify (${SR.pacifyCost(S, id)}◍)</button>`;
+  if (canAct && !ps.buildings.__ && S.mode === "A") g += `<button class="act" data-a="raze" data-id="${id}"><span class="ai">🔥</span>Raze</button>`;
+  g += `</div>`;
+  return mySiege + g;
+};
+UI.enemyProvinceActions = function (S, id, ps) {
+  // find your adjacent provinces with movable armies
+  const froms = SR.stat(id).adj.filter(a => S.provinces[a].owner === S.humanClan && SR.movableUnits(S, a).length);
+  if (!froms.length) return `<span class="small">March an army to a neighbouring province you hold to attack here.</span>`;
+  return `<div class="small" style="margin-bottom:6px">Attack from:</div>` + froms.map(f =>
+    `<button class="list-btn" data-a="attackfrom" data-from="${f}" data-to="${id}">
+      <div class="lb-t">From ${esc(SR.stat(f).name)}</div>
+      <div class="lb-d">${SR.movableUnits(S, f).length} units ready · power ${Math.round(SR.armyPower(SR.movableUnits(S, f)))}</div></button>`).join("");
+};
+
+UI.tabClans = function (S) {
+  const clans = SR.livingClans(S).sort((a, b) => (S.mode === "B" ? SR.retainerPower(S, b).power - SR.retainerPower(S, a).power : SR.scoreTotal(S, b).total - SR.scoreTotal(S, a).total));
+  const maxV = S.mode === "B" ? Math.max(1, ...clans.map(c => SR.retainerPower(S, c).power)) : Math.max(1, ...clans.map(c => SR.scoreTotal(S, c).total));
+  return `<div class="panel"><h3>The Powers</h3><p class="psub">${S.mode === "B" ? "Retainers of " + S.modeB.house : "Rival daimyō"} — estimated standing.</p>` +
+    clans.map(cid => {
+      const c = S.clans[cid];
+      const v = S.mode === "B" ? Math.round(SR.retainerPower(S, cid).power) : SR.scoreTotal(S, cid).total;
+      const rel = cid === S.humanClan ? "you" : (S.clans[S.humanClan].relations[cid] ? S.clans[S.humanClan].relations[cid].pact : "none");
+      return `<div class="clan-list-row">
+        <span class="mini-crest" style="background:${c.color}">${c.crest}</span>
+        <span class="cln">${esc(c.name)}${cid === S.humanClan ? ' <span class="you-badge">YOU</span>' : ""}
+          <div class="bar"><i style="width:${Math.round(v / maxV * 100)}%;background:${c.color}"></i></div>
+        </span>
+        <span class="clv">${v}</span>
+      </div>
+      <div class="small" style="padding:0 4px 6px 32px">${SR.pacifiedProvinces(S, cid).length} prov · Honour ${c.honour} (${SR.honourBand(c.honour).name})${rel !== "you" && rel !== "none" ? " · " + rel : ""}</div>`;
+    }).join("") + `</div>`;
+};
+
+UI.tabDiplo = function (S) {
+  if (S.mode === "B") return `<div class="panel"><h3>Diplomacy</h3><p class="psub">In the House Divided, deal directly with your fellow retainers through the <b>Shadow</b> and the <b>Ambition</b> tab. Formal pacts are for the Warring Clans.</p></div>`;
+  const others = SR.livingClans(S).filter(c => c !== S.humanClan);
+  let h = `<div class="panel"><h3>Diplomacy</h3><p class="psub">Forge pacts. Binding pacts need both parties at Low Honour or above.</p>`;
+  for (const cid of others) {
+    const c = S.clans[cid]; const r = S.clans[S.humanClan].relations[cid];
+    h += `<div style="border:1px solid var(--paper-line);border-radius:8px;padding:9px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span class="mini-crest" style="background:${c.color}">${c.crest}</span>
+        <b style="font-family:var(--font-h)">${esc(c.name)}</b>
+        <span class="small">${r.pact !== "none" ? "· " + SR.PACTS[r.pact].name : ""}</span>
+      </div>
+      <div class="chips">
+        <button class="chip" data-a="pact" data-to="${cid}" data-p="nap">Non-Aggression</button>
+        <button class="chip" data-a="pact" data-to="${cid}" data-p="trade">Trade</button>
+        <button class="chip" data-a="pact" data-to="${cid}" data-p="alliance">Alliance</button>
+        <button class="chip" data-a="pact" data-to="${cid}" data-p="marriage">Marriage</button>
+        <button class="chip" data-a="pact" data-to="${cid}" data-p="vassal">Demand Vassalage</button>
+      </div></div>`;
+  }
+  return h + `</div>`;
+};
+
+UI.tabSpy = function (S) {
+  const c = S.clans[S.humanClan];
+  let h = `<div class="panel"><h3>The Shadow</h3><p class="psub">Recruit Shinobi, embed them (one season), then run ops. Op strength = embedded agents + koban + Spymaster.</p>`;
+  h += `<div class="act-grid">
+    <button class="act" data-a="agent"><span class="ai">🥷</span>Recruit Shinobi (${SR.AGENT_COST}◍)</button>
+    <button class="act" data-a="spymaster" ${c.spymaster ? "disabled" : ""}><span class="ai">👁</span>${c.spymaster ? "Spymaster kept" : "Hire Spymaster (" + SR.SPYMASTER_COST + "◍)"}</button>
+  </div><div class="divider"></div>`;
+  h += `<div class="k small" style="margin-bottom:5px">Your agents (${c.agents.length})</div>`;
+  if (!c.agents.length) h += `<span class="small">None yet.</span>`;
+  c.agents.forEach(a => {
+    const emb = a.embedAbs !== null && a.embedAbs <= SR.absSeason(S);
+    h += `<div class="small" style="padding:3px 0">🥷 ${a.target ? "in " + SR.stat(a.target).name + (emb ? " · <span class='okc'>embedded</span>" : " · embedding…") : "<i>idle</i>"}
+      ${!a.target ? `<button class="chip" data-a="deploy" data-uid="${a.uid}" style="padding:2px 8px;font-size:11px">Deploy</button>` : ""}
+      ${emb ? `<button class="chip" data-a="op" data-uid="${a.uid}" data-t="${a.target}" style="padding:2px 8px;font-size:11px">Run op</button>` : ""}</div>`;
+  });
+  return h + `</div>`;
+};
+
+UI.tabCourt = function (S) {
+  const c = S.clans[S.humanClan];
+  const host = S.courtHost ? S.clans[S.courtHost].name : "none (Kyoto contested)";
+  let h = `<div class="panel"><h3>The Imperial Court</h3>
+    <p class="psub">Kyoto's host: <b>${esc(host)}</b>. Climb the ranks for great Prestige — but Honour gates the way.</p>`;
+  h += `<div class="kv"><span class="k">Your Court Rank</span><span>${c.courtRank ? DATA.courtRanks[c.courtRank - 1].name : "none"}</span></div>`;
+  const e = SR.courtEligible(S, c.id);
+  if (!DATA.courtRanks[c.courtRank]) h += `<p class="okc small" style="margin-top:10px">You hold the highest office.</p>`;
+  else {
+    const nx = DATA.courtRanks[c.courtRank];
+    h += `<div class="divider"></div><div class="k small">Next: ${nx.name}</div>
+      <div class="small" style="margin:6px 0">Cost ${nx.cost}◍ · Honour ≥ ${nx.honour} (${SR.honourBand(nx.honour).name})${nx.provinces ? " · ≥ " + nx.provinces + " provinces" : ""}${nx.kyoto ? " · control Kyoto" : ""} → +${nx.prestige} Prestige</div>
+      <button class="primary" data-a="court" ${e.ok ? "" : "disabled"} style="width:100%">${e.ok ? "Petition the Court" : "Not yet eligible"}</button>
+      ${e.ok ? "" : `<p class="warn small" style="margin-top:6px">${e.reason}</p>`}`;
+  }
+  return h + `</div>`;
+};
+
+UI.tabAmbition = function (S) {
+  const c = S.clans[S.humanClan]; const M = S.modeB;
+  const amb = DATA.ambitions.find(a => a.key === c.ambition);
+  const share = Math.round(SR.modeBInvaderShare(S) * 100);
+  let h = `<div class="panel"><h3>Your Secret Ambition</h3>
+    <div style="background:#f6eed9;border:1px solid var(--gold2);border-radius:8px;padding:11px;margin-bottom:10px">
+      <div style="font-family:var(--font-h);font-size:15px;color:var(--vermilion)">${amb.name}</div>
+      <div class="small" style="margin-top:4px">${amb.text}</div>
+      <div class="small okc" style="margin-top:6px">Win if: ${amb.hint}</div>
+    </div>
+    <div class="kv"><span class="k">Standing with the lord</span><span>${c.standing}</span></div>
+    <div class="kv"><span class="k">The lord (${esc(M.lordName)})</span><span>${M.lordAlive ? "alive" : "<b class='warn'>dead — succession!</b>"}</span></div>
+    <div class="kv"><span class="k">Land held by outside rivals</span><span class="${share >= 30 ? "warn" : ""}">${share}%</span></div>`;
+  if (M.lordAlive && M.directive) {
+    h += `<div class="divider"></div><div class="k small">The lord's directive this season</div>
+      <div class="small" style="margin:5px 0">${esc(M.directive.text)} (asks ${M.directive.ask} ${M.directive.give})</div>`;
+    if (!M.directiveAsked) h += `<div class="act-grid">
+        <button class="act" data-a="contribute"><span class="ai">🤝</span>Contribute (+2 Standing)</button>
+        <button class="act" data-a="refuse"><span class="ai">✋</span>Refuse (−2 Standing)</button></div>`;
+    else h += `<p class="small okc">You have answered the lord this season.</p>`;
+  }
+  return h + `</div>`;
+};
+
+UI.tabLog = function (S) {
+  return `<div class="panel"><h3>Chronicle</h3>` +
+    S.log.slice(0, 60).map(e => `<div class="log-entry ${e.kind}"><span class="lt">${e.t}</span><br>${esc(e.msg)}</div>`).join("") + `</div>`;
+};
+
+UI.objectivesHTML = function (S) {
+  if (S.mode === "B") {
+    const c = S.clans[S.humanClan]; const amb = DATA.ambitions.find(a => a.key === c.ambition);
+    return `<div class="k small" style="margin-bottom:4px">Your charge</div><div class="small">Keep the House of ${S.modeB.house} alive against outside rivals — and quietly pursue: <b>${amb.name}</b> (${amb.hint}). See the Ambition tab.</div>`;
+  }
+  const sc = SR.scoreTotal(S, S.humanClan);
+  return `<div class="k small" style="margin-bottom:4px">The roads to victory</div>
+    <div class="small">Most Prestige at the end of Year ${S.lengthYears} wins. Your estimate: <b>${sc.total}</b>
+    (standing ${sc.standing} + banked ${sc.banked} + honour ${sc.honour} + majorities ${sc.majorities}).<br>
+    Or a <b>sudden win</b>: Kyoto + 55% of Japan, or 60 koban with 3 markets/ports.</div>`;
+};
+
+/* ---------------------------------------------------------------------
+ * TAB EVENT WIRING (delegated)
+ * ------------------------------------------------------------------- */
+UI.wireTab = function (S) {
+  $("#tab-body").querySelectorAll("[data-a]").forEach(el => {
+    el.onclick = () => UI.action(el.dataset.a, el.dataset, el);
+  });
+};
+UI.action = function (a, d) {
+  const S = SR.state, cid = S.humanClan;
+  const after = (res) => { if (res && res.ok === false) UI.toast(res.reason); UI.render(); };
+  switch (a) {
+    case "march": UI.enterMove(d.id); break;
+    case "attackfrom": UI.openMarch(d.from, d.to); break;
+    case "recruit": UI.openRecruit(d.id); break;
+    case "build": UI.openBuild(d.id); break;
+    case "pacify": after(SR.doPacify(S, d.id, cid)); break;
+    case "raze": UI.confirm(`Raze ${SR.stat(d.id).name}? This destroys its buildings & income and costs 3 Honour.`, () => after(SR.doRaze(S, d.id, cid))); break;
+    case "assault": UI.doAssault(d.id); break;
+    case "lift": SR.liftSiege(S, d.id); UI.render(); break;
+    case "court": after(SR.doCourt(S, cid)); break;
+    case "agent": after(SR.recruitAgent(S, cid)); break;
+    case "spymaster": after(SR.hireSpymaster(S, cid)); break;
+    case "deploy": UI.openDeploy(d.uid); break;
+    case "op": UI.openOp(d.uid, d.t); break;
+    case "pact": UI.doPact(d.to, d.p); break;
+    case "contribute": SR.modeBContribute(S, cid, true); S.modeB.directiveAsked = true; UI.render(); break;
+    case "refuse": SR.modeBContribute(S, cid, false); S.modeB.directiveAsked = true; UI.render(); break;
+  }
+};
+
+/* ---------------------------------------------------------------------
+ * ACTION MODALS
+ * ------------------------------------------------------------------- */
+UI.openRecruit = function (id) {
+  const S = SR.state, cid = S.humanClan;
+  const types = Object.keys(DATA.units);
+  const rows = types.map(t => {
+    const acc = SR.canRecruit(S, cid, t);
+    const cost = SR.recruitCost(S, cid, t);
+    const afford = S.clans[cid].koban >= (cost.koban || 0) && S.clans[cid].rice >= (cost.rice || 0);
+    const dis = !acc.ok || !afford;
+    const d = DATA.units[t];
+    return `<button class="list-btn" data-t="${t}" ${dis ? "disabled" : ""}>
+      <div class="lb-t"><span class="unit-glyph" style="background:${UI.unitColor(t)}">${d.glyph}</span> ${d.name}
+        <span style="float:right">${cost.koban || 0}◍${cost.rice ? " " + cost.rice + "🌾" : ""}</span></div>
+      <div class="lb-d">Atk ${d.atk} · Def ${d.def} · Move ${d.move} · upkeep ${d.upkeep}🌾 — ${esc(d.desc)}${acc.ok ? "" : `<br><span class='warn'>${acc.reason}</span>`}</div>
+    </button>`;
+  }).join("");
+  UI.modal({
+    title: "Recruit at " + SR.stat(id).name,
+    body: `<div class="small" style="margin-bottom:8px">Treasury: ${S.clans[cid].koban}◍ · ${S.clans[cid].rice}🌾. Newly raised troops cannot march until next season.</div>${rows}`,
+    foot: `<button class="ghost" onclick="UI.closeModal()">Done</button>`,
+  });
+  $("#modal-body").querySelectorAll("[data-t]").forEach(b => b.onclick = () => {
+    const r = SR.doRecruit(S, cid, id, b.dataset.t); if (!r.ok) UI.toast(r.reason);
+    UI.openRecruit(id); UI.renderTop(); UI.renderMap();
+  });
+};
+
+UI.openBuild = function (id) {
+  const S = SR.state, cid = S.humanClan, ps = S.provinces[id];
+  const keys = Object.keys(DATA.buildings).concat(["castle"]);
+  const rows = keys.map(k => {
+    if (k === "castle") {
+      const dis = ps.castle >= 4 || S.clans[cid].koban < 4;
+      return `<button class="list-btn" data-k="castle" ${dis ? "disabled" : ""}>
+        <div class="lb-t">Castle Upgrade <span style="float:right">4◍</span></div>
+        <div class="lb-d">Raise the castle to level ${Math.min(4, ps.castle + 1)} (+2 defensive strength, +1 Prestige/level).</div></button>`;
+    }
+    const b = DATA.buildings[k]; const have = ps.buildings[k];
+    let reason = "";
+    if (have) reason = "Already built.";
+    else if (b.needsCoast && SR.stat(id).terrain !== "Coast") reason = "Needs a Coast province.";
+    else if (b.needsMineral && !["silver", "gold"].includes(SR.stat(id).feature)) reason = "Needs a silver/gold feature.";
+    else if (b.unique && SR.clanProvinces(S, cid).some(p => S.provinces[p].buildings[k])) reason = "Only one allowed.";
+    else if (S.clans[cid].koban < b.cost) reason = "Not enough koban.";
+    return `<button class="list-btn" data-k="${k}" ${reason ? "disabled" : ""}>
+      <div class="lb-t">${b.name} <span style="float:right">${b.cost}◍</span></div>
+      <div class="lb-d">${esc(b.desc)}${reason ? `<br><span class='warn'>${reason}</span>` : ""}</div></button>`;
+  }).join("");
+  UI.modal({
+    title: "Build at " + SR.stat(id).name,
+    body: `<div class="small" style="margin-bottom:8px">Treasury: ${S.clans[cid].koban}◍</div>${rows}`,
+    foot: `<button class="ghost" onclick="UI.closeModal()">Done</button>`,
+  });
+  $("#modal-body").querySelectorAll("[data-k]").forEach(b => b.onclick = () => {
+    const r = SR.doBuild(S, cid, id, b.dataset.k); if (!r.ok) UI.toast(r.reason);
+    UI.openBuild(id); UI.renderTop(); UI.renderMap();
+  });
+};
+
+UI.marchState = null;
+UI.openMarch = function (fromId, toId) {
+  const S = SR.state, cid = S.humanClan;
+  const hostile = SR.isHostile(S, toId, cid);
+  const movable = SR.movableUnits(S, fromId);
+  UI.marchState = { fromId, toId, sel: movable.map(u => u.uid), posture: "Line", surprise: false, bringDaimyo: false };
+  UI.renderMarch();
+};
+UI.renderMarch = function () {
+  const S = SR.state, cid = S.humanClan, m = UI.marchState;
+  const { fromId, toId } = m;
+  const hostile = SR.isHostile(S, toId, cid);
+  const ps = S.provinces[toId];
+  const movable = SR.movableUnits(S, fromId);
+  const daimyoHere = S.clans[cid].daimyoAlive && S.clans[cid].daimyoLoc === fromId;
+  const defenders = UI.unitVisible(S, toId) ? `${ps.units.length} units, power ${Math.round(SR.armyPower(ps.units))}${ps.castle ? ", castle lvl " + ps.castle : ""}` : "unknown strength" + (ps.castle ? ", castle lvl " + ps.castle : "");
+
+  const picks = movable.map(u => {
+    const d = DATA.units[u.type]; const on = m.sel.includes(u.uid);
+    return `<span class="upick ${on ? "sel" : ""}" data-uid="${u.uid}"><span class="unit-glyph" style="background:${UI.unitColor(u.type)}">${d.glyph}</span>${d.name}</span>`;
+  }).join("");
+
+  const body = `
+    <div class="small" style="margin-bottom:10px">${hostile ? "Attacking" : "Marching into"} <b>${esc(SR.stat(toId).name)}</b> (${SR.stat(toId).terrain}) from ${esc(SR.stat(fromId).name)}.
+    ${hostile ? "Defenders: " + defenders + "." : ""}</div>
+    <div class="field"><label>Commit which units (${m.sel.length}/${movable.length})</label><div class="unit-pick">${picks || "<span class='small'>none available</span>"}</div></div>
+    ${hostile ? `
+    <div class="field"><label>Formation (posture)</label><div class="chips">
+      ${["Deep", "Line", "Wide"].map(p => `<span class="chip ${m.posture === p ? "sel" : ""}" data-post="${p}">${p}</span>`).join("")}
+      </div><div class="small">Deep resists shock (narrow) · Line balanced · Wide brings more to bear on open ground (brittle).</div></div>
+    <div class="field"><label>Manner of attack</label><div class="chips">
+      <span class="chip ${!m.surprise ? "sel" : ""}" data-sur="0">Declared (Honour safe)</span>
+      <span class="chip ${m.surprise ? "sel" : ""}" data-sur="1">Surprise (−2 Honour, ambush)</span></div></div>
+    ${daimyoHere ? `<div class="field"><label>Leadership</label><div class="chips">
+      <span class="chip ${m.bringDaimyo ? "sel" : ""}" data-daimyo="1">Lead with ${esc(S.clans[cid].daimyo)} (+command, at risk)</span></div></div>` : ""}
+    ` : ""}`;
+  UI.modal({
+    title: hostile ? "March to Battle" : "March",
+    body,
+    foot: `<button class="ghost" onclick="UI.closeModal()">Cancel</button>
+      <button class="primary" id="march-go" ${m.sel.length ? "" : "disabled"}>${hostile ? "Engage!" : "March"}</button>`,
+  });
+  const mb = $("#modal-body");
+  mb.querySelectorAll("[data-uid]").forEach(el => el.onclick = () => {
+    const uid = +el.dataset.uid;
+    if (m.sel.includes(uid)) m.sel = m.sel.filter(x => x !== uid); else m.sel.push(uid);
+    UI.renderMarch();
+  });
+  mb.querySelectorAll("[data-post]").forEach(el => el.onclick = () => { m.posture = el.dataset.post; UI.renderMarch(); });
+  mb.querySelectorAll("[data-sur]").forEach(el => el.onclick = () => { m.surprise = el.dataset.sur === "1"; UI.renderMarch(); });
+  mb.querySelectorAll("[data-daimyo]").forEach(el => el.onclick = () => { m.bringDaimyo = !m.bringDaimyo; UI.renderMarch(); });
+  $("#march-go").onclick = () => GAME.humanMarch(m);
+};
+
+/* ---------------------------------------------------------------------
+ * BATTLE REPORT
+ * ------------------------------------------------------------------- */
+UI.showBattleReport = function (report, onDone) {
+  const S = SR.state;
+  if (!report || !report.sim) {
+    // walkover / siege-start / occupation
+    UI.modal({
+      title: report && report.outcome === "siege" ? "Siege Begins" : "March",
+      body: `<p>${esc(report ? (report.text || report.postText || "The army advances.") : "The army advances.")}</p>
+        ${report && report.honourNote ? `<p class="warn small">${esc(report.honourNote)}</p>` : ""}`,
+      foot: `<button class="primary" id="br-ok">Continue</button>`,
+    });
+    $("#br-ok").onclick = () => { UI.closeModal(); onDone && onDone(); };
+    return;
+  }
+  const r = report.sim;
+  const attName = report.attCid ? S.clans[report.attCid].name : "Attacker";
+  const defName = report.defCid ? S.clans[report.defCid].name : "Independents";
+  const humanAtt = report.attCid === S.humanClan;
+  const win = (r.winner === "att" && humanAtt) || (r.winner === "def" && report.defCid === S.humanClan);
+  let lines = "";
+  const all = [...r.rounds];
+  all.forEach((ln, i) => {
+    lines += `<div class="round-line ${ln.n === "Ambush" ? "ambush" : ""}" style="animation-delay:${i * 0.25}s">${esc(ln.text)}${ln.mA !== undefined ? `<div class="mbar"><span>morale — att ${ln.mA} / def ${ln.mD}</span></div>` : ""}</div>`;
+  });
+  const outcomeTxt = r.winner === "att"
+    ? `${esc(attName)} carry the field${r.routed === "def" ? " — the enemy routs!" : "."}`
+    : `${esc(defName)} hold${r.routed === "att" ? " — the attackers rout!" : " the field."}`;
+  const body = `
+    <div class="battle-head">
+      <div class="bh-side att"><div class="bhn">${esc(attName)}</div><div class="small">${report.attStart} units · ${report.terrain}</div></div>
+      <div class="bh-vs">⚔</div>
+      <div class="bh-side"><div class="bhn">${esc(defName)}</div><div class="small">${report.defStart} units</div></div>
+    </div>
+    ${report.surprise ? `<p class="small" style="color:var(--vermilion)">A surprise attack — the ambush falls before the lines form.</p>` : ""}
+    <div>${lines}</div>
+    <div class="outcome ${win ? "win" : "lose"}">${outcomeTxt}</div>
+    ${report.postText ? `<p class="small" style="margin-top:8px">${esc(report.postText)}</p>` : ""}
+    ${report.honourNote ? `<p class="warn small">${esc(report.honourNote)}</p>` : ""}
+    ${report.generalFate && report.generalFate !== "escape" ? `<p class="small"><b>A leader ${report.generalFate === "seppuku" ? "commits seppuku" : report.generalFate === "captured" ? "is captured" : "falls"}.</b></p>` : ""}`;
+  UI.modal({ title: "The Field of Battle", body,
+    foot: `<button class="primary" id="br-ok">Continue</button>` });
+  $("#br-ok").onclick = () => {
+    UI.closeModal();
+    if (report.pendingSeppuku) { UI.openSeppuku(report.pendingSeppuku, onDone); return; }
+    onDone && onDone();
+  };
+};
+
+UI.openSeppuku = function (pending, onDone) {
+  const S = SR.state;
+  UI.modal({
+    title: "Your Daimyō is Cornered",
+    body: `<p>${esc(S.clans[pending.loserCid].daimyo)} is trapped in the rout. Do they die by their own hand — denying the enemy the capture and preserving Honour — or risk being taken alive?</p>`,
+    foot: `<button class="ghost" id="sep-live">Risk capture</button><button class="primary" id="sep-die">Commit seppuku (+1 Honour)</button>`,
+  });
+  $("#sep-die").onclick = () => { SR.resolveSeppuku(S, pending.loserCid, pending.winnerCid, true); UI.closeModal(); UI.render(); onDone && onDone(); };
+  $("#sep-live").onclick = () => { SR.resolveSeppuku(S, pending.loserCid, pending.winnerCid, false); UI.closeModal(); UI.render(); onDone && onDone(); };
+};
+
+/* ---------------------------------------------------------------------
+ * DEFENDER RESPONSE (human is attacked)
+ * ------------------------------------------------------------------- */
+UI.openDefense = function (ev, onDone) {
+  const S = SR.state;
+  const attName = S.clans[ev.attCid].name;
+  const toId = ev.toId, ps = S.provinces[toId];
+  const canFortify = ps.castle >= 1;
+  const escapes = SR.stat(toId).adj.filter(a => S.provinces[a].owner === S.humanClan || (!S.provinces[a].owner && !S.provinces[a].units.length));
+  const st = UI.defState = { response: "stand", postureD: "Line" };
+  const render = () => {
+    UI.modal({
+      title: "Under Attack!",
+      body: `<p>${esc(attName)} march on <b>${esc(SR.stat(toId).name)}</b>${ev.opts && ev.opts.surprise ? ' <span class="warn">(a surprise attack!)</span>' : ""}. Your garrison: ${ps.units.length} units (power ${Math.round(SR.armyPower(ps.units))}), castle lvl ${ps.castle}.</p>
+        <div class="field"><label>Your response</label><div class="chips">
+          <span class="chip ${st.response === "stand" ? "sel" : ""}" data-r="stand">Stand & fight</span>
+          ${canFortify ? `<span class="chip ${st.response === "fortify" ? "sel" : ""}" data-r="fortify">Fortify (withdraw into castle → siege)</span>` : ""}
+          ${escapes.length ? `<span class="chip ${st.response.startsWith("retreat") ? "sel" : ""}" data-r="retreat:${escapes[0]}">Retreat to ${esc(SR.stat(escapes[0]).name)}</span>` : ""}
+        </div></div>
+        ${st.response === "stand" ? `<div class="field"><label>Formation</label><div class="chips">
+          ${["Deep", "Line", "Wide"].map(p => `<span class="chip ${st.postureD === p ? "sel" : ""}" data-post="${p}">${p}</span>`).join("")}
+        </div></div>` : ""}`,
+      foot: `<button class="primary" id="def-go">Confirm</button>`,
+    });
+    const mb = $("#modal-body");
+    mb.querySelectorAll("[data-r]").forEach(el => el.onclick = () => { st.response = el.dataset.r; render(); });
+    mb.querySelectorAll("[data-post]").forEach(el => el.onclick = () => { st.postureD = el.dataset.post; render(); });
+    $("#def-go").onclick = () => {
+      const opts = Object.assign({}, ev.opts, { response: st.response, postureD: st.postureD });
+      const report = SR.executeAttack(S, ev.fromId, toId, ev.uids, ev.attCid, opts);
+      UI.render();
+      UI.showBattleReport(report, onDone);
+    };
+  };
+  render();
+};
+
+/* ---------------------------------------------------------------------
+ * DIPLOMACY / ESPIONAGE / ASSAULT small flows
+ * ------------------------------------------------------------------- */
+UI.doPact = function (to, type) {
+  const S = SR.state;
+  const chk = SR.canOfferPact(S, S.humanClan, to, type);
+  if (!chk.ok) { UI.toast(chk.reason); return; }
+  const r = SR.proposePact(S, S.humanClan, to, type);
+  UI.toast(r.accepted ? `${S.clans[to].name} agrees.` : (r.reason || "Declined."));
+  UI.render();
+};
+UI.openDeploy = function (uid) {
+  const S = SR.state;
+  const targets = Object.keys(S.provinces).filter(id => S.provinces[id].owner && S.provinces[id].owner !== S.humanClan && !S.clans[S.provinces[id].owner].isNeutral || (S.provinces[id].owner === "invaders"));
+  const opts = targets.map(id => `<button class="list-btn" data-id="${id}"><div class="lb-t">${esc(SR.stat(id).name)}</div><div class="lb-d">${S.clans[S.provinces[id].owner].name}${S.clans[S.provinces[id].owner].daimyoLoc === id ? " · daimyō here" : ""}</div></button>`).join("");
+  UI.modal({ title: "Deploy Agent", body: opts || "<p class='small'>No valid targets.</p>", foot: `<button class="ghost" onclick="UI.closeModal()">Cancel</button>` });
+  $("#modal-body").querySelectorAll("[data-id]").forEach(b => b.onclick = () => { SR.deployAgent(S, S.humanClan, +uid, b.dataset.id); UI.closeModal(); UI.render(); });
+};
+UI.openOp = function (uid, target) {
+  const S = SR.state;
+  const rows = Object.keys(SR.ops).map(k => {
+    const op = SR.ops[k];
+    return `<button class="list-btn" data-k="${k}"><div class="lb-t">${op.name} <span style="float:right">${op.koban}◍+</span></div><div class="lb-d">${esc(op.desc)}${op.risk ? " <span class='warn'>(high blowback)</span>" : ""}</div></button>`;
+  }).join("");
+  UI.modal({ title: "Run Operation on " + SR.stat(target).name, body: `<div class="small" style="margin-bottom:8px">Commit extra koban to raise the odds. Treasury ${S.clans[S.humanClan].koban}◍.</div>${rows}`, foot: `<button class="ghost" onclick="UI.closeModal()">Cancel</button>` });
+  $("#modal-body").querySelectorAll("[data-k]").forEach(b => b.onclick = () => {
+    const commit = Math.min(2, Math.max(0, S.clans[S.humanClan].koban - SR.ops[b.dataset.k].koban));
+    const r = SR.runOp(S, S.humanClan, b.dataset.k, target, commit);
+    UI.closeModal();
+    if (r.ok) UI.modal({ title: r.success ? "Operation Succeeds" : "Operation Fails", body: r.lines.map(l => `<p>${esc(l)}</p>`).join(""), foot: `<button class="primary" onclick="UI.closeModal();UI.render()">Continue</button>` });
+    else UI.toast(r.reason);
+    UI.render();
+  });
+};
+UI.doAssault = function (id) {
+  const S = SR.state;
+  UI.confirm(`Storm the walls of ${SR.stat(id).name}? Assaulting a castle is bloody — the defender fights with its full castle bonus.`, () => {
+    const report = SR.siegeAssault(S, id, true);
+    UI.render();
+    UI.showBattleReport(report, () => UI.render());
+  });
+};
+
+/* ---------------------------------------------------------------------
+ * GENERIC MODAL / CONFIRM / TOAST
+ * ------------------------------------------------------------------- */
+UI.modal = function (o) {
+  $("#modal-title").textContent = o.title || "";
+  $("#modal-body").innerHTML = o.body || "";
+  $("#modal-foot").innerHTML = o.foot || "";
+  $("#modal-layer").classList.remove("hidden");
+  UI._onClose = o.onClose || null;
+};
+UI.closeModal = function () { $("#modal-layer").classList.add("hidden"); const f = UI._onClose; UI._onClose = null; if (f) f(); };
+UI.confirm = function (msg, onYes) {
+  UI.modal({ title: "Confirm", body: `<p>${esc(msg)}</p>`, foot: `<button class="ghost" id="c-no">No</button><button class="primary" id="c-yes">Yes</button>` });
+  $("#c-yes").onclick = () => { UI.closeModal(); onYes(); };
+  $("#c-no").onclick = () => UI.closeModal();
+};
+UI._toastT = null;
+UI.toast = function (msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(UI._toastT); UI._toastT = setTimeout(() => t.classList.remove("show"), 2200);
+};
+
+/* ---------------------------------------------------------------------
+ * MASTER RENDER
+ * ------------------------------------------------------------------- */
+UI.render = function () {
+  if (!SR.state) return;
+  UI.renderTop();
+  UI.renderMap();
+  UI.renderTab();
+};
+
+UI.initGame = function () {
+  $$(".tab").forEach(t => t.onclick = () => { UI.tab = t.dataset.tab; $$(".tab").forEach(x => x.classList.remove("active")); t.classList.add("active"); UI.renderTab(); });
+  $("#end-season-btn").onclick = () => GAME.endSeason();
+  $("#objectives-btn").onclick = () => UI.modal({ title: "Objectives", body: `<div class="panel">${UI.objectivesHTML(SR.state)}</div>`, foot: `<button class="primary" onclick="UI.closeModal()">Close</button>` });
+  $("#modal-x").onclick = () => UI.closeModal();
+};
+
+if (typeof module !== "undefined") module.exports = UI;
+
+
+/* =====================================================================
+ * main.js — the flow controller (GAME). Ties the engine, AI, Mode B, and
+ * UI together into the season loop.
+ * ===================================================================== */
+
+const GAME = {};
+
+window.addEventListener("DOMContentLoaded", () => {
+  UI.initTitle();
+  UI.initGame();
+  UI.showScreen("title-screen");
+});
+
+/* ---- start a new campaign ------------------------------------------ */
+GAME.start = function () {
+  const s = UI.setup;
+  if (s.mode === "B") SR.newGameB({ clan: s.clan, retainers: s.ret, lengthYears: s.len });
+  else SR.newGameA({ clan: s.clan, lengthYears: s.len });
+  UI.selected = SR.state.clans[SR.state.humanClan].daimyoLoc;
+  UI.tab = "province";
+  $$(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === "province"));
+  UI.showScreen("game-screen");
+  GAME.startSeason(true);
+};
+
+/* ---- begin a season (economy, events, then the human acts) --------- */
+GAME.startSeason = function (first) {
+  const S = SR.state;
+  SR.beginSeason(S);
+  if (S.mode === "B") {
+    SR.modeBSeasonStart(S);
+    // if the lord just died at the top of the final year, resolve immediately
+    if (!S.modeB.lordAlive && S.modeB.successor === undefined && DATA.seasons[S.seasonIdx] === "Spring" && S.year >= S.modeB.lordClock) {
+      // let the final year play out; succession resolves at year end
+    }
+    if (S.modeB.lordAlive && S.modeB.directive) UI.toast(`The lord issues a directive — see the Ambition tab.`);
+  }
+  UI.render();
+  $("#hint").textContent = S.mode === "B"
+    ? `Year ${S.year}, ${DATA.seasons[S.seasonIdx]} — hold your fiefs, answer the lord, and scheme. Press End Season when ready.`
+    : `Year ${S.year}, ${DATA.seasons[S.seasonIdx]} — take your actions, then press End Season.`;
+  if (SR.state.gameOver) GAME.showGameOver();
+};
+
+/* ---- human march / attack from the March modal --------------------- */
+GAME.humanMarch = function (m) {
+  const S = SR.state, cid = S.humanClan;
+  UI.closeModal();
+  UI.moveMode = null;
+  const { fromId, toId, sel } = m;
+  if (!sel.length) return;
+  const hostile = SR.isHostile(S, toId, cid);
+  if (!hostile) {
+    SR.performMove(S, fromId, toId, sel, cid);
+    UI.toast(`Marched to ${SR.stat(toId).name}.`);
+    UI.render();
+    return;
+  }
+  const report = SR.executeAttack(S, fromId, toId, sel, cid, {
+    surprise: m.surprise, postureA: m.posture, bringDaimyo: m.bringDaimyo,
+  });
+  UI.render();
+  UI.showBattleReport(report, () => { UI.render(); if (SR.state.gameOver) GAME.showGameOver(); });
+};
+
+/* ---- END SEASON: run AI, resolve human defenses, advance ----------- */
+GAME.endSeason = function () {
+  const S = SR.state;
+  if (S.gameOver) return;
+  UI.moveMode = null;
+  $("#end-season-btn").disabled = true;
+  UI.toast("The rival clans make their moves…");
+
+  // brief delay so the toast shows, then process
+  setTimeout(() => {
+    // AI economic & military phase
+    SR.aiPhase(S);
+    if (S.mode === "B") {
+      SR.modeBAIDirectives(S);
+      SR.modeBInvaderTurn(S);
+    }
+    const pending = S.pendingDefenses || [];
+    GAME.processDefenses(pending, 0);
+  }, 260);
+};
+
+GAME.processDefenses = function (list, i) {
+  const S = SR.state;
+  if (i >= list.length) { GAME.finishSeason(); return; }
+  const ev = list[i];
+  // skip if the target is no longer ours or the attacker vanished
+  if (S.provinces[ev.toId].owner !== S.humanClan || !S.provinces[ev.fromId] || S.provinces[ev.fromId].owner !== ev.attCid) {
+    GAME.processDefenses(list, i + 1); return;
+  }
+  UI.render();
+  UI.openDefense(ev, () => { UI.render(); GAME.processDefenses(list, i + 1); });
+};
+
+/* ---- advance the clock / detect game end --------------------------- */
+GAME.finishSeason = function () {
+  const S = SR.state;
+  $("#end-season-btn").disabled = false;
+
+  if (S.mode === "B") { GAME.finishSeasonB(S); return; }
+
+  const ended = SR.advanceSeason(S);
+  if (ended) { UI.render(); GAME.showGameOver(); return; }
+  GAME.startSeason();
+};
+
+GAME.finishSeasonB = function (S) {
+  const M = S.modeB;
+  // collective collapse?
+  if (SR.modeBInvaderShare(S) >= 0.4) {
+    SR.modeBResolve(S, true); UI.render(); GAME.showGameOverB(); return;
+  }
+  const isWinter = DATA.seasons[S.seasonIdx] === "Winter";
+  if (isWinter) {
+    if (!M.lordAlive) { SR.modeBSuccession(S); SR.modeBResolve(S, false); UI.render(); GAME.showGameOverB(); return; }
+    if (S.year >= S.lengthYears) {
+      SR.modeBLordDies(S, `${M.lordName} passes away as the campaign draws to its close.`);
+      SR.modeBSuccession(S); SR.modeBResolve(S, false); UI.render(); GAME.showGameOverB(); return;
+    }
+    S.year += 1; S.seasonIdx = 0;
+  } else {
+    S.seasonIdx += 1;
+  }
+  GAME.startSeason();
+};
+
+/* ---- GAME OVER: Mode A scoring ------------------------------------- */
+GAME.showGameOver = function () {
+  const S = SR.state;
+  const scores = S.finalScores || SR.livingClans(S).map(c => ({ cid: c, ...SR.scoreTotal(S, c) })).sort((a, b) => b.total - a.total);
+  const winCid = S.winner;
+  const youWin = winCid === S.humanClan;
+  const rows = scores.map((s, i) => {
+    const c = S.clans[s.cid];
+    return `<div class="score-row ${s.cid === winCid ? "win" : ""}">
+      <span class="sr-rank">${i + 1}</span>
+      <span class="mini-crest" style="background:${c.color}">${c.crest}</span>
+      <span class="sr-name">${esc(c.name)}${s.cid === S.humanClan ? ' <span class="you-badge">YOU</span>' : ""}
+        <div class="score-detail">standing ${s.standing} · banked ${s.banked} · honour ${s.honour} (${s.band}) · majorities ${s.majorities}</div>
+      </span>
+      <span class="sr-total">${s.total}</span>
+    </div>`;
+  }).join("");
+  UI.modal({
+    title: youWin ? "Victory!" : "The Campaign Ends",
+    body: `<p style="font-family:var(--font-h);font-size:16px;margin-top:0">${esc(S.endReason || "")}</p>
+      <p class="${youWin ? "okc" : "warn"}" style="font-family:var(--font-h)">${youWin ? "Your clan stands supreme over Japan." : `The ${esc(S.clans[winCid].name)} clan claims the highest Prestige.`}</p>
+      <div class="divider"></div>${rows}`,
+    foot: `<button class="primary" onclick="location.reload()">Play Again</button>`,
+  });
+};
+
+/* ---- GAME OVER: Mode B succession --------------------------------- */
+GAME.showGameOverB = function () {
+  const S = SR.state, M = S.modeB;
+  const ranking = M.finalRanking || [];
+  const you = ranking.find(r => r.isHuman);
+  const youWon = ranking[0] && ranking[0].isHuman;
+  const youAch = S.humanAchieved;
+  const rows = ranking.map((r, i) => `<div class="score-row ${i === 0 ? "win" : ""}">
+      <span class="sr-rank">${i + 1}</span>
+      <span class="mini-crest" style="background:${S.clans[r.r].color}">${S.clans[r.r].crest}</span>
+      <span class="sr-name">${esc(r.name)}${r.isHuman ? ' <span class="you-badge">YOU</span>' : ""}
+        <div class="score-detail">${esc(r.ambition.name)} — ${r.achieved ? "<b class='okc'>fulfilled</b>" : "unfulfilled"} · Standing ${r.standing} · power ${r.power}</div>
+      </span>
+    </div>`).join("");
+  UI.modal({
+    title: youWon ? "The House is Yours" : "The Succession is Decided",
+    body: `<p style="font-family:var(--font-h);font-size:16px;margin-top:0">${esc(S.endReason || "")}</p>
+      <p class="${youAch ? "okc" : "warn"}" style="font-family:var(--font-h)">Your ambition — <b>${esc(you ? you.ambition.name : "")}</b> — was ${youAch ? "fulfilled." : "not fulfilled."} ${youWon ? "You come out ahead of every rival." : ""}</p>
+      <div class="divider"></div>${rows}`,
+    foot: `<button class="primary" onclick="location.reload()">Play Again</button>`,
+  });
+};
+
+if (typeof module !== "undefined") module.exports = GAME;
+
+</script>
+</body>
+</html>

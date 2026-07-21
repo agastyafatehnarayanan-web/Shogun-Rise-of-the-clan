@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shōgun: Rise of the Clans</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ======================= TITLE SCREEN ======================= -->
+<div id="title-screen" class="screen active">
+  <div class="title-wrap">
+    <div class="kanji-mark">将軍</div>
+    <h1>SHŌGUN</h1>
+    <h2>Rise of the Clans</h2>
+    <p class="tagline">A grand-strategy game of the Sengoku period — war, trade, diplomacy, honour, and intrigue in the struggle to rule Japan.</p>
+
+    <div class="setup">
+      <div class="setup-row">
+        <label>Game Mode</label>
+        <div class="btn-group" id="mode-group">
+          <button class="opt active" data-mode="A">The Warring Clans</button>
+          <button class="opt" data-mode="B">The House Divided</button>
+        </div>
+      </div>
+      <p class="mode-desc" id="mode-desc">You lead a rival daimyō on the national map. Defeat five AI clans across six roads to victory — conquest, wealth, culture, honour, legitimacy, or the shadow war.</p>
+
+      <div class="setup-row" id="clan-row">
+        <label id="clan-label">Choose your Clan</label>
+        <div class="clan-grid" id="clan-grid"></div>
+      </div>
+
+      <div class="setup-row two-col">
+        <div>
+          <label>Game Length</label>
+          <div class="btn-group" id="length-group">
+            <button class="opt" data-len="4">4 yrs</button>
+            <button class="opt active" data-len="6">6 yrs</button>
+            <button class="opt" data-len="8">8 yrs</button>
+          </div>
+        </div>
+        <div id="retainers-wrap" style="display:none">
+          <label>Retainers</label>
+          <div class="btn-group" id="retainers-group">
+            <button class="opt" data-ret="4">4</button>
+            <button class="opt active" data-ret="5">5</button>
+            <button class="opt" data-ret="6">6</button>
+            <button class="opt" data-ret="7">7</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="setup-actions">
+        <button id="start-btn" class="primary big">Begin the Campaign</button>
+        <button id="help-btn" class="ghost">How to Play</button>
+      </div>
+    </div>
+    <p class="credit">A playable digital adaptation of the tabletop rulebook “Shōgun: Rise of the Clans, v1.0”.</p>
+  </div>
+</div>
+
+<!-- ======================= GAME SCREEN ======================= -->
+<div id="game-screen" class="screen">
+  <header id="topbar">
+    <div class="tb-left">
+      <span id="clan-crest" class="crest"></span>
+      <div class="tb-clan">
+        <div id="tb-clan-name">—</div>
+        <div id="tb-clan-sub" class="sub">—</div>
+      </div>
+    </div>
+    <div class="tb-center">
+      <div id="season-badge"><span id="season-name">Spring</span> · <span id="year-name">Year 1</span></div>
+      <div id="weather-line" class="sub"></div>
+    </div>
+    <div class="tb-right">
+      <div class="res"><span class="ri koban">◍</span><span id="r-koban">0</span><span class="rl">koban</span></div>
+      <div class="res"><span class="ri rice">🌾</span><span id="r-rice">0</span><span class="rl">rice</span></div>
+      <div class="res"><span class="ri honour">誉</span><span id="r-honour">0</span><span class="rl" id="r-honour-band">—</span></div>
+      <div class="res"><span class="ri prestige">★</span><span id="r-prestige">0</span><span class="rl">prestige</span></div>
+    </div>
+  </header>
+
+  <main id="board">
+    <div id="map-wrap">
+      <svg id="map" viewBox="0 0 1000 720" preserveAspectRatio="xMidYMid meet"></svg>
+      <div id="map-legend"></div>
+    </div>
+
+    <aside id="side">
+      <nav id="tabs">
+        <button class="tab active" data-tab="province">Province</button>
+        <button class="tab" data-tab="clans">Powers</button>
+        <button class="tab" data-tab="diplo">Diplomacy</button>
+        <button class="tab" data-tab="spy">Shadow</button>
+        <button class="tab" data-tab="court">Court</button>
+        <button class="tab" data-tab="ambition" id="tab-ambition" style="display:none">Ambition</button>
+        <button class="tab" data-tab="log">Chronicle</button>
+      </nav>
+      <div id="tab-body"></div>
+    </aside>
+  </main>
+
+  <footer id="bottombar">
+    <div id="hint">Select a province to begin.</div>
+    <div class="bb-actions">
+      <button id="objectives-btn" class="ghost">Objectives</button>
+      <button id="end-season-btn" class="primary">End Season ▸</button>
+    </div>
+  </footer>
+</div>
+
+<!-- ======================= MODAL LAYER ======================= -->
+<div id="modal-layer" class="hidden">
+  <div id="modal-card">
+    <div id="modal-head"><span id="modal-title"></span><button id="modal-x" class="modal-x">✕</button></div>
+    <div id="modal-body"></div>
+    <div id="modal-foot"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/battle.js"></script>
+<script src="js/espionage.js"></script>
+<script src="js/diplomacy.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/modeb.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
