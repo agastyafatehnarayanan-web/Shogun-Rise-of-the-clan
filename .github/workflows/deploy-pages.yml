@@ -1,0 +1,56 @@
+name: Deploy to GitHub Pages
+
+# Builds the single-file bundle and publishes the whole site (index.html +
+# css/ + js/ + assets/ + dist/) to GitHub Pages. The landing page is
+# index.html — the modular game, which runs fine over HTTPS.
+#
+# One-time setup: in the repo, go to Settings → Pages → "Build and
+# deployment" → Source → select "GitHub Actions". After that this workflow
+# publishes automatically on every push to the default branch (and you can
+# also run it manually from the Actions tab via "Run workflow").
+
+on:
+  push:
+    branches: ["claude/video-game-creation-9qho0l"]
+  workflow_dispatch:
+
+# Permissions the deploy step needs.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deploy at a time; a newer push supersedes an in-flight one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Rebuild the single-file bundle
+        run: node build.js
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
