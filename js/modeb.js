@@ -79,6 +79,8 @@ SR.newGameB = function (opts) {
       color: DATA.retainerColors[i][0], color2: DATA.retainerColors[i][1], crest: DATA.retainerCrests[i],
       daimyo: DATA.retainerNames[i] + " " + SR.pick(["Masayuki", "Nobufusa", "Toramasa", "Masatoyo", "Nobukimi"]),
       command: SR.rint(2, 3), trait: traits[i % traits.length], lean: "", identity: ids[i % ids.length],
+      ms: (["cavalry", "samurai", "ashigaru"].includes(ids[i % ids.length]) ? 4 : 3),
+      ec: 3, nv: 3, dp: 3, in: 3,
       isHuman: i === 0, isNeutral: false, alive: true,
       koban: 6, rice: 14, honour: 10, prestige: 0, courtRank: 0,
       agents: [], spymaster: false, daimyoLoc: null, daimyoAlive: true,
@@ -90,6 +92,7 @@ SR.newGameB = function (opts) {
   S.clans.invaders = {
     id: "invaders", name: "Rival Clans", color: "#3b3b3b", color2: "#1a1a1a", crest: "敵",
     daimyo: "Warlord", command: 2, trait: "", lean: "", identity: "ashigaru",
+    ms: 3, ec: 3, nv: 3, dp: 3, in: 3,
     isHuman: false, isNeutral: true, alive: true,
     koban: 0, rice: 0, honour: 5, prestige: 0, courtRank: 0,
     agents: [], spymaster: false, daimyoLoc: null, daimyoAlive: false,

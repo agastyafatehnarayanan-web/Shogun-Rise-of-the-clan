@@ -8,13 +8,10 @@ SR.provKoban = function (S, id) {
   const ps = S.provinces[id], f = SR.stat(id).feature;
   let k = 1; // base tax
   const b = ps.buildings;
-  if (b.market) k += 2;
-  if (b.port) k += 2;
-  if (ps.hasMine) k += 2;
-  if (f === "free_port") k += 4;
-  if (f === "crossroads") k += 2;
-  if (f === "foreign_trade") k += 2;
-  if (f === "naval_base") k += 1;
+  if (b.market) k += DATA.buildings.market.koban;   // +1
+  if (b.port) k += DATA.buildings.port.koban;       // +2 (0 if blockaded — naval simplified here)
+  if (ps.hasMine) k += 2;                           // worked silver/gold Feature
+  k += DATA.featureKoban[f] || 0;                   // free_port +2, crossroads/roads/foreign +1
   return k;
 };
 SR.provKoku = function (S, id) {
@@ -101,6 +98,12 @@ SR.eventAPI = {
     for (const id in S.provinces) if (["occupied", "pacifying"].includes(S.provinces[id].status)) occ.push(id);
     if (occ.length) S.provinces[SR.pick(occ)].unrest += 2;
   },
+  stirUnrest: (S) => {
+    for (const id in S.provinces) {
+      const ps = S.provinces[id];
+      if (["occupied", "pacifying"].includes(ps.status) || SR.stat(id).hard) ps.unrest += 1;
+    }
+  },
   tradeWindfall: (S) => SR.livingClans(S).forEach(c =>
     S.clans[c].koban += SR.portMarketCount(S, c)),
   rewardHonour: (S) => {
@@ -120,8 +123,21 @@ SR.processIncomeUpkeep = function (S) {
     c.rice += supply;
     if (season === "Autumn") {
       // The harvest: a bonus of rice AND the year's koban (taxes, mines, trade).
-      const harvest = SR.sum(SR.pacifiedProvinces(S, cid), id => SR.provKoku(S, id));
-      const koban = SR.sum(SR.pacifiedProvinces(S, cid), id => SR.provKoban(S, id));
+      // Year Events sway the harvest (Part V); the Economy axis adds income.
+      const poor = S.flags.poorRains === S.year, bumper = S.flags.bumperYear === S.year;
+      const harvest = SR.sum(SR.pacifiedProvinces(S, cid), id => {
+        let k = SR.provKoku(S, id);
+        if (poor) k = Math.max(1, k - 1);
+        if (bumper) k += 1;
+        return k;
+      });
+      let koban = SR.sum(SR.pacifiedProvinces(S, cid), id => {
+        let k = SR.provKoban(S, id);
+        if (S.flags.foreignShip === S.year && S.provinces[id].buildings.port) k += 1;
+        return k;
+      });
+      koban += (c.ec - 3);   // Economy axis: (Ec−3) Koban/yr
+      koban = Math.max(0, koban);
       c.rice += harvest; c.koban += koban;
       if (cid === S.humanClan) SR.log(S, `Autumn harvest: +${harvest} bonus rice, +${koban} koban.`, "econ");
     }
@@ -167,7 +183,7 @@ SR.processUnrest = function (S) {
     const garrison = ps.units.length;
     const band = SR.honourBand(c.honour);
     const temple = (ps.buildings.temple ? 1 : 0) + (ps.buildings.shrine ? 2 : 0);
-    const ikko = pd.feature === "ikko" || ps.razed;
+    const ikko = pd.hard || ps.razed;
 
     if (ps.status === "pacifying") {
       let rate = 1 + Math.floor(garrison / 2) - band.revolt + temple;
@@ -257,14 +273,19 @@ SR.courtEligible = function (S, cid) {
   if (prov < next.provinces) return { ok: false, reason: `Need ≥ ${next.provinces} provinces (you hold ${prov}).` };
   if (next.kyoto && S.courtHost !== cid) return { ok: false, reason: "Must control Kyoto (Yamashiro)." };
   if (next.rank === 3 && S.shogun && S.shogun !== cid) return { ok: false, reason: "Another clan already holds the Shōgunate." };
-  if (c.koban < next.cost) return { ok: false, reason: `Need ${next.cost} koban.` };
+  const cost = SR.courtCost(S, cid, next);
+  if (c.koban < cost) return { ok: false, reason: `Need ${cost} koban.` };
   return { ok: true, next };
+};
+SR.courtCost = function (S, cid, rankObj) {
+  // Diplomacy & Court axis reduces court costs (Dp−3), min 0.
+  return Math.max(0, rankObj.cost - (S.clans[cid].dp - 3));
 };
 SR.doCourt = function (S, cid) {
   const e = SR.courtEligible(S, cid);
   if (!e.ok) return e;
   const c = S.clans[cid];
-  c.koban -= e.next.cost; c.courtRank = e.next.rank;
+  c.koban -= SR.courtCost(S, cid, e.next); c.courtRank = e.next.rank;
   c.prestige += e.next.prestige;
   if (e.next.rank === 3) { S.shogun = cid; c.honour = SR.clamp(c.honour + 1, 0, 20); }
   SR.log(S, `${c.name} attains ${e.next.name}! (+${e.next.prestige} Prestige)`, "good");
@@ -276,14 +297,15 @@ SR.doCourt = function (S, cid) {
  * ------------------------------------------------------------------- */
 SR.provincePrestige = function (id) {
   const pd = SR.stat(id);
-  if (pd.kyoto) return 5;
-  if (pd.capital) return 2;
+  if (pd.kyoto) return 5;              // the Capital
+  if (pd.castle >= 2) return 2;        // a province whose printed Castle is 2+ counts 2
   return 1;
 };
-SR.buildingPrestige = function (ps) {
+SR.buildingPrestige = function (ps, id) {
   const b = ps.buildings; let p = 0;
   if (b.temple) p += 2; if (b.shrine) p += 3; if (b.academy) p += 2;
   if (b.market) p += 1; if (b.port) p += 1; if (b.mine) p += 2;
+  if (id && SR.stat(id).feature === "sacred_coast" && (b.temple || b.shrine)) p += 1; // Ise
   return p;
 };
 SR.scoreStanding = function (S, cid) {
@@ -292,7 +314,7 @@ SR.scoreStanding = function (S, cid) {
   for (const id of SR.pacifiedProvinces(S, cid)) {
     terr += SR.provincePrestige(id);
     castles += S.provinces[id].castle;
-    builds += SR.buildingPrestige(S.provinces[id]);
+    builds += SR.buildingPrestige(S.provinces[id], id);
   }
   const marriages = c.marriages.length * 2;
   const vassals = c.vassals.length * 2;
@@ -330,16 +352,16 @@ SR.scoreTotal = function (S, cid) {
  * YEAR-END + WIN/LOSE
  * ------------------------------------------------------------------- */
 SR.checkVictory = function (S) {
-  const totalProv = Object.keys(S.provinces).length;
-  // sudden conquest
+  // Sudden wins are checked at each year's end (Part XVII).
   for (const cid of SR.livingClans(S)) {
     const pac = SR.pacifiedProvinces(S, cid).length;
     const kyoto = S.provinces.yamashiro.owner === cid && S.provinces.yamashiro.status === "pacified";
-    if (kyoto && pac / totalProv >= 0.55) {
-      return SR.endGame(S, cid, `${S.clans[cid].name} holds Kyoto and ${Math.round(pac / totalProv * 100)}% of Japan — the realm is united by the sword!`);
+    // Shōgun's Path: Kyoto + 14 of the 24 provinces, all pacified.
+    if (kyoto && pac >= DATA.win.conquestProvinces) {
+      return SR.endGame(S, cid, `${S.clans[cid].name} holds Kyoto and ${pac} provinces — the realm is united by the sword!`);
     }
-    // sudden wealth
-    if (S.clans[cid].koban >= 60 && SR.portMarketCount(S, cid) >= 3) {
+    // Merchant Prince: ≥30 koban while holding ≥3 Port/Market buildings.
+    if (S.clans[cid].koban >= DATA.win.wealthKoban && SR.portMarketCount(S, cid) >= DATA.win.wealthBuildings) {
       return SR.endGame(S, cid, `${S.clans[cid].name}'s coffers overflow and its markets dominate the land — a Merchant Prince's triumph!`);
     }
   }
@@ -370,7 +392,7 @@ SR.doRecruit = function (S, cid, id, type) {
   if (!SR.canBuildHere(S, cid, id)) return { ok: false, reason: "Recruit only in a pacified province you hold." };
   const acc = SR.canRecruit(S, cid, type);
   if (!acc.ok) return acc;
-  const cost = SR.recruitCost(S, cid, type);
+  const cost = SR.recruitCost(S, cid, type, id);
   if (c.koban < (cost.koban || 0)) return { ok: false, reason: `Need ${cost.koban} koban.` };
   if (c.rice < (cost.rice || 0)) return { ok: false, reason: `Need ${cost.rice} rice.` };
   c.koban -= cost.koban || 0; c.rice -= cost.rice || 0;
@@ -396,9 +418,14 @@ SR.doBuild = function (S, cid, id, key) {
   if (b.needsCoast && SR.stat(id).terrain !== "Coast") return { ok: false, reason: "Ports need a Coast province." };
   if (b.needsMineral && !["silver", "gold"].includes(SR.stat(id).feature)) return { ok: false, reason: "Mine Works need a silver/gold feature." };
   if (b.unique && SR.clanProvinces(S, cid).some(p => S.provinces[p].buildings[key])) return { ok: false, reason: "You may build only one Grand Shrine." };
-  if (c.koban < b.cost) return { ok: false, reason: `Need ${b.cost} koban.` };
-  c.koban -= b.cost; ps.buildings[key] = true;
+  const feat = SR.stat(id).feature;
+  const sacred = feat === "sacred_coast" && (key === "temple" || key === "shrine");
+  let cost = b.cost - (sacred ? 1 : 0);              // Ise: Temples/Shrines cost −1
+  if (c.koban < cost) return { ok: false, reason: `Need ${cost} koban.` };
+  c.koban -= cost; ps.buildings[key] = true;
   if (b.honour) c.honour = SR.clamp(c.honour + b.honour, 0, 20);
+  if (feat === "land_of_gods" && (key === "temple" || key === "shrine"))
+    c.honour = SR.clamp(c.honour + 1, 0, 20);        // Izumo: +1 Honour extra
   SR.applyMineFlags(S);
   SR.log(S, `${c.name} builds a ${b.name} at ${SR.stat(id).name}.`, "econ");
   return { ok: true };

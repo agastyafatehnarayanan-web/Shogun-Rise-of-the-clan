@@ -65,7 +65,7 @@ UI.showHelp = function () {
   UI.modal({
     title: "How to Play",
     body: `<div class="small" style="font-size:13px;line-height:1.6">
-      <p><b>Goal.</b> Everything converts to <b>Prestige</b> — the most wins at the end of the final year. Or trigger a <b>sudden win</b>: hold Kyoto + 55% of Japan (conquest), or amass 60 koban with 3+ ports/markets (wealth).</p>
+      <p><b>Goal.</b> Everything converts to <b>Prestige</b> — the most wins at the end of the final year. Or trigger a <b>sudden win</b>: hold Kyoto + 14 of the 24 provinces (conquest), or amass 30 koban with 3+ ports/markets (wealth).</p>
       <p><b>The year</b> is four seasons: <b>Spring</b> (mobilise), <b>Summer</b> (campaign; typhoons at sea), <b>Autumn</b> (harvest — you collect rice & koban), <b>Winter</b> (½ move, double rice upkeep, no guns, snowbound provinces sealed). Feed your armies with rice every season.</p>
       <p><b>Each season</b> you may recruit, build, march & attack, pacify, run spies, do diplomacy, and climb the Court — all free-form, limited only by resources and one move per army. Then press <b>End Season</b>.</p>
       <p><b>War.</b> Select your province → <b>March</b> → click a neighbour. A <b>Declared</b> attack is honourable; a <b>Surprise</b> attack gives an ambush edge but costs Honour. Terrain sets how many units can fight at once; cavalry shock, guns, and reserves decide the day. Win the field, reduce the castle, then <b>garrison + pay to Pacify</b>.</p>
@@ -115,7 +115,30 @@ UI.ownerColor = function (S, owner) {
 };
 UI.renderMap = function () {
   const S = SR.state, svg = $("#map");
-  let links = "", nodes = "";
+
+  /* --- decorative layer: sea-zone labels, title cartouche, compass --- */
+  let decor = "";
+  for (const z in DATA.seaZones) {
+    const sz = DATA.seaZones[z];
+    decor += `<g class="sea-label"><text class="sz-jp" x="${sz.x}" y="${sz.y}">${sz.jp}</text>
+      <text class="sz-en" x="${sz.x}" y="${sz.y + 13}">${sz.name}</text></g>`;
+  }
+  // title cartouche (top-left of the sea)
+  decor += `<g class="cartouche">
+    <rect x="26" y="20" width="196" height="70" rx="6"/>
+    <text class="ct-jp" x="124" y="56">日本国</text>
+    <text class="ct-en" x="124" y="78">NIPPON — Realm of the Rising Sun</text></g>`;
+  // compass rose (top-right)
+  const cx = 946, cy = 60;
+  decor += `<g class="compass" transform="translate(${cx},${cy})">
+    <circle r="27" class="cmp-ring"/>
+    <path class="cmp-star" d="M0,-24 L5,-5 L24,0 L5,5 L0,24 L-5,5 L-24,0 L-5,-5 Z"/>
+    <path class="cmp-star2" d="M0,-24 L4,-4 L0,0 L-4,-4 Z"/>
+    <text class="cmp-n" x="0" y="-30">北</text><text class="cmp-s" x="0" y="40">南</text>
+    <text class="cmp-e" x="34" y="4">東</text><text class="cmp-w" x="-34" y="4">西</text></g>`;
+
+  /* --- links: roads, river borders, strait crossings --- */
+  let links = "";
   const drawn = {};
   for (const id in DATA.provinces) {
     const p = DATA.provinces[id];
@@ -123,10 +146,15 @@ UI.renderMap = function () {
       const key = [id, nb].sort().join("|");
       if (drawn[key]) continue; drawn[key] = 1;
       const q = DATA.provinces[nb];
-      const sea = p.terrain === "Coast" && q.terrain === "Coast";
-      links += `<line class="prov-link ${sea ? "sea" : ""}" x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}"/>`;
+      const isStrait = (p.strait && p.strait.includes(nb)) || (q.strait && q.strait.includes(id));
+      const isRiver = (p.river && p.river.includes(nb)) || (q.river && q.river.includes(id));
+      const cls = isStrait ? "strait" : isRiver ? "river" : "road";
+      links += `<line class="prov-link ${cls}" x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}"/>`;
     }
   }
+
+  /* --- province tokens --- */
+  let nodes = "";
   for (const id in DATA.provinces) {
     const p = DATA.provinces[id], ps = S.provinces[id];
     const col = UI.ownerColor(S, ps.owner);
@@ -136,29 +164,25 @@ UI.renderMap = function () {
     const daimyoHere = ps.owner && S.clans[ps.owner].daimyoAlive && S.clans[ps.owner].daimyoLoc === id;
     const nUnits = ps.units.length;
     const feat = p.feature ? UI.featGlyph(p.feature) : "";
-    const w = 84, hh = 50, x0 = p.x - w / 2, y0 = p.y - hh / 2;
-    const revealed = ps._revealed && ps._revealed >= SR.absSeason(S);
+    const w = 78, hh = 46, x0 = p.x - w / 2, y0 = p.y - hh / 2;
     nodes += `<g class="prov ${sel ? "sel" : ""} ${reachable ? "reach" : ""}" data-id="${id}">
-      <rect class="pbody" x="${x0}" y="${y0}" width="${w}" height="${hh}" rx="10"
+      <rect class="pbody" x="${x0}" y="${y0}" width="${w}" height="${hh}" rx="9"
         fill="${col.c}" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))"/>
-      ${ps.siege ? `<rect class="siege-ring" x="${x0 - 4}" y="${y0 - 4}" width="${w + 8}" height="${hh + 8}" rx="13"/>` : ""}
-      <text class="pname ${p.kyoto ? "pkyoto" : ""}" x="${p.x}" y="${p.y - 9}">${p.kyoto ? "⛩ " : ""}${esc(p.name)}</text>
-      <text class="pinfo" x="${p.x}" y="${p.y + 5}">禾${SR.provKoku(S, id)} · ⚔${nUnits}${daimyoHere ? " ★" : ""}</text>
-      <text class="pcastle" x="${p.x}" y="${p.y + 18}">${"▲".repeat(ps.castle) || "—"}${feat ? "  " + feat : ""}</text>
+      ${ps.siege ? `<rect class="siege-ring" x="${x0 - 4}" y="${y0 - 4}" width="${w + 8}" height="${hh + 8}" rx="12"/>` : ""}
+      <text class="pjp" x="${p.x}" y="${p.y - 12}">${esc(p.jp || "")}</text>
+      <text class="pname ${p.kyoto ? "pkyoto" : ""}" x="${p.x}" y="${p.y - 1}">${p.kyoto ? "⛩ " : ""}${esc(p.name)}</text>
+      <text class="pinfo" x="${p.x}" y="${p.y + 11}">禾${SR.provKoku(S, id)} · ⚔${nUnits}${daimyoHere ? " ★" : ""}</text>
+      <text class="pcastle" x="${p.x}" y="${p.y + 22}">${"▲".repeat(ps.castle) || "—"}${feat ? "  " + feat : ""}</text>
     </g>`;
   }
-  svg.innerHTML = links + nodes;
+  svg.innerHTML = decor + links + nodes;
   svg.querySelectorAll(".prov").forEach(g => g.onclick = () => UI.onProvinceClick(g.dataset.id));
 
-  // legend
-  const S2 = SR.state;
   $("#map-legend").innerHTML = `<b>禾</b> rice · <b>⚔</b> units · <b>▲</b> castle · <b>★</b> daimyō · <b>⛩</b> Kyoto
-    <br><span style="color:#e8b53a">▢ gold ring</span> = under siege`;
+    <br><span style="color:#7fb0c4">〜 river border</span> · <span style="color:#8fb8c0">┄ strait</span> · <span style="color:#e8b53a">▢ siege</span>`;
 };
 UI.featGlyph = function (f) {
-  return ({ capital: "⛩", teppo_farm: "🌾", horse: "🐎", snowbound: "❄", great_castle: "🏯",
-    naval_base: "⚓", free_port: "⛵", crossroads: "🛤", silver: "⚙", gold: "⚙",
-    foreign_trade: "🌐", ikko: "☸" })[f] || "";
+  return (DATA.features[f] && DATA.features[f].glyph) || "";
 };
 
 /* ---------------------------------------------------------------------
@@ -290,8 +314,14 @@ UI.tabClans = function (S) {
         </span>
         <span class="clv">${v}</span>
       </div>
-      <div class="small" style="padding:0 4px 6px 32px">${SR.pacifiedProvinces(S, cid).length} prov · Honour ${c.honour} (${SR.honourBand(c.honour).name})${rel !== "you" && rel !== "none" ? " · " + rel : ""}</div>`;
+      <div class="small" style="padding:0 4px 2px 32px">${SR.pacifiedProvinces(S, cid).length} prov · Honour ${c.honour} (${SR.honourBand(c.honour).name})${rel !== "you" && rel !== "none" ? " · " + rel : ""}</div>
+      <div class="axes" style="padding:0 4px 7px 32px">${UI.axisChips(c)}</div>`;
     }).join("") + `</div>`;
+};
+/* Five-axis clan profile chips (Appendix A). */
+UI.axisChips = function (c) {
+  const ax = [["MS", c.ms], ["Ec", c.ec], ["Nv", c.nv], ["Dp", c.dp], ["In", c.in]];
+  return ax.map(([k, v]) => `<span class="axis" title="${k}: ${v}/5"><b>${k}</b>${"●".repeat(v)}${"○".repeat(5 - v)}</span>`).join("");
 };
 
 UI.tabDiplo = function (S) {
@@ -345,8 +375,9 @@ UI.tabCourt = function (S) {
   if (!DATA.courtRanks[c.courtRank]) h += `<p class="okc small" style="margin-top:10px">You hold the highest office.</p>`;
   else {
     const nx = DATA.courtRanks[c.courtRank];
+    const cost = SR.courtCost(S, c.id, nx);
     h += `<div class="divider"></div><div class="k small">Next: ${nx.name}</div>
-      <div class="small" style="margin:6px 0">Cost ${nx.cost}◍ · Honour ≥ ${nx.honour} (${SR.honourBand(nx.honour).name})${nx.provinces ? " · ≥ " + nx.provinces + " provinces" : ""}${nx.kyoto ? " · control Kyoto" : ""} → +${nx.prestige} Prestige</div>
+      <div class="small" style="margin:6px 0">Cost ${cost}◍${cost !== nx.cost ? ` <span class="okc">(Dp)</span>` : ""} · Honour ≥ ${nx.honour} (${SR.honourBand(nx.honour).name})${nx.provinces ? " · ≥ " + nx.provinces + " provinces" : ""}${nx.kyoto ? " · control Kyoto" : ""} → +${nx.prestige} Prestige</div>
       <button class="primary" data-a="court" ${e.ok ? "" : "disabled"} style="width:100%">${e.ok ? "Petition the Court" : "Not yet eligible"}</button>
       ${e.ok ? "" : `<p class="warn small" style="margin-top:6px">${e.reason}</p>`}`;
   }
@@ -391,7 +422,7 @@ UI.objectivesHTML = function (S) {
   return `<div class="k small" style="margin-bottom:4px">The roads to victory</div>
     <div class="small">Most Prestige at the end of Year ${S.lengthYears} wins. Your estimate: <b>${sc.total}</b>
     (standing ${sc.standing} + banked ${sc.banked} + honour ${sc.honour} + majorities ${sc.majorities}).<br>
-    Or a <b>sudden win</b>: Kyoto + 55% of Japan, or 60 koban with 3 markets/ports.</div>`;
+    Or a <b>sudden win</b>: Kyoto + ${DATA.win.conquestProvinces} of 24 provinces, or ${DATA.win.wealthKoban} koban with ${DATA.win.wealthBuildings} markets/ports.</div>`;
 };
 
 /* ---------------------------------------------------------------------
@@ -433,7 +464,7 @@ UI.openRecruit = function (id) {
   const types = Object.keys(DATA.units);
   const rows = types.map(t => {
     const acc = SR.canRecruit(S, cid, t);
-    const cost = SR.recruitCost(S, cid, t);
+    const cost = SR.recruitCost(S, cid, t, id);
     const afford = S.clans[cid].koban >= (cost.koban || 0) && S.clans[cid].rice >= (cost.rice || 0);
     const dis = !acc.ok || !afford;
     const d = DATA.units[t];

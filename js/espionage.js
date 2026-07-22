@@ -70,9 +70,12 @@ SR.runOp = function (S, cid, opKey, targetProv, kobanCommit) {
   const targetClan = S.provinces[targetProv].owner;
   const targetIsClan = targetClan && !S.clans[targetClan].isNeutral;
 
-  const opStrength = embedded * 3 + kobanCommit + (c.spymaster ? 3 : 0) + SR.rint(0, 3) + 1;
+  // Intrigue axis (In−3) sharpens your ops and stiffens a rival's security.
+  const opStrength = embedded * 3 + kobanCommit + (c.spymaster ? 3 : 0)
+    + (c.in - 3) + SR.rint(0, 3) + 1;
   const security = op.sec + S.provinces[targetProv].castle
     + (targetIsClan && S.clans[targetClan].spymaster ? 3 : 0)
+    + (targetIsClan ? (S.clans[targetClan].in - 3) : 0)
     + (S.provinces[targetProv].units.length > 4 ? 1 : 0) + SR.rint(0, 3);
 
   const success = opStrength >= security;

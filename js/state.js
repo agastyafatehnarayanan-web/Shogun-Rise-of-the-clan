@@ -54,6 +54,7 @@ SR.newGameA = function (opts) {
     S.clans[cid] = {
       id: cid, name: c.name, color: c.color, color2: c.color2, crest: c.crest,
       daimyo: c.daimyo, command: c.command, trait: c.trait, lean: c.lean, identity: c.identity,
+      ms: c.ms, ec: c.ec, nv: c.nv, dp: c.dp, in: c.in,
       isHuman: cid === opts.clan, isNeutral: false, alive: true,
       koban: 6, rice: 12, honour: 10, prestige: 0, courtRank: 0,
       agents: [], spymaster: false,
@@ -81,14 +82,15 @@ SR.newGameA = function (opts) {
     if (c.homes[1]) S.provinces[c.homes[1]].units.push(SR.mkUnit("ashigaru"));
   }
 
-  // Independent / rebel garrisons on neutral provinces (minor clans).
+  // Independent / neutral garrisons (Δ38): (Castle+1) Ashigaru, +2 if Hard
+  // to pacify. Kyoto, the great prize, keeps a couple of samurai.
   for (const id in S.provinces) {
     const ps = S.provinces[id]; const pd = DATA.provinces[id];
     if (ps.owner) continue;
     ps.status = "neutral";
-    const n = 2 + ps.castle + (pd.kyoto ? 2 : 0);
-    for (let i = 0; i < n; i++) ps.units.push(SR.mkUnit(i === 0 && pd.kyoto ? "samurai" : "ashigaru"));
-    if (pd.kyoto) ps.units.push(SR.mkUnit("samurai"));
+    const n = ps.castle + 1 + (pd.hard ? 2 : 0);
+    for (let i = 0; i < n; i++) ps.units.push(SR.mkUnit("ashigaru"));
+    if (pd.kyoto) { ps.units.push(SR.mkUnit("samurai")); ps.units.push(SR.mkUnit("samurai")); }
     ps.unrest = 0;
   }
 
@@ -112,43 +114,56 @@ SR.pacifiedProvinces = (S, cid) =>
 
 SR.honourBand = (h) => DATA.honourBands.find(b => h >= b.min && h <= b.max) || DATA.honourBands[0];
 
-/* Access checks based on controlled provinces + clan identity. */
+/* Access checks based on controlled provinces + clan identity.
+ * Gun access: Owari, Settsu, Kii, Bungo, Satsuma (province.gun) — or
+ * Oda / Shimazu anywhere. Horse access: Kai, Shinano, Mutsu
+ * (province.horse) — or Takeda anywhere. */
 SR.hasGunAccess = function (S, cid) {
   if (cid === "oda" || cid === "shimazu") return true;
-  return SR.clanProvinces(S, cid).some(id => {
-    const f = SR.stat(id).feature;
-    return f === "free_port" || f === "foreign_trade" || f === "teppo_farm";
-  });
+  return SR.clanProvinces(S, cid).some(id => SR.stat(id).gun);
 };
 SR.hasHorseAccess = function (S, cid) {
   if (cid === "takeda") return true;
-  return SR.clanProvinces(S, cid).some(id => {
-    const f = SR.stat(id).feature; return f === "horse" || f === "gold";
-  });
+  return SR.clanProvinces(S, cid).some(id => SR.stat(id).horse);
 };
-SR.provinceHasSea = (id) => ["Coast"].includes(SR.stat(id).terrain);
+SR.provinceHasSea = (id) => { const p = SR.stat(id); return p.terrain === "Coast" || p.minorCoast; };
+SR.provinceIsPort = function (S, id) {
+  const f = SR.stat(id).feature;
+  return SR.provinceHasSea(id) && (S.provinces[id].buildings.port ||
+    f === "naval_base" || f === "free_port" || f === "foreign_trade" || f === "foreign_port");
+};
 SR.hasSeaAccess = function (S, cid) {
-  return SR.clanProvinces(S, cid).some(id => SR.provinceHasSea(id) &&
-    (S.provinces[id].buildings.port || SR.stat(id).feature === "naval_base" ||
-     SR.stat(id).feature === "free_port" || SR.stat(id).feature === "foreign_trade"));
+  return SR.clanProvinces(S, cid).some(id => SR.provinceIsPort(S, id));
 };
 
 /* Can this clan recruit `type`? returns {ok, reason}. */
 SR.canRecruit = function (S, cid, type) {
   const u = DATA.units[type];
-  if (u.needs === "gun" && !SR.hasGunAccess(S, cid)) return { ok: false, reason: "No gun access (need a port / foreign-trade / Owari)." };
-  if (u.needs === "horse" && !SR.hasHorseAccess(S, cid)) return { ok: false, reason: "No horse country (need Kai / a gold province)." };
-  if (u.needs === "sea" && !SR.hasSeaAccess(S, cid)) return { ok: false, reason: "No naval base / port with sea access." };
+  if (u.needs === "gun" && !SR.hasGunAccess(S, cid)) return { ok: false, reason: "No gun access (need Owari / Settsu / Kii / Bungo / Satsuma)." };
+  if (u.needs === "horse" && !SR.hasHorseAccess(S, cid)) return { ok: false, reason: "No horse country (need Kai / Shinano / Mutsu)." };
+  if (u.needs === "sea" && !SR.hasSeaAccess(S, cid)) return { ok: false, reason: "No Port with sea access to build ships." };
   return { ok: true };
 };
 
-/* Adjusted recruit cost (koban/rice) accounting for features & events. */
-SR.recruitCost = function (S, cid, type) {
+/* Adjusted recruit cost (koban/rice), accounting for the province's own
+ * feature discounts, the clan's Navy axis, and events. If provId is given
+ * the discount is that province's; otherwise the best the clan can reach. */
+SR.recruitCost = function (S, cid, type, provId) {
   const base = DATA.units[type].cost;
   const cost = { koban: base.koban || 0, rice: base.rice || 0 };
-  const provs = SR.clanProvinces(S, cid);
-  if (type === "cavalry" && provs.some(id => SR.stat(id).feature === "horse")) cost.koban -= 1;
-  if (type === "warship" && provs.some(id => SR.stat(id).feature === "naval_base")) cost.koban -= 1;
+  const c = S.clans[cid];
+  const feats = provId ? [SR.stat(provId).feature]
+    : SR.clanProvinces(S, cid).map(id => SR.stat(id).feature);
+  const has = (f) => feats.includes(f);
+
+  if (type === "cavalry" && has("horse_land")) cost.koban -= 1;          // Kai
+  if (type === "samurai" && has("swordsmiths")) cost.koban -= 1;         // Bizen
+  if (type === "samurai" && has("elite_infantry")) cost.koban = Math.min(cost.koban, 2); // Echigo
+  if (type === "ashigaru" && has("hardy_levies")) cost.koban = 0;        // Mikawa (1 rice only)
+  if (type === "warship") {
+    if (has("naval_base") || has("pirate_haven")) cost.koban -= 1;       // Aki / Tosa
+    cost.koban -= (c.nv - 3);                                            // Navy axis
+  }
   if (type === "teppo" && S.flags.cheapGuns) cost.koban -= 1;
   cost.koban = Math.max(0, cost.koban);
   return cost;
