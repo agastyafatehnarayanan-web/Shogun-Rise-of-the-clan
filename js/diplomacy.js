@@ -12,6 +12,12 @@ SR.PACTS = {
   vassal:   { name: "Vassalage",           binding: true,  gift: 0,  years: 0 },
 };
 
+/* Gift cost to propose `type`, after the Diplomacy & Court axis (Dp−3). */
+SR.pactGift = function (S, cid, type) {
+  const P = SR.PACTS[type]; if (!P) return 0;
+  return Math.max(0, P.gift - (S.clans[cid].dp - 3));
+};
+
 SR.relPower = function (S, cid) {
   return SR.pacifiedProvinces(S, cid).length * 2 +
     SR.sum(SR.clanProvinces(S, cid), id => SR.armyPower(S.provinces[id].units)) / 3;
@@ -31,7 +37,8 @@ SR.canOfferPact = function (S, a, b, type) {
     if (SR.honourBand(S.clans[b].honour).name === "Infamous")
       return { ok: false, reason: `${S.clans[b].name} is Infamous — no one will bind to them.` };
   }
-  if (S.clans[a].koban < P.gift) return { ok: false, reason: `Need ${P.gift} koban as a gift.` };
+  const gift = SR.pactGift(S, a, type);
+  if (S.clans[a].koban < gift) return { ok: false, reason: `Need ${gift} koban as a gift.` };
   return { ok: true };
 };
 
@@ -57,7 +64,7 @@ SR.aiAcceptPact = function (S, ai, from, type) {
 /* Form the pact (mutually). Applies costs / prestige / honour. */
 SR.formPact = function (S, a, b, type) {
   const P = SR.PACTS[type];
-  S.clans[a].koban -= P.gift;
+  S.clans[a].koban = Math.max(0, S.clans[a].koban - SR.pactGift(S, a, type));
   const setRel = (x, y) => { const r = S.clans[x].relations[y]; if (r) { r.pact = type; r.years = P.years; r.attitude += 30; } };
   if (type === "vassal") {
     // b becomes vassal of a
@@ -97,13 +104,14 @@ SR.diplomacyIncome = function (S) {
       if (r.pact === "trade") S.clans[a].koban += 1;
     }
   }
-  // vassal tribute once per year (Spring)
-  if (DATA.seasons[S.seasonIdx] === "Spring") {
+  // vassal tribute once per year (Autumn): 1 koban + 1 rice (Δ50)
+  if (DATA.seasons[S.seasonIdx] === "Autumn") {
     for (const a of SR.livingClans(S)) {
       for (const v of S.clans[a].vassals) {
         if (S.clans[v] && S.clans[v].alive) {
-          const t = Math.min(2, S.clans[v].koban);
-          S.clans[v].koban -= t; S.clans[a].koban += t;
+          const k = Math.min(1, S.clans[v].koban), r = Math.min(1, S.clans[v].rice);
+          S.clans[v].koban -= k; S.clans[a].koban += k;
+          S.clans[v].rice -= r; S.clans[a].rice += r;
         }
       }
     }

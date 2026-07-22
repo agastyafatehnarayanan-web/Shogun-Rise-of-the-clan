@@ -118,18 +118,39 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #map-legend b{color:var(--gold)}
 
 /* SVG map elements */
-.prov-link{stroke:#3d5561;stroke-width:2;opacity:.5}
-.prov-link.sea{stroke-dasharray:4 5;stroke:#4a6b74}
+.prov-link{stroke:#6f6448;stroke-width:2;opacity:.55}
+.prov-link.road{stroke:#7a6c49;stroke-dasharray:1 4;stroke-linecap:round;opacity:.6}
+.prov-link.river{stroke:#5f93a8;stroke-width:2.4;stroke-dasharray:7 3;opacity:.8}
+.prov-link.strait{stroke:#6f9aa4;stroke-width:1.6;stroke-dasharray:2 5;opacity:.7}
+
+/* sea-zone labels */
+.sea-label{pointer-events:none}
+.sea-label .sz-jp{fill:#5c7a86;font-size:15px;text-anchor:middle;font-family:var(--font-h);opacity:.55;letter-spacing:2px}
+.sea-label .sz-en{fill:#48626d;font-size:9px;text-anchor:middle;letter-spacing:1.5px;opacity:.6;text-transform:uppercase}
+
+/* title cartouche */
+.cartouche rect{fill:rgba(18,14,10,.55);stroke:var(--gold2);stroke-width:1.5}
+.cartouche .ct-jp{fill:var(--gold);font-size:32px;text-anchor:middle;font-family:var(--font-h);letter-spacing:6px;paint-order:stroke;stroke:#000;stroke-width:1px}
+.cartouche .ct-en{fill:#c8b892;font-size:9.5px;text-anchor:middle;letter-spacing:1.2px}
+
+/* compass rose */
+.compass{pointer-events:none}
+.compass .cmp-ring{fill:rgba(18,14,10,.4);stroke:var(--gold2);stroke-width:1.4}
+.compass .cmp-star{fill:#c9a24a;opacity:.9}
+.compass .cmp-star2{fill:#f0d692}
+.compass text{fill:#cdbb90;font-size:11px;text-anchor:middle;font-family:var(--font-h);dominant-baseline:middle}
+
 .prov{cursor:pointer}
+.prov .pjp{font-size:11px;fill:#ffffff;opacity:.5;text-anchor:middle;pointer-events:none;font-family:var(--font-h)}
 .prov .pbody{stroke:#00000055;stroke-width:1.5;transition:.12s}
 .prov:hover .pbody{stroke:#fff}
 .prov.sel .pbody{stroke:var(--gold);stroke-width:3.5}
 .prov.reach .pbody{stroke:#ffe08a;stroke-width:3;stroke-dasharray:3 3}
-.prov .pname{font-family:var(--font-h);font-size:12.5px;fill:#fff;text-anchor:middle;pointer-events:none;
+.prov .pname{font-family:var(--font-h);font-size:12px;fill:#fff;text-anchor:middle;pointer-events:none;
   paint-order:stroke;stroke:#000;stroke-width:2.4px;stroke-linejoin:round;font-weight:700}
-.prov .pinfo{font-size:10px;fill:#f2ead3;text-anchor:middle;pointer-events:none;
+.prov .pinfo{font-size:9.5px;fill:#f2ead3;text-anchor:middle;pointer-events:none;
   paint-order:stroke;stroke:#000;stroke-width:2px}
-.prov .pcastle{font-size:10px;fill:#ffd98a;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:#000;stroke-width:2px}
+.prov .pcastle{font-size:9.5px;fill:#ffd98a;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:#000;stroke-width:2px}
 .prov .pkyoto{fill:#ffe9a8}
 .siege-ring{fill:none;stroke:#e8b53a;stroke-width:2.5;stroke-dasharray:5 4}
 .feat-dot{font-size:11px;pointer-events:none}
@@ -173,6 +194,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .clan-list-row .clv{font-weight:700}
 .bar{height:6px;background:#d8c79e;border-radius:4px;overflow:hidden;margin-top:3px}
 .bar > i{display:block;height:100%;background:var(--vermilion)}
+.axes{display:flex;flex-wrap:wrap;gap:7px}
+.axis{font-size:9.5px;color:#7a6a45;letter-spacing:.5px}
+.axis b{color:var(--ink);margin-right:2px;font-family:var(--font-h)}
 
 .list-btn{width:100%;text-align:left;background:#f6eed9;border:1px solid var(--paper-line);border-radius:7px;
   padding:9px 11px;font-size:12.5px;margin-bottom:7px;color:var(--ink)}

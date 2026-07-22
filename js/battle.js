@@ -38,16 +38,20 @@ SR.simulateBattle = function (ctx) {
   const rounds = [];
   const wet = ctx.weather && (ctx.weather.rain || ctx.weather.winter);
 
+  // Melee line value: attacker uses Atk, defender Def (Part X).
+  const roleVal = (type, role) => { const u = DATA.units[type]; return role === "def" ? u.def : u.atk; };
+
   const traitBonus = (trait, units, role) => {
     let b = 0;
-    if (trait === "Morale") b += 2;
     if (trait === "Infantry") b += 0.5 * (SR.countType(units, "ashigaru") + SR.countType(units, "samurai"));
     if (trait === "Siege & Defence" && role === "def") b += 2;
     return b;
   };
 
-  let mA = 10 + Math.min(3, SR.countType(A, "samurai")) + ctx.attCmd + traitBonus(ctx.attTrait, A, "att");
-  let mD = 10 + Math.min(3, SR.countType(D, "samurai")) + ctx.defCmd + traitBonus(ctx.defTrait, D, "def")
+  // Army Morale = 10 + Samurai (max +3) + Command + Military Strength (Part X).
+  const msA = ctx.attMS || 0, msD = ctx.defMS || 0;
+  let mA = 10 + Math.min(3, SR.countType(A, "samurai")) + ctx.attCmd + msA + traitBonus(ctx.attTrait, A, "att");
+  let mD = 10 + Math.min(3, SR.countType(D, "samurai")) + ctx.defCmd + msD + traitBonus(ctx.defTrait, D, "def")
            + (ctx.castleBonus || 0) * 1.5;
   const mA0 = mA, mD0 = mD;
 
@@ -55,29 +59,33 @@ SR.simulateBattle = function (ctx) {
   const frontD = SR.frontage(ctx.terrain, ctx.postureD);
 
   const engagedPower = (units, front, role, posture, round, trait, enemyPosture) => {
-    // sort by base value desc; the frontage best fight, rest are reserve (10%)
-    const sorted = [...units].sort((a, b) => SR.unitBase(b.type) - SR.unitBase(a.type));
+    // Melee line: sort by role value; the frontage best fight, rest support.
+    const sorted = [...units].sort((a, b) => roleVal(b.type, role) - roleVal(a.type, role));
     const eng = sorted.slice(0, front), res = sorted.slice(front);
     let p = 0;
     for (const u of eng) {
       const d = DATA.units[u.type];
-      let v = SR.unitBase(u.type);
+      let v = roleVal(u.type, role);
       if (role === "def") v += T.defBonus * 0.5;
-      // shock (round 1 only, terrain-damped)
+      // Shock: charging cavalry on first contact, terrain-damped (Part X).
       if (round === 1 && d.tags.includes("shock")) v += 3 * T.cavalry * (trait === "Cavalry" ? 1.3 : 1);
-      // ranged pre-fire
-      if (d.tags.includes("ranged") && !(d.tags.includes("volley"))) v += 2;                 // archers every round
-      if (d.tags.includes("volley") && !wet && round % 2 === 1) {                             // teppo odd rounds, dry
-        v += 4 + (enemyPosture === "Deep" ? 1 : 0);
-      }
       p += v;
     }
-    // reserves add a fraction
-    p += SR.sum(res, u => SR.unitBase(u.type)) * 0.15;
+    // Support line contributes a fraction of its melee value.
+    p += SR.sum(res, u => roleVal(u.type, role)) * 0.15;
+    // Ranged fire: EVERY archer/teppō fires, from front OR support rank (Δ14).
+    let guns = 0;
+    for (const u of units) {
+      const d = DATA.units[u.type];
+      if (d.tags.includes("volley")) {                        // Teppō: odd rounds, dry only
+        if (!wet && round % 2 === 1) { p += 3 + (enemyPosture === "Deep" ? 1 : 0); guns++; }
+      } else if (d.tags.includes("ranged")) { p += 2; }       // Archers: every round
+    }
+    if (trait === "Teppō") p += guns;                          // Oda's disciplined gun line
     p += traitBonus(trait, units, role);
-    // posture
+    // Posture (Part X): Deep +1/support (max 3); Wide +2 shock, brittle.
     if (posture === "Wide") p += 2;
-    if (posture === "Deep") p -= 1;
+    if (posture === "Deep") p += Math.min(3, res.length);
     return p;
   };
 
@@ -111,6 +119,8 @@ SR.simulateBattle = function (ctx) {
     round++;
     let pA = engagedPower(A, frontA, "att", ctx.postureA, round, ctx.attTrait, ctx.postureD);
     let pD = engagedPower(D, frontD, "def", ctx.postureD, round, ctx.defTrait, ctx.postureA);
+    // Martial Prowess: once per battle, add Military Strength to one sector.
+    if (round === 1) { pA += msA; pD += msD; }
     // fatigue
     pA *= (1 - Math.min(0.4, (round - 1) * 0.08));
     pD *= (1 - Math.min(0.4, (round - 1) * 0.08));
@@ -183,8 +193,8 @@ SR.canReach = function (S, fromId, toId, cid) {
   const ps = S.provinces[fromId];
   if (ps.owner !== cid) return { ok: false, reason: "You don't hold that province." };
   if (SR.movableUnits(S, fromId).length === 0) return { ok: false, reason: "No units left to move here this season." };
-  // snowbound provinces sealed in winter
-  if (S.weather.winter && (SR.stat(fromId).feature === "snowbound" || SR.stat(toId).feature === "snowbound"))
+  // snowbound provinces sealed in winter (Echigo, Kaga, Mutsu, Shinano)
+  if (S.weather.winter && (SR.stat(fromId).snowbound || SR.stat(toId).snowbound))
     return { ok: false, reason: "Snowbound passes are sealed in Winter." };
   return { ok: true };
 };
@@ -305,6 +315,7 @@ SR.resolveField = function (S, fromId, toId, attArmy, attCid, defCid, o) {
     attUnits: attArmy, defUnits: defArmy,
     attCmd: o.attCmd, defCmd,
     attTrait: o.attTrait, defTrait,
+    attMS: S.clans[attCid].ms, defMS: defCid ? S.clans[defCid].ms : 0,
     terrain: SR.stat(toId).terrain, weather: S.weather,
     surprise: o.surprise, postureA: o.postureA, postureD: o.postureD,
     castleBonus: o.assault ? to.castle : 0, assault: !!o.assault,
@@ -362,7 +373,7 @@ SR.occupy = function (S, id, army, cid, fromId, bringDaimyo) {
   const ps = S.provinces[id]; const pd = SR.stat(id);
   ps.owner = cid; ps.units = army; ps.siege = null;
   ps.status = "occupied";
-  ps.unrest = SR.stat(id).koku + (pd.feature === "ikko" ? 2 : 0) + (ps.razed ? 2 : 0);
+  ps.unrest = SR.stat(id).koku + (pd.hard ? 2 : 0) + (ps.razed ? 2 : 0);
   const band = SR.honourBand(S.clans[cid].honour);
   ps.unrest += Math.max(0, band.revolt);
   ps.pacifying = false;
@@ -477,6 +488,7 @@ SR.siegeAssault = function (S, id, forced) {
     attCmd: sg.bringDaimyo ? S.clans[attCid].command : 1,
     defCmd: defDaimyoHere ? S.clans[defCid].command : 1,
     attTrait: S.clans[attCid].trait, defTrait: defCid ? S.clans[defCid].trait : "",
+    attMS: S.clans[attCid].ms, defMS: defCid ? S.clans[defCid].ms : 0,
     terrain: SR.stat(id).terrain, weather: S.weather,
     surprise: false, postureA: "Line", postureD: "Deep",
     castleBonus: ps.castle, assault: true,
@@ -516,7 +528,7 @@ SR.liftSiege = function (S, id) {
 SR.pacifyCost = function (S, id) {
   const pd = SR.stat(id); const ps = S.provinces[id];
   let cost = SR.stat(id).koku;
-  if (pd.feature === "ikko" || ps.razed) cost *= 2;
+  if (pd.hard || ps.razed) cost *= 2;
   return cost;
 };
 SR.doPacify = function (S, id, cid) {

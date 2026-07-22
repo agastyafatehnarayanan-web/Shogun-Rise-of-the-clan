@@ -1,11 +1,14 @@
 # 将軍 SHŌGUN — Rise of the Clans
 
 A playable digital adaptation of the tabletop grand-strategy game **“Shōgun: Rise of
-the Clans” (v1.0)** — war, trade, diplomacy, honour, and intrigue in the struggle to
-rule Sengoku-period Japan.
+the Clans — Master Edition v3.2”** — war, trade, diplomacy, honour, and intrigue in
+the struggle to rule Sengoku-period Japan.
 
 It runs entirely in the browser with **no build step and no dependencies** — just open
-a file. You lead one clan (or one retainer of a divided house); the rest are AI.
+a file. You lead one clan (or one retainer of a divided house); the rest are AI. The
+board is the full **24-province map of Nippon** from the rulebook — Kyūshū in the
+south-west, up the spine of Honshū, to Mutsu in the far north-east — with its eight
+sea zones, river borders and strait crossings.
 
 ![Shōgun: Rise of the Clans](assets/screenshot.png)
 
@@ -44,8 +47,8 @@ wins. There are six roads there, and two of them can end the game early:
 
 | Path | Engine |
 |------|--------|
-| **The Shōgun** (Conquest) | territory + most-territory majority + **sudden win**: hold Kyoto + 55% of Japan |
-| **The Merchant Prince** (Wealth) | markets/ports/mines + richest & most-income majorities + **sudden win**: 60 koban & 3+ ports/markets |
+| **The Shōgun** (Conquest) | territory + most-territory majority + **sudden win**: hold Kyoto + 14 of the 24 provinces |
+| **The Merchant Prince** (Wealth) | markets/ports/mines + richest & most-income majorities + **sudden win**: 30 koban & 3+ ports/markets |
 | **The Golden Age** (Culture) | temples, shrines, academies + most-culture majority |
 | **The Honoured Clan** (Honour) | your end-game Honour band scores −5 → +12, plus the highest-Honour majority |
 | **Imperial Legitimacy** (Politics) | climb Court Ranks at Kyoto to Sei-i Taishōgun (the Shōgunate) — gated by Honour |
@@ -59,7 +62,7 @@ Four seasons turn the clock and the food/weather engine:
 - **Summer** — full campaign season; typhoons threaten ships.
 - **Autumn** — the **harvest**: you collect the year’s koban and a rice bonus.
 - **Winter** — movement halved, **rice upkeep doubled**, guns useless in the cold,
-  snowbound provinces (Echigo) sealed. Keep your stores full.
+  the four snowbound provinces (Echigo, Kaga, Mutsu, Shinano) sealed. Keep your stores full.
 
 Each season is free-form: recruit, build, march & attack, pacify, run spies, do
 diplomacy, and petition the Court — limited only by your resources and one move per
@@ -102,13 +105,19 @@ is legitimate; it is simply priced.
 
 ## What’s modelled (and what’s simplified)
 
-Faithfully implemented: the 16-province map with terrain/castles/features, the
-season & weather clock, the rice+koban economy with supply lines and attrition, all
-seven unit types with their access rules, eight building types, the full
-engagement → field-battle → siege → pacification chain, the Honour track and its
-effects, the Imperial Court and Shōgunate, espionage (agents, embedding, ops, blowback),
-diplomacy (NAP / trade / alliance / marriage / vassalage) with anti-runaway pressure,
-Prestige scoring with majorities and sudden wins, and the complete Mode B succession game.
+Faithfully implemented: the full **24-province map** with each province’s koku,
+terrain, castle level, and feature; the eight sea zones, river borders and strait
+crossings; the six Great Houses rated on the rulebook’s **five axes** (Military
+Strength, Economy, Navy, Diplomacy, Intrigue) with their historical daimyō, homes,
+and identity units; the season & weather clock; the rice+koban economy with supply
+lines and attrition; all seven unit types with their access gates; eight building
+types; the full engagement → field-battle → siege → pacification chain (Military
+Strength driving morale and a once-per-battle prowess surge; archers and Teppō firing
+from the support rank); the Honour track and its effects; the Imperial Court and
+Shōgunate; espionage (agents, embedding, ops, blowback); diplomacy (NAP / trade /
+alliance / marriage / vassalage) with anti-runaway pressure; Prestige scoring with
+majorities and the two sudden-win thresholds (Kyoto + 14/24; 30 koban with 3 markets/
+ports); and the complete Mode B succession game.
 
 Deliberately streamlined for a single-player video game: it’s human-vs-AI (no
 hotseat/online); battles play as an interactive round-by-round summary with the key
@@ -136,4 +145,4 @@ build.js            # bundles everything into dist/shogun.html
 dist/shogun.html    # single-file playable build
 ```
 
-*A digital adaptation of the fan rulebook “Shōgun: Rise of the Clans, v1.0.” Built for play and study.*
+*A digital adaptation of the fan rulebook “Shōgun: Rise of the Clans — Master Edition v3.2.” Built for play and study.*
