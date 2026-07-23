@@ -40,13 +40,13 @@ DATA.terrain = {
 DATA.units = {
   ashigaru: {
     name: "Ashigaru", short: "足", atk: 2, def: 3, move: 1, upkeep: 1,
-    cost: { koban: 1, rice: 1 }, glyph: "足",
+    cost: { koban: 1 }, glyph: "足",
     tags: ["cheap", "deep"],
     desc: "Peasant levy. Cheap; the classic Deep block that soaks up a charge — but slow and narrow.",
   },
   samurai: {
     name: "Samurai", short: "侍", atk: 4, def: 4, move: 1, upkeep: 1,
-    cost: { koban: 3, rice: 1 }, glyph: "侍",
+    cost: { koban: 3 }, glyph: "侍",
     tags: ["morale"],
     desc: "Warrior nobility. High value, steadies morale (+1 each, max +3), strong in a long grind.",
   },
@@ -213,7 +213,7 @@ DATA.features = {
   ikko:          { name: "Ikkō-ikki Country", glyph: "☸", desc: "Hard to pacify; Snowbound — fortified temples reject any lord." },
   mountain_forts:{ name: "Mountain Forts", glyph: "⛰", desc: "Horse access; mountain forts; Snowbound." },
   east_road:     { name: "Crossroads of the East", glyph: "🛤", desc: "The road to Kyoto; +1 Koban/yr." },
-  hardy_levies:  { name: "Hardy Levies", glyph: "🪖", desc: "Ashigaru raised here cost only 1 rice (no koban)." },
+  hardy_levies:  { name: "Hardy Levies", glyph: "🪖", desc: "Ashigaru raised here are free — the levy answers the call." },
   tokaido:       { name: "Tōkaidō Road", glyph: "🛤", desc: "+1 Koban/yr along the great eastern highway." },
   great_plain:   { name: "The Great Eastern Plain", glyph: "🌾", desc: "Musashi's vast rice lands." },
   sacred_coast:  { name: "Sacred Coast", glyph: "⛩", desc: "Temples/Shrines here cost −1 and give +1 Prestige." },

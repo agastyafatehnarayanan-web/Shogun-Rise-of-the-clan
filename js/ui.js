@@ -505,7 +505,8 @@ UI.openMarch = function (fromId, toId) {
   const S = SR.state, cid = S.humanClan;
   const hostile = SR.isHostile(S, toId, cid);
   const movable = SR.movableUnits(S, fromId);
-  UI.marchState = { fromId, toId, sel: movable.map(u => u.uid), posture: "Line", surprise: false, bringDaimyo: false };
+  UI.marchState = { fromId, toId, sel: movable.map(u => u.uid), surprise: false, bringDaimyo: false,
+    plan: { formation: "Line", main: "C", reserve: true } };
   UI.renderMarch();
 };
 UI.renderMarch = function () {
@@ -527,9 +528,15 @@ UI.renderMarch = function () {
     ${hostile ? "Defenders: " + defenders + "." : ""}</div>
     <div class="field"><label>Commit which units (${m.sel.length}/${movable.length})</label><div class="unit-pick">${picks || "<span class='small'>none available</span>"}</div></div>
     ${hostile ? `
-    <div class="field"><label>Formation (posture)</label><div class="chips">
-      ${["Deep", "Line", "Wide"].map(p => `<span class="chip ${m.posture === p ? "sel" : ""}" data-post="${p}">${p}</span>`).join("")}
-      </div><div class="small">Deep resists shock (narrow) · Line balanced · Wide brings more to bear on open ground (brittle).</div></div>
+    <div class="field"><label>Battle plan — where to concentrate</label><div class="chips">
+      ${[["L", "◀ Left"], ["C", "▲ Centre"], ["R", "Right ▶"]].map(([k, t]) => `<span class="chip ${m.plan.main === k ? "sel" : ""}" data-main="${k}">${t}</span>`).join("")}
+      </div><div class="small">Your best troops & cavalry mass on the chosen flank — break it, then roll up their line.</div></div>
+    <div class="field"><label>Formation</label><div class="chips">
+      ${[["Line", "Line (balanced)"], ["Wide", "Wide (aggressive)"], ["Deep", "Deep (defensive)"]].map(([k, t]) => `<span class="chip ${m.plan.formation === k ? "sel" : ""}" data-form="${k}">${t}</span>`).join("")}
+      </div><div class="small">Deep resists a charge (narrow) · Line balanced · Wide overlaps but is brittle.</div></div>
+    <div class="field"><label>Reserve</label><div class="chips">
+      <span class="chip ${m.plan.reserve ? "sel" : ""}" data-res="1">Hold a reserve (reinforces a losing sector)</span>
+      <span class="chip ${!m.plan.reserve ? "sel" : ""}" data-res="0">Commit everything</span></div></div>
     <div class="field"><label>Manner of attack</label><div class="chips">
       <span class="chip ${!m.surprise ? "sel" : ""}" data-sur="0">Declared (Honour safe)</span>
       <span class="chip ${m.surprise ? "sel" : ""}" data-sur="1">Surprise (−2 Honour, ambush)</span></div></div>
@@ -548,7 +555,9 @@ UI.renderMarch = function () {
     if (m.sel.includes(uid)) m.sel = m.sel.filter(x => x !== uid); else m.sel.push(uid);
     UI.renderMarch();
   });
-  mb.querySelectorAll("[data-post]").forEach(el => el.onclick = () => { m.posture = el.dataset.post; UI.renderMarch(); });
+  mb.querySelectorAll("[data-main]").forEach(el => el.onclick = () => { m.plan.main = el.dataset.main; UI.renderMarch(); });
+  mb.querySelectorAll("[data-form]").forEach(el => el.onclick = () => { m.plan.formation = el.dataset.form; UI.renderMarch(); });
+  mb.querySelectorAll("[data-res]").forEach(el => el.onclick = () => { m.plan.reserve = el.dataset.res === "1"; UI.renderMarch(); });
   mb.querySelectorAll("[data-sur]").forEach(el => el.onclick = () => { m.surprise = el.dataset.sur === "1"; UI.renderMarch(); });
   mb.querySelectorAll("[data-daimyo]").forEach(el => el.onclick = () => { m.bringDaimyo = !m.bringDaimyo; UI.renderMarch(); });
   $("#march-go").onclick = () => GAME.humanMarch(m);
@@ -559,6 +568,8 @@ UI.renderMarch = function () {
  * ------------------------------------------------------------------- */
 UI.showBattleReport = function (report, onDone) {
   const S = SR.state;
+  // A live field battle the human is fighting — play it out on the dice board.
+  if (report && report.interactive && report.ctx) { UI.runBattle(report, onDone); return; }
   if (UI.audio) UI.audio.play(report && report.outcome === "occupied" ? "capture" : "battle");
   if (!report || !report.sim) {
     // walkover / siege-start / occupation
@@ -605,6 +616,230 @@ UI.showBattleReport = function (report, onDone) {
   };
 };
 
+/* ---------------------------------------------------------------------
+ * INTERACTIVE FIELD OF BATTLE — the player rolls a clickable d6 each round.
+ * Deterministic sector strength + one bounded die of friction per side.
+ * Deploy is already set from the March plan; each round you may commit the
+ * Reserve or wheel a broken flank, then roll to resolve. AI auto-rolls.
+ * ------------------------------------------------------------------- */
+UI.PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+UI.dieCells = function (n) {
+  if (!(n >= 1 && n <= 6)) return `<span class="d6-mark">✕</span>`;
+  let s = ""; for (let i = 0; i < 9; i++) s += `<span class="pip${UI.PIPS[n].includes(i) ? " on" : ""}"></span>`; return s;
+};
+
+UI.runBattle = function (report, onDone) {
+  const S = SR.state;
+  const ctx = report.ctx;
+  const B = SR.beginBattle(ctx);
+  const humanSide = B.humanSide, foeSide = humanSide === "att" ? "def" : "att";
+  const attName = report.attCid ? S.clans[report.attCid].name : "Attackers";
+  const defName = report.defCid ? S.clans[report.defCid].name : "Independents";
+  const sideName = (sk) => sk === "att" ? attName : defName;
+  const youName = sideName(humanSide), foeName = sideName(foeSide);
+  if (UI.audio) UI.audio.play("battle");
+
+  let phase = "choose";      // choose → shown → over
+  let order = null;          // pending order for this round
+  let rolling = false, finalized = false, closedHandled = false;
+  let lastRR = null;         // last round result
+  const narr = [];           // running narration (player perspective)
+
+  /* Sector strengths for the upcoming round (preview) or current state. */
+  function board(preview) {
+    if (preview) B.round++;
+    const rows = SR.SECTORS.map(sec => ({
+      sec, name: SR.sectorName[sec],
+      a: SR.sectorSS(B, "att", sec), d: SR.sectorSS(B, "def", sec),
+      aU: SR.secUnits(B, "att", sec), dU: SR.secUnits(B, "def", sec),
+    }));
+    if (preview) B.round--;
+    return rows;
+  }
+  function unitGlyphs(units) {
+    if (!units.length) return `<span class="bt-empty">—</span>`;
+    const by = {}; units.forEach(u => by[u.type] = (by[u.type] || 0) + 1);
+    return Object.keys(by).map(t => `<span class="bt-ug" style="background:${UI.unitColor(t)}" title="${esc(DATA.units[t].name)}">${DATA.units[t].glyph}${by[t] > 1 ? "<b>" + by[t] + "</b>" : ""}</span>`).join("");
+  }
+  function partsText(parts) {
+    const ks = Object.keys(parts); if (!ks.length) return "";
+    return ks.map(k => `${k} ${parts[k] >= 0 ? "+" : ""}${parts[k]}`).join(" · ");
+  }
+  function moraleBar(sk) {
+    const m = Math.max(0, Math.round(B.morale[sk])), m0 = B.morale0[sk] || 1;
+    const pct = Math.max(3, Math.min(100, Math.round(100 * m / m0)));
+    return `<div class="bt-mor ${sk === humanSide ? "you" : "foe"}">
+      <div class="bt-mor-l">${sk === humanSide ? "Your morale" : esc(foeName) + " morale"} <b>${m}</b></div>
+      <div class="bt-mor-bar"><span style="width:${pct}%"></span></div></div>`;
+  }
+  function sectorHTML(preview) {
+    const rows = board(preview);
+    const mainYou = B.side[humanSide].mainSec, mainFoe = B.side[foeSide].mainSec;
+    return `<div class="bt-board">` + rows.map(r => {
+      const attYou = humanSide === "att";
+      const topSS = attYou ? r.a : r.d, botSS = attYou ? r.d : r.a;
+      const topU = attYou ? r.aU : r.dU, botU = attYou ? r.dU : r.aU;
+      const isMainYou = r.sec === mainYou, isMainFoe = r.sec === mainFoe;
+      return `<div class="bt-sec">
+        <div class="bt-sec-h">${esc(r.name)}${isMainYou ? ' <span class="bt-tag you">your main</span>' : ""}${isMainFoe ? ' <span class="bt-tag foe">enemy main</span>' : ""}</div>
+        <div class="bt-side-row you">
+          <div class="bt-units">${unitGlyphs(topU)}</div>
+          <div class="bt-ss" title="${esc(partsText(topSS.parts))}">${topSS.ss}</div>
+        </div>
+        ${preview ? `<div class="bt-parts">${esc(partsText(topSS.parts))}</div>` : ""}
+        <div class="bt-clash">⚔</div>
+        <div class="bt-side-row foe">
+          <div class="bt-units">${unitGlyphs(botU)}</div>
+          <div class="bt-ss" title="${esc(partsText(botSS.parts))}">${botSS.ss}</div>
+        </div>
+      </div>`;
+    }).join("") + `</div>`;
+  }
+  function ordersHTML() {
+    const canRes = B.deploy[humanSide].RES.length > 0;
+    const canWheel = !!B.broke[humanSide];
+    if (!canRes && !canWheel) return `<div class="bt-orders"><span class="bto-label">The lines are locked — roll to resolve.</span></div>`;
+    let h = `<div class="bt-orders"><span class="bto-label">Orders:</span>
+      <span class="bto ${!order ? "sel" : ""}" data-ord="hold">Hold</span>`;
+    if (canRes) h += ["L", "C", "R"].map(s => `<span class="bto ${order && order.type === "reserve" && order.sector === s ? "sel" : ""}" data-ord="res:${s}">Reserve → ${esc(SR.sectorName[s])} (${B.deploy[humanSide].RES.length})</span>`).join("");
+    if (canWheel) h += `<span class="bto ${order && order.type === "wheel" ? "sel" : ""}" data-ord="wheel">Wheel broken flank → Centre</span>`;
+    return h + `</div>`;
+  }
+  function narrHTML() {
+    if (!narr.length) return "";
+    return `<div class="bt-log">` + narr.map(n => `<div class="bt-line ${n.cls}">${esc(n.text)}</div>`).join("") + `</div>`;
+  }
+
+  function finalize() {
+    if (finalized) return; finalized = true;
+    if (!B.done) { let g = 0; while (!B.done && g++ < 6) SR.stepBattle(B); }
+    const res = SR.battleResult(B);
+    report.interactive = false;
+    SR.applyFieldResult(S, report, res, report.apply);
+  }
+  function closeDone() {
+    closedHandled = true; UI._onClose = null; UI.closeModal();
+    UI.render();
+    if (report.pendingSeppuku) { UI.openSeppuku(report.pendingSeppuku, onDone); return; }
+    onDone && onDone();
+  }
+  const onClose = () => {   // X-button / stray close → finish the fight fairly
+    if (closedHandled) return; closedHandled = true;
+    finalize();
+    UI.render();
+    if (report.pendingSeppuku) { UI.openSeppuku(report.pendingSeppuku, onDone); return; }
+    onDone && onDone();
+  };
+
+  function render() {
+    const terr = report.terrain;
+    let body = `<div class="bt-wrap">
+      <div class="bt-morales">${moraleBar(humanSide)}${moraleBar(foeSide)}</div>
+      ${sectorHTML(phase === "choose")}`;
+
+    if (phase === "choose") {
+      body += ordersHTML() + `
+        <div class="bt-dice">
+          <div class="bt-die-wrap">
+            <div class="d6 you clickable" id="bt-roll" role="button" tabindex="0" title="Click to roll">${UI.dieCells(1)}</div>
+            <div class="bt-die-lbl">You — <b>click to roll</b></div>
+          </div>
+          <div class="bt-swords">⚔</div>
+          <div class="bt-die-wrap">
+            <div class="d6 foe" id="bt-foe"><span class="d6-mark">?</span></div>
+            <div class="bt-die-lbl">${esc(foeName)}</div>
+          </div>
+        </div>`;
+    } else {
+      const youDie = humanSide === "att" ? lastRR.dieA : lastRR.dieD;
+      const foeDie = humanSide === "att" ? lastRR.dieD : lastRR.dieA;
+      body += `<div class="bt-dice">
+          <div class="bt-die-wrap">
+            <div class="d6 you landed">${UI.dieCells(youDie)}</div>
+            <div class="bt-die-lbl">You rolled <b>${youDie >= 1 ? youDie : "—"}</b></div>
+          </div>
+          <div class="bt-swords">⚔</div>
+          <div class="bt-die-wrap">
+            <div class="d6 foe landed">${UI.dieCells(foeDie)}</div>
+            <div class="bt-die-lbl">${esc(foeName)} rolled <b>${foeDie >= 1 ? foeDie : "—"}</b></div>
+          </div>
+        </div>`;
+    }
+    body += narrHTML();
+
+    if (phase === "over") {
+      const humanWon = B.winner === humanSide;
+      body += `<div class="bt-outcome ${humanWon ? "win" : "lose"}">${humanWon ? "Victory!" : "The field is lost."}${B.routed === foeSide ? " The enemy routs!" : B.routed === humanSide ? " Your army breaks!" : ""}</div>
+        ${report.postText ? `<p class="small" style="margin-top:6px">${esc(report.postText)}</p>` : ""}
+        ${report.generalFate && report.generalFate !== "escape" ? `<p class="small"><b>A leader ${report.generalFate === "seppuku" ? "commits seppuku" : report.generalFate === "captured" ? "is captured" : "falls in the rout"}.</b></p>` : ""}
+        ${report.honourNote ? `<p class="warn small">${esc(report.honourNote)}</p>` : ""}`;
+    }
+    body += `</div>`;
+
+    let foot;
+    if (phase === "choose") foot = `<button class="ghost" id="bt-auto">Resolve automatically</button>`;
+    else if (phase === "shown") foot = B.done ? `<button class="primary" id="bt-next">See the outcome →</button>` : `<button class="primary" id="bt-next">Press the attack →</button>`;
+    else foot = `<button class="primary" id="bt-fin">Continue</button>`;
+
+    UI.modal({ title: `The Field of Battle — ${esc(terr)}${report.surprise ? " · surprise!" : ""}`, body, foot, onClose });
+
+    if (phase === "choose") {
+      const mb = $("#modal-body");
+      mb.querySelectorAll("[data-ord]").forEach(el => el.onclick = () => {
+        const v = el.dataset.ord;
+        if (v === "hold") order = null;
+        else if (v.startsWith("res:")) order = { type: "reserve", sector: v.slice(4) };
+        else if (v === "wheel") order = { type: "wheel", sector: B.broke[humanSide] };
+        render();
+      });
+      const die = $("#bt-roll");
+      const roll = () => doRoll();
+      die.onclick = roll;
+      die.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); roll(); } };
+      $("#bt-auto").onclick = () => { finalize(); phase = "over"; render(); };
+    } else if (phase === "shown") {
+      $("#bt-next").onclick = () => {
+        if (B.done) { finalize(); phase = "over"; }
+        else { order = null; phase = "choose"; }
+        render();
+      };
+    } else {
+      $("#bt-fin").onclick = closeDone;
+    }
+  }
+
+  function doRoll() {
+    if (rolling) return; rolling = true;
+    const die = $("#bt-roll");
+    if (die) { die.classList.add("rolling"); die.classList.remove("clickable"); }
+    if (UI.audio) UI.audio.play("battle");
+    let ticks = 0;
+    const iv = setInterval(() => { if (die) die.innerHTML = UI.dieCells(SR.rint(1, 6)); if (++ticks >= 8) clearInterval(iv); }, 70);
+    setTimeout(() => {
+      const v = SR.rint(1, 6);
+      SR.applyOrders(B, order ? { [humanSide]: order } : {});
+      const rr = SR.resolveRound(B, { [humanSide]: v });
+      lastRR = rr;
+      const youDie = humanSide === "att" ? rr.dieA : rr.dieD;
+      narr.push({ cls: "hd", text: `Round ${rr.round}${rr.ambush ? (humanSide === "att" ? " — you strike from ambush!" : " — ambushed!") : ""} — you rolled ${youDie >= 1 ? youDie : "—"}.` });
+      rr.results.forEach(x => {
+        const youWon = x.winner === humanSide;
+        const yourTot = humanSide === "att" ? x.totA : x.totD, foeTot = humanSide === "att" ? x.totD : x.totA;
+        let t = `${x.name}: your ${yourTot} vs their ${foeTot} — `;
+        if (x.margin === 0) t += "a bloody stand-off";
+        else t += youWon ? `you win by ${x.margin}` : `they win by ${x.margin}`;
+        if (x.loseCas) { const loserIsYou = (x.winner === "att" ? "def" : "att") === humanSide; t += `, ${loserIsYou ? "you lose" : "they lose"} ${x.loseCas}`; }
+        if (x.broke) t += youWon ? " — you shatter their line!" : " — your line breaks!";
+        narr.push({ cls: youWon ? "good" : "bad", text: t + (t.endsWith("!") ? "" : ".") });
+      });
+      rolling = false; order = null; phase = "shown";
+      render();
+    }, 640);
+  }
+
+  render();
+};
+
 UI.openSeppuku = function (pending, onDone) {
   const S = SR.state;
   UI.modal({
@@ -644,7 +879,7 @@ UI.openDefense = function (ev, onDone) {
     mb.querySelectorAll("[data-r]").forEach(el => el.onclick = () => { st.response = el.dataset.r; render(); });
     mb.querySelectorAll("[data-post]").forEach(el => el.onclick = () => { st.postureD = el.dataset.post; render(); });
     $("#def-go").onclick = () => {
-      const opts = Object.assign({}, ev.opts, { response: st.response, postureD: st.postureD });
+      const opts = Object.assign({}, ev.opts, { response: st.response, defPlan: { formation: st.postureD, main: "C", reserve: true }, interactive: true });
       const report = SR.executeAttack(S, ev.fromId, toId, ev.uids, ev.attCid, opts);
       UI.render();
       UI.showBattleReport(report, onDone);

@@ -31,156 +31,274 @@ SR.countType = (units, type) => units.filter(u => u.type === type).length;
  * returns { winner:'att'|'def', rounds:[...lines], attLosses, defLosses,
  *           attSurv, defSurv, routed:'att'|'def'|null }
  * ------------------------------------------------------------------- */
+/* =====================================================================
+ * THE FIELD OF BATTLE — three sectors (Left · Centre · Right) + a Reserve.
+ * Deterministic strength (skill) + ONE six-sided die of friction per side
+ * (bounded ±5, so a real edge reliably wins). Interactive: deploy your army,
+ * pick a formation per sector, and issue one order a round (commit the
+ * Reserve, or wheel a broken flank into the centre). Stateful API:
+ *   SR.beginBattle(ctx) → B ;  SR.stepBattle(B, order) → round result ;
+ *   SR.battleResult(B). SR.simulateBattle(ctx) auto-plays it (AI/siege/sea).
+ * ===================================================================== */
+SR.SECTORS = ["L", "C", "R"];
+SR.sectorName = { L: "Left flank", C: "Centre", R: "Right flank" };
+
+SR.roleVal = (type, role) => { const u = DATA.units[type]; return role === "def" ? u.def : u.atk; };
+
+/* A sensible default deployment: cavalry take a flank, guns + a strong line
+ * hold the centre, a reserve is kept back if the army is large enough. */
+SR.autoDeploy = function (units, role, terrain) {
+  const d = { L: [], C: [], R: [], RES: [], pL: "Line", pC: "Line", pR: "Line" };
+  const cav = units.filter(u => DATA.units[u.type].tags.includes("shock"));
+  const foot = units.filter(u => !DATA.units[u.type].tags.includes("shock"));
+  cav.forEach(u => d.R.push(u.uid));                       // horse on the right flank
+  const keepRes = units.length >= 6 ? 1 : 0;
+  const spread = ["C", "L", "C", "R", "C", "L", "R"];
+  let i = 0;
+  for (const u of foot) {
+    if (keepRes && d.RES.length < keepRes && i === 2) d.RES.push(u.uid);
+    else d[spread[i % spread.length]].push(u.uid);
+    i++;
+  }
+  if (d.C.length >= 2) d.pC = "Deep";                      // hold the centre deep
+  return d;
+};
+
+/* Build a deployment from a player's simple battle plan:
+ *   { formation:'Line'|'Wide'|'Deep', main:'L'|'C'|'R', reserve:bool }
+ * Cavalry and the main effort concentrate on `main`; formation sets postures;
+ * a reserve is held back if asked. A few high-impact choices, clearly mapped. */
+SR.planDeploy = function (units, role, terrain, plan) {
+  plan = plan || {};
+  const main = ["L", "C", "R"].includes(plan.main) ? plan.main : "C";
+  const form = ["Line", "Wide", "Deep"].includes(plan.formation) ? plan.formation : "Line";
+  const d = { L: [], C: [], R: [], RES: [], pL: form, pC: form, pR: form };
+  const others = ["L", "C", "R"].filter(s => s !== main);
+  const cav = units.filter(u => DATA.units[u.type].tags.includes("shock"));
+  const rest = units.filter(u => !DATA.units[u.type].tags.includes("shock"));
+  cav.forEach(u => d[main].push(u.uid));                   // horse spearheads the main effort
+  const reserveN = plan.reserve ? Math.max(1, Math.round(rest.length / 4)) : 0;
+  let a = 0;
+  for (const u of rest) {
+    if (d.RES.length < reserveN) { d.RES.push(u.uid); continue; }
+    d[a % 2 === 0 ? main : others[Math.floor(a / 2) % 2]].push(u.uid); a++;   // ~half to main
+  }
+  return d;
+};
+
+/* Units still alive in a side's sector. */
+SR.secUnits = function (B, sk, sec) {
+  const ids = B.deploy[sk][sec]; const live = B.side[sk].units;
+  return live.filter(u => ids.includes(u.uid));
+};
+
+/* Deterministic Sector Strength for one side in one sector this round. */
+SR.sectorSS = function (B, sk, sec) {
+  const S = B.side[sk], role = S.role, posture = B.deploy[sk]["p" + sec];
+  const units = SR.secUnits(B, sk, sec);
+  if (!units.length) return { ss: 0, front: 0, parts: {} };
+  const T = DATA.terrain[B.terrain];
+  let front = T.frontage; if (posture === "Deep") front = Math.max(1, front - 1); if (posture === "Wide") front += 1;
+  const sorted = [...units].sort((a, b) => SR.roleVal(b.type, role) - SR.roleVal(a.type, role));
+  const eng = sorted.slice(0, front), sup = sorted.slice(front);
+  const parts = {};
+  let ss = SR.sum(eng, u => SR.roleVal(u.type, role)); parts.line = ss;
+  // Attacker's initiative: they chose the ground and the moment to strike.
+  if (role === "att") { ss += 1; parts.assault = 1; }
+  // terrain
+  if (role === "def") { const t = T.defBonus; ss += t; if (t) parts.terrain = t; }
+  else if (B.terrain === "Mountain" || B.terrain === "River") { ss -= 2; parts.terrain = -2; }
+  // shock: charging cavalry, round 1, max 2, ½ in mtn/forest — but enemy guns/
+  // archers in this sector shoot the horses (each Teppō cancels 3, each Archer 1).
+  if (B.round <= 1) {
+    const cav = Math.min(2, units.filter(u => DATA.units[u.type].tags.includes("shock")).length);
+    if (cav) {
+      let sh = Math.round(cav * 3 * (["Mountain", "Forest"].includes(B.terrain) ? 0.5 : 1));
+      const foe = SR.secUnits(B, sk === "att" ? "def" : "att", sec);
+      const antiShock = foe.filter(u => u.type === "teppo").length * 3 + foe.filter(u => u.type === "archers").length;
+      sh = Math.max(0, sh - antiShock);
+      if (sh) { ss += sh; parts.shock = sh; } else if (antiShock) parts.shock = 0;
+    }
+  }
+  // ranged fire (front OR support): archers +2 always; teppō +3 odd rounds, dry
+  let fire = 0;
+  for (const u of units) { const d = DATA.units[u.type];
+    if (d.tags.includes("volley")) { if (!B.wet && B.round % 2 === 1) fire += 3 + (B.deploy[sk === "att" ? "def" : "att"]["p" + sec] === "Deep" ? 1 : 0); }
+    else if (d.tags.includes("ranged")) fire += 2; }
+  if (fire) { ss += fire; parts.fire = fire; if (S.trait === "Teppō") { ss += 1; parts.fire += 1; } }
+  // depth (Deep), infantry/defence traits
+  if (posture === "Deep" && sup.length) { const dep = Math.min(3, sup.length); ss += dep; parts.depth = dep; }
+  if (S.trait === "Infantry") { const inf = Math.round(0.5 * units.filter(u => ["ashigaru", "samurai"].includes(u.type)).length); if (inf) { ss += inf; parts.infantry = inf; } }
+  if (S.trait === "Siege & Defence" && role === "def") { ss += 2; parts.defence = 2; }
+  if (role === "def" && B.castleBonus && B.assault) { const cb = B.castleBonus * 2; ss += cb; parts.walls = cb; }
+  // leadership in the main-effort sector
+  if (sec === S.mainSec && S.cmd) { ss += S.cmd; parts.command = S.cmd; }
+  // wheel bonus (won a flank last round → roll into the centre)
+  if (B.wheel[sk] === sec) { ss += 4; parts.wheel = 4; }
+  // one-time Martial Prowess surge (round 1, on the main effort)
+  if (S.prowessSec === sec && B.round === 1 && S.ms) { ss += S.ms; parts.prowess = S.ms; }
+  // fatigue
+  const fat = Math.min(3, B.fatigue[sk][sec] || 0); if (fat) { ss -= fat; parts.fatigue = -fat; }
+  return { ss: Math.max(0, ss), front, parts, count: units.length };
+};
+
+SR.beginBattle = function (ctx) {
+  const mk = (units) => units.map(u => ({ ...u }));
+  const A = mk(ctx.attUnits), D = mk(ctx.defUnits);
+  const mainOf = (dep) => ["C", "L", "R"].sort((a, b) => dep[b].length - dep[a].length)[0];
+  const B = {
+    terrain: ctx.terrain, wet: !!(ctx.weather && (ctx.weather.rain || ctx.weather.winter)),
+    assault: !!ctx.assault, castleBonus: ctx.castleBonus || 0, surprise: !!ctx.surprise,
+    round: 0, done: false, winner: null, routed: null, log: [], humanSide: ctx.humanSide || null,
+    side: {
+      att: { units: A, role: "att", cmd: ctx.attCmd || 0, ms: ctx.attMS || 0, trait: ctx.attTrait || "", prowessUsed: false },
+      def: { units: D, role: "def", cmd: ctx.defCmd || 0, ms: ctx.defMS || 0, trait: ctx.defTrait || "", prowessUsed: false },
+    },
+    deploy: {
+      att: ctx.attDeploy || SR.autoDeploy(A, "att", ctx.terrain),
+      def: ctx.defDeploy || SR.autoDeploy(D, "def", ctx.terrain),
+    },
+    morale: {
+      att: 10 + Math.min(3, SR.countType(A, "samurai")) + (ctx.attCmd || 0) + (ctx.attMS || 0),
+      def: 10 + Math.min(3, SR.countType(D, "samurai")) + (ctx.defCmd || 0) + (ctx.defMS || 0) + (ctx.castleBonus || 0),
+    },
+    fatigue: { att: { L: 0, C: 0, R: 0 }, def: { L: 0, C: 0, R: 0 } },
+    wheel: { att: null, def: null }, broke: { att: null, def: null },
+    losses: { att: [], def: [] }, morale0: {},
+  };
+  ["att", "def"].forEach(sk => {
+    B.side[sk].mainSec = mainOf(B.deploy[sk]);
+    B.side[sk].prowessSec = B.side[sk].mainSec; // spend Prowess on the main effort
+  });
+  B.morale0 = { att: B.morale.att, def: B.morale.def };
+  if (B.surprise) B.morale.def -= 2;           // caught outside the walls
+  return B;
+};
+
+/* Start a round: advance the counter and apply each side's order (commit the
+ * Reserve, or wheel a broken flank). A missing side's order is auto-decided. */
+SR.applyOrders = function (B, orders) {
+  B.round++;
+  orders = orders || {};
+  const aiOrder = (sk) => {
+    if (B.broke[sk] && B.round > 1) return { type: "wheel", sector: B.broke[sk] };
+    if (B.deploy[sk].RES.length) return { type: "reserve", sector: B.side[sk].mainSec };
+    return { type: "hold" };
+  };
+  ["att", "def"].forEach(sk => {
+    const o = orders[sk] || aiOrder(sk);
+    if (o.type === "reserve" && B.deploy[sk].RES.length) {
+      const sec = SR.SECTORS.includes(o.sector) ? o.sector : B.side[sk].mainSec;
+      B.deploy[sk][sec] = B.deploy[sk][sec].concat(B.deploy[sk].RES);
+      B.deploy[sk].RES = []; B.fatigue[sk][sec] = 0;
+      B.log.push(`${sk === "att" ? "Attacker" : "Defender"} commits the Reserve to the ${SR.sectorName[sec]}.`);
+    } else if (o.type === "wheel" && B.broke[sk]) {
+      B.wheel[sk] = "C"; B.morale[sk === "att" ? "def" : "att"] -= 3;
+      B.log.push(`${sk === "att" ? "Attacker" : "Defender"} wheels from the broken ${SR.sectorName[B.broke[sk]]} into the centre!`);
+    }
+  });
+  B.broke = { att: null, def: null };
+};
+
+/* Read-only per-sector strengths for display (no dice, no mutation). */
+SR.previewSectors = function (B) {
+  return SR.SECTORS.map(sec => {
+    const a = SR.sectorSS(B, "att", sec), d = SR.sectorSS(B, "def", sec);
+    return { sector: sec, name: SR.sectorName[sec], attSS: a.ss, attParts: a.parts, attCount: a.count || 0,
+      defSS: d.ss, defParts: d.parts, defCount: d.count || 0 };
+  }).filter(x => x.attCount || x.defCount);
+};
+
+/* Resolve the round with ONE bounded d6 of friction per side (injected as
+ * dice:{att,def}, else rolled). The same die applies across the sectors. */
+SR.resolveRound = function (B, dice) {
+  const dieA = dice && dice.att != null ? dice.att : SR.rint(1, 6);
+  const ambush = B.surprise && B.round === 1;
+  const dieD = ambush ? 0 : (dice && dice.def != null ? dice.def : SR.rint(1, 6));
+  const results = [];
+  for (const sec of SR.SECTORS) {
+    const a = SR.sectorSS(B, "att", sec), d = SR.sectorSS(B, "def", sec);
+    if (!a.count && !d.count) continue;
+    const totA = a.ss + dieA, totD = d.ss + dieD;
+    const margin = Math.abs(totA - totD);
+    const winSide = totA >= totD ? "att" : "def", loseSide = winSide === "att" ? "def" : "att";
+    const loseUnits = SR.secUnits(B, loseSide, sec), winUnits = SR.secUnits(B, winSide, sec);
+    let loseCas = Math.min(Math.floor(margin / 4), loseUnits.length);
+    if (B.deploy[loseSide]["p" + sec] === "Deep") loseCas = Math.max(0, loseCas - 1);
+    const winCas = Math.min(Math.floor(margin / 8), 1, Math.max(0, winUnits.length - 1));
+    SR.removeSecCas(B, loseSide, sec, loseCas);
+    SR.removeSecCas(B, winSide, sec, winCas);
+    let mLoss = Math.min(margin, 6);
+    if (B.deploy[loseSide]["p" + sec] === "Deep") mLoss = Math.max(0, mLoss - 2);
+    if (margin > 0) B.morale[loseSide] -= mLoss;
+    B.fatigue.att[sec]++; B.fatigue.def[sec]++;
+    const lostFront = SR.secUnits(B, loseSide, sec).length === 0;
+    const broke = margin >= 8 || lostFront;
+    if (broke) { if (B.deploy[loseSide]["p" + sec] === "Wide") B.morale[loseSide] -= 2; B.broke[winSide] = sec; }
+    results.push({ sector: sec, name: SR.sectorName[sec], attSS: a.ss, defSS: d.ss, attParts: a.parts, defParts: d.parts,
+      dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke,
+      text: `${SR.sectorName[sec]}: ${totA} vs ${totD} — ${winSide === "att" ? "you" : "they"}` +
+            `${margin === 0 ? " hold, a bloody stand-off" : " win by " + margin + (loseCas ? `, ${loseSide === "att" ? "you lose" : "they lose"} ${loseCas}` : "")}` +
+            `${broke ? " — the line breaks!" : ""}.` });
+  }
+  B.wheel = { att: null, def: null };
+  B.surprise = false;
+  const aGone = B.side.att.units.length === 0, dGone = B.side.def.units.length === 0;
+  if (B.morale.def <= 0 || dGone) { B.done = true; B.winner = "att"; B.routed = "def"; }
+  else if (B.morale.att <= 0 || aGone) { B.done = true; B.winner = "def"; B.routed = "att"; }
+  else if (B.round >= 3) { B.done = true; B.winner = B.morale.att > B.morale.def + 0.5 ? "att" : "def"; }
+  return { round: B.round, dieA, dieD, ambush, results, morale: { ...B.morale }, done: B.done, winner: B.winner, routed: B.routed, log: B.log.slice() };
+};
+
+/* Convenience: advance one full round (orders + roll). Used by the auto
+ * resolver; the interactive UI calls applyOrders / previewSectors / resolveRound
+ * itself so the player can roll the die. */
+SR.stepBattle = function (B, params) {
+  if (B.done) return null;
+  params = params || {};
+  SR.applyOrders(B, params.orders);
+  return SR.resolveRound(B, params.dice);
+};
+
+SR.removeSecCas = function (B, sk, sec, n) {
+  if (n <= 0) return;
+  const inSec = SR.secUnits(B, sk, sec).sort((a, b) => SR.unitBase(a.type) - SR.unitBase(b.type));
+  for (let i = 0; i < n && i < inSec.length; i++) {
+    const u = inSec[i];
+    B.side[sk].units = B.side[sk].units.filter(x => x.uid !== u.uid);
+    B.deploy[sk][sec] = B.deploy[sk][sec].filter(id => id !== u.uid);
+    B.losses[sk].push(u);
+  }
+};
+
+/* Final result in the legacy shape the rest of the code expects. */
+SR.battleResult = function (B) {
+  // rout attrition + pursuit
+  const rout = (sk) => {
+    const arr = B.side[sk].units;
+    if (arr.length > 1) { const lose = Math.floor(arr.length / 3); for (let i = 0; i < lose; i++) B.losses[sk].push(arr.pop()); }
+  };
+  if (B.routed) rout(B.routed);
+  return {
+    winner: B.winner, routed: B.routed, rounds: B.rounds || [],
+    attLosses: B.losses.att, defLosses: B.losses.def,
+    attSurv: B.side.att.units, defSurv: B.side.def.units,
+    mA: Math.round(B.morale.att), mD: Math.round(B.morale.def),
+  };
+};
+
+/* Auto-play the whole battle (AI vs AI, sieges, sea, multiplayer). */
 SR.simulateBattle = function (ctx) {
-  const T = DATA.terrain[ctx.terrain];
-  const A = ctx.attUnits.map(u => ({ ...u }));
-  const D = ctx.defUnits.map(u => ({ ...u }));
+  const B = SR.beginBattle(ctx);
   const rounds = [];
-  const wet = ctx.weather && (ctx.weather.rain || ctx.weather.winter);
-
-  // Melee line value: attacker uses Atk, defender Def (Part X).
-  const roleVal = (type, role) => { const u = DATA.units[type]; return role === "def" ? u.def : u.atk; };
-
-  const traitBonus = (trait, units, role) => {
-    let b = 0;
-    if (trait === "Infantry") b += 0.5 * (SR.countType(units, "ashigaru") + SR.countType(units, "samurai"));
-    if (trait === "Siege & Defence" && role === "def") b += 2;
-    return b;
-  };
-
-  // Army Morale = 10 + Samurai (max +3) + Command + Military Strength (Part X).
-  const msA = ctx.attMS || 0, msD = ctx.defMS || 0;
-  let mA = 10 + Math.min(3, SR.countType(A, "samurai")) + ctx.attCmd + msA + traitBonus(ctx.attTrait, A, "att");
-  let mD = 10 + Math.min(3, SR.countType(D, "samurai")) + ctx.defCmd + msD + traitBonus(ctx.defTrait, D, "def")
-           + (ctx.castleBonus || 0) * 1.5;
-  const mA0 = mA, mD0 = mD;
-
-  const frontA = SR.frontage(ctx.terrain, ctx.postureA);
-  const frontD = SR.frontage(ctx.terrain, ctx.postureD);
-
-  const engagedPower = (units, front, role, posture, round, trait, enemyPosture) => {
-    // Melee line: sort by role value; the frontage best fight, rest support.
-    const sorted = [...units].sort((a, b) => roleVal(b.type, role) - roleVal(a.type, role));
-    const eng = sorted.slice(0, front), res = sorted.slice(front);
-    let p = 0;
-    for (const u of eng) {
-      const d = DATA.units[u.type];
-      let v = roleVal(u.type, role);
-      if (role === "def") v += T.defBonus * 0.5;
-      // Shock: charging cavalry on first contact, terrain-damped (Part X).
-      if (round === 1 && d.tags.includes("shock")) v += 3 * T.cavalry * (trait === "Cavalry" ? 1.3 : 1);
-      p += v;
-    }
-    // Support line contributes a fraction of its melee value.
-    p += SR.sum(res, u => roleVal(u.type, role)) * 0.15;
-    // Ranged fire: EVERY archer/teppō fires, from front OR support rank (Δ14).
-    let guns = 0;
-    for (const u of units) {
-      const d = DATA.units[u.type];
-      if (d.tags.includes("volley")) {                        // Teppō: odd rounds, dry only
-        if (!wet && round % 2 === 1) { p += 3 + (enemyPosture === "Deep" ? 1 : 0); guns++; }
-      } else if (d.tags.includes("ranged")) { p += 2; }       // Archers: every round
-    }
-    if (trait === "Teppō") p += guns;                          // Oda's disciplined gun line
-    p += traitBonus(trait, units, role);
-    // Posture (Part X): Deep +1/support (max 3); Wide +2 shock, brittle.
-    if (posture === "Wide") p += 2;
-    if (posture === "Deep") p += Math.min(3, res.length);
-    return p;
-  };
-
-  const applyCasualties = (units, n, posture) => {
-    // Deep posture soaks a hit
-    if (posture === "Deep") n = Math.max(0, n - 1);
-    const removed = [];
-    // lowest-value (ashigaru) die first — the shield of the line
-    const order = [...units].sort((a, b) => SR.unitBase(a.type) - SR.unitBase(b.type));
-    for (let i = 0; i < n && order.length; i++) {
-      const u = order.shift(); const idx = units.indexOf(u);
-      if (idx >= 0) { units.splice(idx, 1); removed.push(u); }
-    }
-    return removed;
-  };
-
-  const lossesA = [], lossesD = [];
-  let round = 0;
-
-  // Surprise ambush: a free preliminary round against a disordered foe.
-  if (ctx.surprise) {
-    const dmg = Math.max(1, Math.round(SR.armyPower(A, "atk") / 8));
-    const rem = applyCasualties(D, dmg, ctx.postureD);
-    rem.forEach(u => lossesD.push(u)); mD -= dmg * 1.5 + 2;
-    rounds.push({ n: "Ambush", att: 0, def: 0, text: `Surprise! A dawn ambush cuts down ${dmg} defending unit(s) before they form ranks.` });
+  let guard = 0;
+  while (!B.done && guard++ < 4) {
+    const r = SR.stepBattle(B);
+    rounds.push({ n: String(r.round), att: 0, def: 0, mA: Math.round(r.morale.att), mD: Math.round(r.morale.def),
+      text: r.results.map(x => x.text).join(" ") });
   }
-
-  const cap = (units) => Math.max(1, Math.ceil(units.length / 3) + 1);
-
-  while (round < 7 && A.length && D.length && mA > 0 && mD > 0) {
-    round++;
-    let pA = engagedPower(A, frontA, "att", ctx.postureA, round, ctx.attTrait, ctx.postureD);
-    let pD = engagedPower(D, frontD, "def", ctx.postureD, round, ctx.defTrait, ctx.postureA);
-    // Martial Prowess: once per battle, add Military Strength to one sector.
-    if (round === 1) { pA += msA; pD += msD; }
-    // fatigue
-    pA *= (1 - Math.min(0.4, (round - 1) * 0.08));
-    pD *= (1 - Math.min(0.4, (round - 1) * 0.08));
-    // friction — the chaos of the field. Wide enough that a small edge is an
-    // advantage, not a certainty; a large edge still tells.
-    pA *= 0.68 + Math.random() * 0.64;
-    pD *= 0.68 + Math.random() * 0.64;
-
-    const diff = Math.abs(pA - pD);
-    // The round-loser takes casualties scaled to the gap; morale erosion is
-    // what actually breaks an army. The winner bleeds after the loop (a grind
-    // cost), so a hard-fought victory still thins your ranks.
-    let casL = SR.clamp(Math.round(diff / 4), 0, 99);
-    const winner = pA >= pD ? "att" : "def";
-    let rA = [], rD = [];
-    if (winner === "att") {
-      casL = Math.min(casL, cap(D));
-      rD = applyCasualties(D, casL, ctx.postureD);
-      mD -= casL * 1.4 + 1.2 + diff * 0.2; mA -= 0.3;
-    } else {
-      casL = Math.min(casL, cap(A));
-      rA = applyCasualties(A, casL, ctx.postureA);
-      mA -= casL * 1.4 + 1.2 + diff * 0.2; mD -= 0.3;
-    }
-    rA.forEach(u => lossesA.push(u)); rD.forEach(u => lossesD.push(u));
-
-    rounds.push({
-      n: String(round),
-      att: Math.round(pA), def: Math.round(pD),
-      text: `Round ${round}: attacker ${Math.round(pA)} vs defender ${Math.round(pD)} — ` +
-            `${winner === "att" ? "defenders" : "attackers"} lose ${winner === "att" ? rD.length : rA.length}` +
-            `${(winner === "att" ? rA.length : rD.length) ? `, ${winner === "att" ? "attackers" : "defenders"} ${winner === "att" ? rA.length : rD.length}` : ""}.`,
-      mA: Math.round(mA), mD: Math.round(mD),
-    });
-  }
-
-  // Determine outcome
-  let winner, routed = null;
-  if (!D.length) { winner = "att"; routed = "def"; }
-  else if (!A.length) { winner = "def"; routed = "att"; }
-  else if (mD <= 0) { winner = "att"; routed = "def"; }
-  else if (mA <= 0) { winner = "def"; routed = "att"; }
-  else {
-    // no rout after the last round: the fresher, higher-morale army holds the
-    // ground; the defender wins a true tie (the attacker failed to break them).
-    winner = mA > mD + 0.5 ? "att" : "def";
-  }
-
-  // Grind cost: a long, contested fight thins even the victor's ranks.
-  const grind = Math.floor(round / 3);
-  if (grind > 0) {
-    if (winner === "att" && A.length > 1) applyCasualties(A, Math.min(grind, A.length - 1), ctx.postureA).forEach(u => lossesA.push(u));
-    if (winner === "def" && D.length > 1) applyCasualties(D, Math.min(grind, D.length - 1), ctx.postureD).forEach(u => lossesD.push(u));
-  }
-  // Rout & pursuit — a broken army flees, losing some more but leaving a remnant.
-  if (routed === "def" && D.length > 1) applyCasualties(D, Math.ceil(D.length * 0.2), ctx.postureD).forEach(u => lossesD.push(u));
-  if (routed === "att" && A.length > 1) applyCasualties(A, Math.ceil(A.length * 0.2), ctx.postureA).forEach(u => lossesA.push(u));
-
-  return { winner, routed, rounds, attLosses: lossesA, defLosses: lossesD,
-    attSurv: A, defSurv: D, mA: Math.round(mA), mD: Math.round(mD) };
+  B.rounds = rounds;
+  return SR.battleResult(B);
 };
 
 /* ---------------------------------------------------------------------
@@ -297,35 +415,78 @@ SR.executeAttack = function (S, fromId, toId, uids, attCid, opts) {
 
   // stand → field battle
   return SR.resolveField(S, fromId, toId, attArmy, attCid, defCid, {
-    surprise: !!opts.surprise, postureA: opts.postureA || "Line", postureD: opts.postureD || "Line",
+    surprise: !!opts.surprise, attPlan: opts.plan, defPlan: opts.defPlan,
     attCmd, attTrait, report, occupyOnWin: true, bringDaimyo,
+    interactive: !!opts.interactive,
   });
 };
 
-/* Resolve a field of battle and apply everything. */
-SR.resolveField = function (S, fromId, toId, attArmy, attCid, defCid, o) {
-  const to = S.provinces[toId], from = S.provinces[fromId];
+/* Build the battle context (deployments, command, traits, terrain, weather)
+ * for a field of battle. Shared by the auto resolver and the interactive UI. */
+SR.buildFieldCtx = function (S, fromId, toId, attArmy, attCid, defCid, o) {
+  const to = S.provinces[toId];
   const defArmy = to.units.slice();
   const defDaimyoHere = defCid && S.clans[defCid].daimyoAlive && S.clans[defCid].daimyoLoc === toId;
   const defCmd = defDaimyoHere ? S.clans[defCid].command : 1;
   const defTrait = defCid ? S.clans[defCid].trait : "";
-  const report = o.report || { lines: [] };
-
-  const res = SR.simulateBattle({
+  const terr = SR.stat(toId).terrain;
+  const humanSide = attCid === S.humanClan ? "att" : (defCid === S.humanClan ? "def" : null);
+  return {
     attUnits: attArmy, defUnits: defArmy,
     attCmd: o.attCmd, defCmd,
     attTrait: o.attTrait, defTrait,
     attMS: S.clans[attCid].ms, defMS: defCid ? S.clans[defCid].ms : 0,
-    terrain: SR.stat(toId).terrain, weather: S.weather,
-    surprise: o.surprise, postureA: o.postureA, postureD: o.postureD,
+    terrain: terr, weather: S.weather,
+    surprise: o.surprise,
+    // a player's battle plan concentrates their force; the AI auto-deploys
+    attDeploy: o.attPlan ? SR.planDeploy(attArmy, "att", terr, o.attPlan) : undefined,
+    defDeploy: o.defPlan ? SR.planDeploy(defArmy, "def", terr, o.defPlan) : undefined,
     castleBonus: o.assault ? to.castle : 0, assault: !!o.assault,
-  });
+    humanSide, defDaimyoHere,
+  };
+};
 
-  report.sim = res; report.terrain = SR.stat(toId).terrain;
+/* Resolve a field of battle and apply everything.
+ * If o.interactive (and a human is fighting) is set, the battle is NOT resolved
+ * here — instead the report carries the context so the UI can play it out
+ * round-by-round with a clickable die, then call SR.applyFieldResult itself. */
+SR.resolveField = function (S, fromId, toId, attArmy, attCid, defCid, o) {
+  const to = S.provinces[toId];
+  const defArmy = to.units.slice();
+  const report = o.report || { lines: [] };
+  const ctx = SR.buildFieldCtx(S, fromId, toId, attArmy, attCid, defCid, o);
+
+  report.terrain = SR.stat(toId).terrain;
   report.attStart = attArmy.length; report.defStart = defArmy.length;
 
+  const apply = { fromId, toId, attArmy, defArmy, attCid, defCid, o, defDaimyoHere: ctx.defDaimyoHere };
+
+  if (o.interactive && ctx.humanSide) {
+    // Hand the battle to the interactive screen: it will beginBattle(ctx),
+    // step through it with player-rolled dice, then finish via applyFieldResult.
+    report.interactive = true;
+    report.ctx = ctx;
+    report.apply = apply;
+    return report;
+  }
+
+  const res = SR.simulateBattle(ctx);
+  SR.applyFieldResult(S, report, res, apply);
+  return report;
+};
+
+/* Apply the outcome of a resolved field of battle (prestige, honour, leader
+ * fate, occupy / siege / retreat, logging). res is the legacy battleResult. */
+SR.applyFieldResult = function (S, report, res, a) {
+  const { fromId, toId, attArmy, defArmy, attCid, defCid, o, defDaimyoHere } = a;
+  const to = S.provinces[toId], from = S.provinces[fromId];
+  report.interactive = false;   // this report is resolved & applied now
+  report.sim = res;
+  report.attStart = report.attStart != null ? report.attStart : attArmy.length;
+  report.defStart = report.defStart != null ? report.defStart : defArmy.length;
+
   // remove attacker's committed units from origin (they marched)
-  from.units = from.units.filter(u => !attArmy.some(a => a.uid === u.uid));
+  from.units = from.units.filter(u => !attArmy.some(x => x.uid === u.uid));
 
   const survA = res.attSurv, survD = res.defSurv;
 

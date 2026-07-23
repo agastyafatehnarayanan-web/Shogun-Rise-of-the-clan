@@ -126,12 +126,12 @@ SR.runOp = function (S, cid, opKey, targetProv, kobanCommit) {
     SR.log(S, `${c.name}'s ${op.name} on ${SR.stat(targetProv).name} fails.`, "spy");
   }
 
-  if (exposed && targetIsClan) {
+  if (exposed && targetIsClan && targetClan !== cid) {
     const cost = op.risk ? 4 : 2;
     c.honour = SR.clamp(c.honour - cost, 0, 20);
-    S.clans[targetClan].relations[cid].attitude -= 40;
-    c.relations[targetClan] && (c.relations[targetClan].pact = "none");
-    S.clans[targetClan].relations[cid] && (S.clans[targetClan].relations[cid].pact = "none");
+    const rTC = S.clans[targetClan].relations[cid];       // may be absent — guard it
+    if (rTC) { rTC.attitude -= 40; rTC.pact = "none"; }
+    if (c.relations[targetClan]) c.relations[targetClan].pact = "none";
     if (targetClan === S.humanClan) c.prestige -= 1;
     report.lines.push(`Your hand is exposed! −${cost} Honour, and ${S.clans[targetClan].name} now has a casus belli.`);
     SR.log(S, `${c.name}'s spy is exposed by ${S.clans[targetClan].name} (−${cost} Honour).`, "bad");

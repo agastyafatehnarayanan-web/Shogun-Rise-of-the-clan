@@ -246,6 +246,71 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .outcome.lose{background:#efd0c6;color:#7a2c1c}
 .mbar{display:flex;gap:8px;font-size:11px;color:var(--ink2);justify-content:center;margin-top:2px}
 
+/* ---- Interactive field of battle (clickable dice) ---- */
+#modal-card:has(.bt-wrap){max-width:730px}
+.bt-wrap{display:flex;flex-direction:column;gap:10px}
+.bt-morales{display:flex;gap:12px}
+.bt-mor{flex:1}
+.bt-mor-l{font-size:11px;color:var(--ink2);margin-bottom:2px;display:flex;justify-content:space-between}
+.bt-mor-l b{color:var(--ink)}
+.bt-mor-bar{height:9px;background:#e6d7b4;border:1px solid var(--paper-line);border-radius:5px;overflow:hidden}
+.bt-mor-bar span{display:block;height:100%;background:linear-gradient(90deg,#7aa06a,#4f7a45);transition:width .4s ease}
+.bt-mor.foe .bt-mor-bar span{background:linear-gradient(90deg,#c07a5a,#a5432a)}
+.bt-board{display:flex;gap:8px;overflow-x:auto}
+.bt-sec{flex:1;min-width:118px;background:#f4ecd6;border:1px solid var(--paper-line);border-radius:8px;padding:7px 6px;text-align:center}
+.bt-sec-h{font-family:var(--font-h);font-size:12px;letter-spacing:.5px;margin-bottom:5px}
+.bt-tag{display:inline-block;font-size:9px;letter-spacing:0;padding:1px 5px;border-radius:8px;vertical-align:middle}
+.bt-tag.you{background:#2e5227;color:#e6f0dd}
+.bt-tag.foe{background:#7a2c1c;color:#f0dcd3}
+.bt-side-row{display:flex;align-items:center;justify-content:center;gap:6px;padding:3px 0}
+.bt-side-row.you{color:#2e5227}
+.bt-side-row.foe{color:#7a2c1c}
+.bt-units{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;flex:1;min-height:22px}
+.bt-ug{font-family:var(--font-h);min-width:20px;height:20px;border-radius:4px;color:#fff;display:inline-flex;
+  align-items:center;justify-content:center;font-size:12px;padding:0 3px}
+.bt-ug b{font-size:9px;margin-left:1px}
+.bt-empty{color:var(--ink2);opacity:.5}
+.bt-ss{font-family:var(--font-h);font-size:20px;font-weight:700;min-width:26px}
+.bt-parts{font-size:9.5px;color:var(--ink2);line-height:1.3;margin:1px 0 3px;min-height:12px}
+.bt-clash{color:var(--ink2);font-size:12px;margin:1px 0}
+.bt-dice{display:flex;align-items:center;justify-content:center;gap:20px;margin:4px 0}
+.bt-die-wrap{text-align:center}
+.bt-die-lbl{font-size:11px;color:var(--ink2);margin-top:5px}
+.bt-swords{font-family:var(--font-h);font-size:22px;color:var(--ink2)}
+.d6{width:64px;height:64px;border-radius:12px;background:linear-gradient(145deg,#fbf6e7,#e9dcbd);
+  border:1px solid #b49a63;box-shadow:0 3px 8px rgba(0,0,0,.25),inset 0 1px 3px rgba(255,255,255,.7);
+  display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:9px;gap:2px;margin:0 auto}
+.d6 .pip{align-self:center;justify-self:center;width:11px;height:11px;border-radius:50%;background:transparent}
+.d6 .pip.on{background:radial-gradient(circle at 35% 35%,#4a3d2c,#211a12)}
+.d6-mark{grid-column:1/4;grid-row:1/4;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-h);font-size:30px;color:var(--vermilion)}
+.d6.you{border-color:var(--gold2)}
+.d6.foe{opacity:.92}
+.d6.clickable{cursor:pointer;animation:d6pulse 1.6s ease-in-out infinite}
+.d6.clickable:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,.35)}
+@keyframes d6pulse{0%,100%{box-shadow:0 3px 8px rgba(0,0,0,.25),0 0 0 0 rgba(201,162,39,.5)}
+  50%{box-shadow:0 3px 8px rgba(0,0,0,.25),0 0 0 7px rgba(201,162,39,0)}}
+.d6.rolling{animation:d6roll .55s linear}
+@keyframes d6roll{0%{transform:rotate(0) scale(1)}25%{transform:rotate(160deg) scale(1.12)}
+  50%{transform:rotate(300deg) scale(.94)}75%{transform:rotate(430deg) scale(1.1)}100%{transform:rotate(540deg) scale(1)}}
+.d6.landed{animation:d6land .32s ease-out}
+@keyframes d6land{0%{transform:scale(1.25)}60%{transform:scale(.93)}100%{transform:scale(1)}}
+.bt-orders{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center}
+.bto-label{font-size:11px;color:var(--ink2);font-family:var(--font-h);letter-spacing:.5px}
+.bto{background:#f6eed9;border:1px solid var(--paper-line);border-radius:16px;padding:4px 10px;font-size:11.5px;cursor:pointer}
+.bto:hover{border-color:var(--gold)}
+.bto.sel{background:var(--ink);color:var(--washi);border-color:var(--ink)}
+.bt-log{max-height:148px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;background:#efe6cd;
+  border:1px solid var(--paper-line);border-radius:8px;padding:7px 9px}
+.bt-line{font-size:12px;padding:2px 4px;border-radius:4px}
+.bt-line.hd{font-family:var(--font-h);font-size:12.5px;color:var(--ink);border-bottom:1px solid var(--paper-line);
+  margin-top:3px;padding-bottom:2px}
+.bt-line.good{color:#2e5227}
+.bt-line.bad{color:#7a2c1c}
+.bt-outcome{font-family:var(--font-h);font-size:19px;text-align:center;padding:11px;border-radius:8px;margin-top:6px}
+.bt-outcome.win{background:#d6e6cf;color:#2e5227}
+.bt-outcome.lose{background:#efd0c6;color:#7a2c1c}
+
 /* scoring / game over */
 .score-row{display:flex;align-items:center;gap:9px;padding:8px 6px;border-bottom:1px solid var(--paper-line)}
 .score-row.win{background:#e9dcbd}
@@ -298,6 +363,77 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .net-in{background:#f6eed9;border:1px solid var(--paper-line);border-radius:7px;padding:9px 11px;
   font-size:13px;color:var(--ink);flex:1;min-width:0;font-family:var(--font-b)}
 .net-in:focus{outline:none;border-color:var(--vermilion)}
+
+/* =====================================================================
+ * PARCHMENT SIDEBAR — an aged-paper, historic restyle of the whole panel.
+ * Self-contained (CSS gradients + an inline SVG paper grain; no assets).
+ * ===================================================================== */
+#side{
+  position:relative; border-left:none;
+  box-shadow:inset 7px 0 20px rgba(74,49,16,.16), -3px 0 0 var(--gold2),
+             -7px 0 16px rgba(0,0,0,.45);
+  background:
+    radial-gradient(130% 70% at 100% 0%, rgba(150,108,52,.20), transparent 58%),
+    radial-gradient(120% 80% at 0% 100%, rgba(96,64,26,.20), transparent 55%),
+    linear-gradient(158deg, #efe6cb 0%, #e8d9b4 55%, #ddca9d 100%);
+  background-color:#e9dcb8;
+}
+#side::before{                                   /* faint paper grain */
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.16;
+  mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='180'%20height='180'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.9'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3C/filter%3E%3Crect%20width='180'%20height='180'%20filter='url(%23n)'/%3E%3C/svg%3E");
+}
+#side::after{                                    /* aged vignette at the edges */
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  box-shadow:inset 0 0 70px rgba(84,54,16,.26), inset 0 0 16px rgba(84,54,16,.22);
+}
+#tabs, #tab-body{position:relative;z-index:1}
+#tabs{
+  background:linear-gradient(#e2d1a6,#d5c08c);
+  border-bottom:2px solid var(--gold2);
+  box-shadow:0 2px 7px rgba(50,32,8,.22);
+}
+.tab{font-family:var(--font-h);color:#6a5732;letter-spacing:.4px;border-right-color:#c3ad78}
+.tab:hover{background:rgba(255,255,255,.28)}
+.tab.active{
+  background:linear-gradient(#f3ead0,#e9dcb8);color:var(--vermilion);
+  border-bottom:2px solid var(--vermilion);
+  box-shadow:inset 0 3px 7px rgba(255,255,255,.45);
+}
+/* ink-brush headings with a fading vermilion underline */
+.panel h3{
+  color:#2a1d0e;position:relative;padding-bottom:7px;margin-bottom:9px;
+  text-shadow:0 1px 0 rgba(255,255,255,.4);
+}
+.panel h3::after{
+  content:"";position:absolute;left:0;bottom:0;width:70px;height:2px;
+  background:linear-gradient(90deg,var(--vermilion),rgba(176,40,31,0));
+}
+/* decorative rule divider with a centre lozenge */
+.divider{height:0;background:none;border:0;margin:15px 0;position:relative;overflow:visible}
+.divider::before{
+  content:"";position:absolute;left:2px;right:2px;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold2) 18%,var(--gold2) 82%,transparent);
+}
+.divider::after{
+  content:"◆";position:absolute;left:50%;top:-8px;transform:translateX(-50%);
+  color:var(--gold2);font-size:10px;line-height:1;
+  background:radial-gradient(circle,#e9dcb8 60%,transparent 62%);padding:0 5px;
+}
+/* parchment action & list cards with a soft emboss */
+.act, .list-btn{
+  background:linear-gradient(#f7efd6,#ecdfbb);border:1px solid #c3ad78;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 1px 3px rgba(60,40,16,.16);
+}
+.act:hover:not(:disabled), .list-btn:hover:not(:disabled){
+  border-color:var(--vermilion);background:linear-gradient(#fff9ea,#f3e7c8);
+}
+.kv{border-bottom-color:#cdb98a}
+.tag{background:linear-gradient(#efe1bd,#e6d5ac);border-color:#c3ad78}
+/* themed scrollbar */
+#tab-body::-webkit-scrollbar{width:10px}
+#tab-body::-webkit-scrollbar-thumb{background:#c1a771;border-radius:6px;border:2px solid #e4d6b0}
+#tab-body::-webkit-scrollbar-track{background:#ded0a6}
 
 </style>
 <!-- ======================= TITLE SCREEN ======================= -->
@@ -475,13 +611,13 @@ DATA.terrain = {
 DATA.units = {
   ashigaru: {
     name: "Ashigaru", short: "足", atk: 2, def: 3, move: 1, upkeep: 1,
-    cost: { koban: 1, rice: 1 }, glyph: "足",
+    cost: { koban: 1 }, glyph: "足",
     tags: ["cheap", "deep"],
     desc: "Peasant levy. Cheap; the classic Deep block that soaks up a charge — but slow and narrow.",
   },
   samurai: {
     name: "Samurai", short: "侍", atk: 4, def: 4, move: 1, upkeep: 1,
-    cost: { koban: 3, rice: 1 }, glyph: "侍",
+    cost: { koban: 3 }, glyph: "侍",
     tags: ["morale"],
     desc: "Warrior nobility. High value, steadies morale (+1 each, max +3), strong in a long grind.",
   },
@@ -648,7 +784,7 @@ DATA.features = {
   ikko:          { name: "Ikkō-ikki Country", glyph: "☸", desc: "Hard to pacify; Snowbound — fortified temples reject any lord." },
   mountain_forts:{ name: "Mountain Forts", glyph: "⛰", desc: "Horse access; mountain forts; Snowbound." },
   east_road:     { name: "Crossroads of the East", glyph: "🛤", desc: "The road to Kyoto; +1 Koban/yr." },
-  hardy_levies:  { name: "Hardy Levies", glyph: "🪖", desc: "Ashigaru raised here cost only 1 rice (no koban)." },
+  hardy_levies:  { name: "Hardy Levies", glyph: "🪖", desc: "Ashigaru raised here are free — the levy answers the call." },
   tokaido:       { name: "Tōkaidō Road", glyph: "🛤", desc: "+1 Koban/yr along the great eastern highway." },
   great_plain:   { name: "The Great Eastern Plain", glyph: "🌾", desc: "Musashi's vast rice lands." },
   sacred_coast:  { name: "Sacred Coast", glyph: "⛩", desc: "Temples/Shrines here cost −1 and give +1 Prestige." },
@@ -858,7 +994,7 @@ SR.newGameA = function (opts) {
       daimyo: c.daimyo, command: c.command, trait: c.trait, lean: c.lean, identity: c.identity,
       ms: c.ms, ec: c.ec, nv: c.nv, dp: c.dp, in: c.in,
       isHuman: cid === opts.clan, isNeutral: false, alive: true,
-      koban: 6, rice: 12, honour: 10, prestige: 0, courtRank: 0,
+      koban: 9, rice: 12, honour: 10, prestige: 0, courtRank: 0,
       agents: [], spymaster: false,
       daimyoLoc: c.homes[0], daimyoAlive: true,
       relations: {}, marriages: [], vassals: [], overlord: null, treachery: 0,
@@ -1094,11 +1230,11 @@ if (typeof module !== "undefined") module.exports = SR;
 /* ---- province-level economic helpers ------------------------------ */
 SR.provKoban = function (S, id) {
   const ps = S.provinces[id], f = SR.stat(id).feature;
-  let k = 1; // base tax
+  let k = 2; // base tax per pacified province (raised so an army is affordable)
   const b = ps.buildings;
-  if (b.market) k += DATA.buildings.market.koban;   // +1
-  if (b.port) k += DATA.buildings.port.koban;       // +2 (0 if blockaded — naval simplified here)
-  if (ps.hasMine) k += 2;                           // worked silver/gold Feature
+  if (b.market) k += 2;                             // Market: a steady coin income
+  if (b.port) k += 3;                               // Port: the richest peaceful income
+  if (ps.hasMine) k += 3;                           // worked silver/gold Feature
   k += DATA.featureKoban[f] || 0;                   // free_port +2, crossroads/roads/foreign +1
   return k;
 };
@@ -1581,156 +1717,274 @@ SR.countType = (units, type) => units.filter(u => u.type === type).length;
  * returns { winner:'att'|'def', rounds:[...lines], attLosses, defLosses,
  *           attSurv, defSurv, routed:'att'|'def'|null }
  * ------------------------------------------------------------------- */
+/* =====================================================================
+ * THE FIELD OF BATTLE — three sectors (Left · Centre · Right) + a Reserve.
+ * Deterministic strength (skill) + ONE six-sided die of friction per side
+ * (bounded ±5, so a real edge reliably wins). Interactive: deploy your army,
+ * pick a formation per sector, and issue one order a round (commit the
+ * Reserve, or wheel a broken flank into the centre). Stateful API:
+ *   SR.beginBattle(ctx) → B ;  SR.stepBattle(B, order) → round result ;
+ *   SR.battleResult(B). SR.simulateBattle(ctx) auto-plays it (AI/siege/sea).
+ * ===================================================================== */
+SR.SECTORS = ["L", "C", "R"];
+SR.sectorName = { L: "Left flank", C: "Centre", R: "Right flank" };
+
+SR.roleVal = (type, role) => { const u = DATA.units[type]; return role === "def" ? u.def : u.atk; };
+
+/* A sensible default deployment: cavalry take a flank, guns + a strong line
+ * hold the centre, a reserve is kept back if the army is large enough. */
+SR.autoDeploy = function (units, role, terrain) {
+  const d = { L: [], C: [], R: [], RES: [], pL: "Line", pC: "Line", pR: "Line" };
+  const cav = units.filter(u => DATA.units[u.type].tags.includes("shock"));
+  const foot = units.filter(u => !DATA.units[u.type].tags.includes("shock"));
+  cav.forEach(u => d.R.push(u.uid));                       // horse on the right flank
+  const keepRes = units.length >= 6 ? 1 : 0;
+  const spread = ["C", "L", "C", "R", "C", "L", "R"];
+  let i = 0;
+  for (const u of foot) {
+    if (keepRes && d.RES.length < keepRes && i === 2) d.RES.push(u.uid);
+    else d[spread[i % spread.length]].push(u.uid);
+    i++;
+  }
+  if (d.C.length >= 2) d.pC = "Deep";                      // hold the centre deep
+  return d;
+};
+
+/* Build a deployment from a player's simple battle plan:
+ *   { formation:'Line'|'Wide'|'Deep', main:'L'|'C'|'R', reserve:bool }
+ * Cavalry and the main effort concentrate on `main`; formation sets postures;
+ * a reserve is held back if asked. A few high-impact choices, clearly mapped. */
+SR.planDeploy = function (units, role, terrain, plan) {
+  plan = plan || {};
+  const main = ["L", "C", "R"].includes(plan.main) ? plan.main : "C";
+  const form = ["Line", "Wide", "Deep"].includes(plan.formation) ? plan.formation : "Line";
+  const d = { L: [], C: [], R: [], RES: [], pL: form, pC: form, pR: form };
+  const others = ["L", "C", "R"].filter(s => s !== main);
+  const cav = units.filter(u => DATA.units[u.type].tags.includes("shock"));
+  const rest = units.filter(u => !DATA.units[u.type].tags.includes("shock"));
+  cav.forEach(u => d[main].push(u.uid));                   // horse spearheads the main effort
+  const reserveN = plan.reserve ? Math.max(1, Math.round(rest.length / 4)) : 0;
+  let a = 0;
+  for (const u of rest) {
+    if (d.RES.length < reserveN) { d.RES.push(u.uid); continue; }
+    d[a % 2 === 0 ? main : others[Math.floor(a / 2) % 2]].push(u.uid); a++;   // ~half to main
+  }
+  return d;
+};
+
+/* Units still alive in a side's sector. */
+SR.secUnits = function (B, sk, sec) {
+  const ids = B.deploy[sk][sec]; const live = B.side[sk].units;
+  return live.filter(u => ids.includes(u.uid));
+};
+
+/* Deterministic Sector Strength for one side in one sector this round. */
+SR.sectorSS = function (B, sk, sec) {
+  const S = B.side[sk], role = S.role, posture = B.deploy[sk]["p" + sec];
+  const units = SR.secUnits(B, sk, sec);
+  if (!units.length) return { ss: 0, front: 0, parts: {} };
+  const T = DATA.terrain[B.terrain];
+  let front = T.frontage; if (posture === "Deep") front = Math.max(1, front - 1); if (posture === "Wide") front += 1;
+  const sorted = [...units].sort((a, b) => SR.roleVal(b.type, role) - SR.roleVal(a.type, role));
+  const eng = sorted.slice(0, front), sup = sorted.slice(front);
+  const parts = {};
+  let ss = SR.sum(eng, u => SR.roleVal(u.type, role)); parts.line = ss;
+  // Attacker's initiative: they chose the ground and the moment to strike.
+  if (role === "att") { ss += 1; parts.assault = 1; }
+  // terrain
+  if (role === "def") { const t = T.defBonus; ss += t; if (t) parts.terrain = t; }
+  else if (B.terrain === "Mountain" || B.terrain === "River") { ss -= 2; parts.terrain = -2; }
+  // shock: charging cavalry, round 1, max 2, ½ in mtn/forest — but enemy guns/
+  // archers in this sector shoot the horses (each Teppō cancels 3, each Archer 1).
+  if (B.round <= 1) {
+    const cav = Math.min(2, units.filter(u => DATA.units[u.type].tags.includes("shock")).length);
+    if (cav) {
+      let sh = Math.round(cav * 3 * (["Mountain", "Forest"].includes(B.terrain) ? 0.5 : 1));
+      const foe = SR.secUnits(B, sk === "att" ? "def" : "att", sec);
+      const antiShock = foe.filter(u => u.type === "teppo").length * 3 + foe.filter(u => u.type === "archers").length;
+      sh = Math.max(0, sh - antiShock);
+      if (sh) { ss += sh; parts.shock = sh; } else if (antiShock) parts.shock = 0;
+    }
+  }
+  // ranged fire (front OR support): archers +2 always; teppō +3 odd rounds, dry
+  let fire = 0;
+  for (const u of units) { const d = DATA.units[u.type];
+    if (d.tags.includes("volley")) { if (!B.wet && B.round % 2 === 1) fire += 3 + (B.deploy[sk === "att" ? "def" : "att"]["p" + sec] === "Deep" ? 1 : 0); }
+    else if (d.tags.includes("ranged")) fire += 2; }
+  if (fire) { ss += fire; parts.fire = fire; if (S.trait === "Teppō") { ss += 1; parts.fire += 1; } }
+  // depth (Deep), infantry/defence traits
+  if (posture === "Deep" && sup.length) { const dep = Math.min(3, sup.length); ss += dep; parts.depth = dep; }
+  if (S.trait === "Infantry") { const inf = Math.round(0.5 * units.filter(u => ["ashigaru", "samurai"].includes(u.type)).length); if (inf) { ss += inf; parts.infantry = inf; } }
+  if (S.trait === "Siege & Defence" && role === "def") { ss += 2; parts.defence = 2; }
+  if (role === "def" && B.castleBonus && B.assault) { const cb = B.castleBonus * 2; ss += cb; parts.walls = cb; }
+  // leadership in the main-effort sector
+  if (sec === S.mainSec && S.cmd) { ss += S.cmd; parts.command = S.cmd; }
+  // wheel bonus (won a flank last round → roll into the centre)
+  if (B.wheel[sk] === sec) { ss += 4; parts.wheel = 4; }
+  // one-time Martial Prowess surge (round 1, on the main effort)
+  if (S.prowessSec === sec && B.round === 1 && S.ms) { ss += S.ms; parts.prowess = S.ms; }
+  // fatigue
+  const fat = Math.min(3, B.fatigue[sk][sec] || 0); if (fat) { ss -= fat; parts.fatigue = -fat; }
+  return { ss: Math.max(0, ss), front, parts, count: units.length };
+};
+
+SR.beginBattle = function (ctx) {
+  const mk = (units) => units.map(u => ({ ...u }));
+  const A = mk(ctx.attUnits), D = mk(ctx.defUnits);
+  const mainOf = (dep) => ["C", "L", "R"].sort((a, b) => dep[b].length - dep[a].length)[0];
+  const B = {
+    terrain: ctx.terrain, wet: !!(ctx.weather && (ctx.weather.rain || ctx.weather.winter)),
+    assault: !!ctx.assault, castleBonus: ctx.castleBonus || 0, surprise: !!ctx.surprise,
+    round: 0, done: false, winner: null, routed: null, log: [], humanSide: ctx.humanSide || null,
+    side: {
+      att: { units: A, role: "att", cmd: ctx.attCmd || 0, ms: ctx.attMS || 0, trait: ctx.attTrait || "", prowessUsed: false },
+      def: { units: D, role: "def", cmd: ctx.defCmd || 0, ms: ctx.defMS || 0, trait: ctx.defTrait || "", prowessUsed: false },
+    },
+    deploy: {
+      att: ctx.attDeploy || SR.autoDeploy(A, "att", ctx.terrain),
+      def: ctx.defDeploy || SR.autoDeploy(D, "def", ctx.terrain),
+    },
+    morale: {
+      att: 10 + Math.min(3, SR.countType(A, "samurai")) + (ctx.attCmd || 0) + (ctx.attMS || 0),
+      def: 10 + Math.min(3, SR.countType(D, "samurai")) + (ctx.defCmd || 0) + (ctx.defMS || 0) + (ctx.castleBonus || 0),
+    },
+    fatigue: { att: { L: 0, C: 0, R: 0 }, def: { L: 0, C: 0, R: 0 } },
+    wheel: { att: null, def: null }, broke: { att: null, def: null },
+    losses: { att: [], def: [] }, morale0: {},
+  };
+  ["att", "def"].forEach(sk => {
+    B.side[sk].mainSec = mainOf(B.deploy[sk]);
+    B.side[sk].prowessSec = B.side[sk].mainSec; // spend Prowess on the main effort
+  });
+  B.morale0 = { att: B.morale.att, def: B.morale.def };
+  if (B.surprise) B.morale.def -= 2;           // caught outside the walls
+  return B;
+};
+
+/* Start a round: advance the counter and apply each side's order (commit the
+ * Reserve, or wheel a broken flank). A missing side's order is auto-decided. */
+SR.applyOrders = function (B, orders) {
+  B.round++;
+  orders = orders || {};
+  const aiOrder = (sk) => {
+    if (B.broke[sk] && B.round > 1) return { type: "wheel", sector: B.broke[sk] };
+    if (B.deploy[sk].RES.length) return { type: "reserve", sector: B.side[sk].mainSec };
+    return { type: "hold" };
+  };
+  ["att", "def"].forEach(sk => {
+    const o = orders[sk] || aiOrder(sk);
+    if (o.type === "reserve" && B.deploy[sk].RES.length) {
+      const sec = SR.SECTORS.includes(o.sector) ? o.sector : B.side[sk].mainSec;
+      B.deploy[sk][sec] = B.deploy[sk][sec].concat(B.deploy[sk].RES);
+      B.deploy[sk].RES = []; B.fatigue[sk][sec] = 0;
+      B.log.push(`${sk === "att" ? "Attacker" : "Defender"} commits the Reserve to the ${SR.sectorName[sec]}.`);
+    } else if (o.type === "wheel" && B.broke[sk]) {
+      B.wheel[sk] = "C"; B.morale[sk === "att" ? "def" : "att"] -= 3;
+      B.log.push(`${sk === "att" ? "Attacker" : "Defender"} wheels from the broken ${SR.sectorName[B.broke[sk]]} into the centre!`);
+    }
+  });
+  B.broke = { att: null, def: null };
+};
+
+/* Read-only per-sector strengths for display (no dice, no mutation). */
+SR.previewSectors = function (B) {
+  return SR.SECTORS.map(sec => {
+    const a = SR.sectorSS(B, "att", sec), d = SR.sectorSS(B, "def", sec);
+    return { sector: sec, name: SR.sectorName[sec], attSS: a.ss, attParts: a.parts, attCount: a.count || 0,
+      defSS: d.ss, defParts: d.parts, defCount: d.count || 0 };
+  }).filter(x => x.attCount || x.defCount);
+};
+
+/* Resolve the round with ONE bounded d6 of friction per side (injected as
+ * dice:{att,def}, else rolled). The same die applies across the sectors. */
+SR.resolveRound = function (B, dice) {
+  const dieA = dice && dice.att != null ? dice.att : SR.rint(1, 6);
+  const ambush = B.surprise && B.round === 1;
+  const dieD = ambush ? 0 : (dice && dice.def != null ? dice.def : SR.rint(1, 6));
+  const results = [];
+  for (const sec of SR.SECTORS) {
+    const a = SR.sectorSS(B, "att", sec), d = SR.sectorSS(B, "def", sec);
+    if (!a.count && !d.count) continue;
+    const totA = a.ss + dieA, totD = d.ss + dieD;
+    const margin = Math.abs(totA - totD);
+    const winSide = totA >= totD ? "att" : "def", loseSide = winSide === "att" ? "def" : "att";
+    const loseUnits = SR.secUnits(B, loseSide, sec), winUnits = SR.secUnits(B, winSide, sec);
+    let loseCas = Math.min(Math.floor(margin / 4), loseUnits.length);
+    if (B.deploy[loseSide]["p" + sec] === "Deep") loseCas = Math.max(0, loseCas - 1);
+    const winCas = Math.min(Math.floor(margin / 8), 1, Math.max(0, winUnits.length - 1));
+    SR.removeSecCas(B, loseSide, sec, loseCas);
+    SR.removeSecCas(B, winSide, sec, winCas);
+    let mLoss = Math.min(margin, 6);
+    if (B.deploy[loseSide]["p" + sec] === "Deep") mLoss = Math.max(0, mLoss - 2);
+    if (margin > 0) B.morale[loseSide] -= mLoss;
+    B.fatigue.att[sec]++; B.fatigue.def[sec]++;
+    const lostFront = SR.secUnits(B, loseSide, sec).length === 0;
+    const broke = margin >= 8 || lostFront;
+    if (broke) { if (B.deploy[loseSide]["p" + sec] === "Wide") B.morale[loseSide] -= 2; B.broke[winSide] = sec; }
+    results.push({ sector: sec, name: SR.sectorName[sec], attSS: a.ss, defSS: d.ss, attParts: a.parts, defParts: d.parts,
+      dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke,
+      text: `${SR.sectorName[sec]}: ${totA} vs ${totD} — ${winSide === "att" ? "you" : "they"}` +
+            `${margin === 0 ? " hold, a bloody stand-off" : " win by " + margin + (loseCas ? `, ${loseSide === "att" ? "you lose" : "they lose"} ${loseCas}` : "")}` +
+            `${broke ? " — the line breaks!" : ""}.` });
+  }
+  B.wheel = { att: null, def: null };
+  B.surprise = false;
+  const aGone = B.side.att.units.length === 0, dGone = B.side.def.units.length === 0;
+  if (B.morale.def <= 0 || dGone) { B.done = true; B.winner = "att"; B.routed = "def"; }
+  else if (B.morale.att <= 0 || aGone) { B.done = true; B.winner = "def"; B.routed = "att"; }
+  else if (B.round >= 3) { B.done = true; B.winner = B.morale.att > B.morale.def + 0.5 ? "att" : "def"; }
+  return { round: B.round, dieA, dieD, ambush, results, morale: { ...B.morale }, done: B.done, winner: B.winner, routed: B.routed, log: B.log.slice() };
+};
+
+/* Convenience: advance one full round (orders + roll). Used by the auto
+ * resolver; the interactive UI calls applyOrders / previewSectors / resolveRound
+ * itself so the player can roll the die. */
+SR.stepBattle = function (B, params) {
+  if (B.done) return null;
+  params = params || {};
+  SR.applyOrders(B, params.orders);
+  return SR.resolveRound(B, params.dice);
+};
+
+SR.removeSecCas = function (B, sk, sec, n) {
+  if (n <= 0) return;
+  const inSec = SR.secUnits(B, sk, sec).sort((a, b) => SR.unitBase(a.type) - SR.unitBase(b.type));
+  for (let i = 0; i < n && i < inSec.length; i++) {
+    const u = inSec[i];
+    B.side[sk].units = B.side[sk].units.filter(x => x.uid !== u.uid);
+    B.deploy[sk][sec] = B.deploy[sk][sec].filter(id => id !== u.uid);
+    B.losses[sk].push(u);
+  }
+};
+
+/* Final result in the legacy shape the rest of the code expects. */
+SR.battleResult = function (B) {
+  // rout attrition + pursuit
+  const rout = (sk) => {
+    const arr = B.side[sk].units;
+    if (arr.length > 1) { const lose = Math.floor(arr.length / 3); for (let i = 0; i < lose; i++) B.losses[sk].push(arr.pop()); }
+  };
+  if (B.routed) rout(B.routed);
+  return {
+    winner: B.winner, routed: B.routed, rounds: B.rounds || [],
+    attLosses: B.losses.att, defLosses: B.losses.def,
+    attSurv: B.side.att.units, defSurv: B.side.def.units,
+    mA: Math.round(B.morale.att), mD: Math.round(B.morale.def),
+  };
+};
+
+/* Auto-play the whole battle (AI vs AI, sieges, sea, multiplayer). */
 SR.simulateBattle = function (ctx) {
-  const T = DATA.terrain[ctx.terrain];
-  const A = ctx.attUnits.map(u => ({ ...u }));
-  const D = ctx.defUnits.map(u => ({ ...u }));
+  const B = SR.beginBattle(ctx);
   const rounds = [];
-  const wet = ctx.weather && (ctx.weather.rain || ctx.weather.winter);
-
-  // Melee line value: attacker uses Atk, defender Def (Part X).
-  const roleVal = (type, role) => { const u = DATA.units[type]; return role === "def" ? u.def : u.atk; };
-
-  const traitBonus = (trait, units, role) => {
-    let b = 0;
-    if (trait === "Infantry") b += 0.5 * (SR.countType(units, "ashigaru") + SR.countType(units, "samurai"));
-    if (trait === "Siege & Defence" && role === "def") b += 2;
-    return b;
-  };
-
-  // Army Morale = 10 + Samurai (max +3) + Command + Military Strength (Part X).
-  const msA = ctx.attMS || 0, msD = ctx.defMS || 0;
-  let mA = 10 + Math.min(3, SR.countType(A, "samurai")) + ctx.attCmd + msA + traitBonus(ctx.attTrait, A, "att");
-  let mD = 10 + Math.min(3, SR.countType(D, "samurai")) + ctx.defCmd + msD + traitBonus(ctx.defTrait, D, "def")
-           + (ctx.castleBonus || 0) * 1.5;
-  const mA0 = mA, mD0 = mD;
-
-  const frontA = SR.frontage(ctx.terrain, ctx.postureA);
-  const frontD = SR.frontage(ctx.terrain, ctx.postureD);
-
-  const engagedPower = (units, front, role, posture, round, trait, enemyPosture) => {
-    // Melee line: sort by role value; the frontage best fight, rest support.
-    const sorted = [...units].sort((a, b) => roleVal(b.type, role) - roleVal(a.type, role));
-    const eng = sorted.slice(0, front), res = sorted.slice(front);
-    let p = 0;
-    for (const u of eng) {
-      const d = DATA.units[u.type];
-      let v = roleVal(u.type, role);
-      if (role === "def") v += T.defBonus * 0.5;
-      // Shock: charging cavalry on first contact, terrain-damped (Part X).
-      if (round === 1 && d.tags.includes("shock")) v += 3 * T.cavalry * (trait === "Cavalry" ? 1.3 : 1);
-      p += v;
-    }
-    // Support line contributes a fraction of its melee value.
-    p += SR.sum(res, u => roleVal(u.type, role)) * 0.15;
-    // Ranged fire: EVERY archer/teppō fires, from front OR support rank (Δ14).
-    let guns = 0;
-    for (const u of units) {
-      const d = DATA.units[u.type];
-      if (d.tags.includes("volley")) {                        // Teppō: odd rounds, dry only
-        if (!wet && round % 2 === 1) { p += 3 + (enemyPosture === "Deep" ? 1 : 0); guns++; }
-      } else if (d.tags.includes("ranged")) { p += 2; }       // Archers: every round
-    }
-    if (trait === "Teppō") p += guns;                          // Oda's disciplined gun line
-    p += traitBonus(trait, units, role);
-    // Posture (Part X): Deep +1/support (max 3); Wide +2 shock, brittle.
-    if (posture === "Wide") p += 2;
-    if (posture === "Deep") p += Math.min(3, res.length);
-    return p;
-  };
-
-  const applyCasualties = (units, n, posture) => {
-    // Deep posture soaks a hit
-    if (posture === "Deep") n = Math.max(0, n - 1);
-    const removed = [];
-    // lowest-value (ashigaru) die first — the shield of the line
-    const order = [...units].sort((a, b) => SR.unitBase(a.type) - SR.unitBase(b.type));
-    for (let i = 0; i < n && order.length; i++) {
-      const u = order.shift(); const idx = units.indexOf(u);
-      if (idx >= 0) { units.splice(idx, 1); removed.push(u); }
-    }
-    return removed;
-  };
-
-  const lossesA = [], lossesD = [];
-  let round = 0;
-
-  // Surprise ambush: a free preliminary round against a disordered foe.
-  if (ctx.surprise) {
-    const dmg = Math.max(1, Math.round(SR.armyPower(A, "atk") / 8));
-    const rem = applyCasualties(D, dmg, ctx.postureD);
-    rem.forEach(u => lossesD.push(u)); mD -= dmg * 1.5 + 2;
-    rounds.push({ n: "Ambush", att: 0, def: 0, text: `Surprise! A dawn ambush cuts down ${dmg} defending unit(s) before they form ranks.` });
+  let guard = 0;
+  while (!B.done && guard++ < 4) {
+    const r = SR.stepBattle(B);
+    rounds.push({ n: String(r.round), att: 0, def: 0, mA: Math.round(r.morale.att), mD: Math.round(r.morale.def),
+      text: r.results.map(x => x.text).join(" ") });
   }
-
-  const cap = (units) => Math.max(1, Math.ceil(units.length / 3) + 1);
-
-  while (round < 7 && A.length && D.length && mA > 0 && mD > 0) {
-    round++;
-    let pA = engagedPower(A, frontA, "att", ctx.postureA, round, ctx.attTrait, ctx.postureD);
-    let pD = engagedPower(D, frontD, "def", ctx.postureD, round, ctx.defTrait, ctx.postureA);
-    // Martial Prowess: once per battle, add Military Strength to one sector.
-    if (round === 1) { pA += msA; pD += msD; }
-    // fatigue
-    pA *= (1 - Math.min(0.4, (round - 1) * 0.08));
-    pD *= (1 - Math.min(0.4, (round - 1) * 0.08));
-    // friction — the chaos of the field. Wide enough that a small edge is an
-    // advantage, not a certainty; a large edge still tells.
-    pA *= 0.68 + Math.random() * 0.64;
-    pD *= 0.68 + Math.random() * 0.64;
-
-    const diff = Math.abs(pA - pD);
-    // The round-loser takes casualties scaled to the gap; morale erosion is
-    // what actually breaks an army. The winner bleeds after the loop (a grind
-    // cost), so a hard-fought victory still thins your ranks.
-    let casL = SR.clamp(Math.round(diff / 4), 0, 99);
-    const winner = pA >= pD ? "att" : "def";
-    let rA = [], rD = [];
-    if (winner === "att") {
-      casL = Math.min(casL, cap(D));
-      rD = applyCasualties(D, casL, ctx.postureD);
-      mD -= casL * 1.4 + 1.2 + diff * 0.2; mA -= 0.3;
-    } else {
-      casL = Math.min(casL, cap(A));
-      rA = applyCasualties(A, casL, ctx.postureA);
-      mA -= casL * 1.4 + 1.2 + diff * 0.2; mD -= 0.3;
-    }
-    rA.forEach(u => lossesA.push(u)); rD.forEach(u => lossesD.push(u));
-
-    rounds.push({
-      n: String(round),
-      att: Math.round(pA), def: Math.round(pD),
-      text: `Round ${round}: attacker ${Math.round(pA)} vs defender ${Math.round(pD)} — ` +
-            `${winner === "att" ? "defenders" : "attackers"} lose ${winner === "att" ? rD.length : rA.length}` +
-            `${(winner === "att" ? rA.length : rD.length) ? `, ${winner === "att" ? "attackers" : "defenders"} ${winner === "att" ? rA.length : rD.length}` : ""}.`,
-      mA: Math.round(mA), mD: Math.round(mD),
-    });
-  }
-
-  // Determine outcome
-  let winner, routed = null;
-  if (!D.length) { winner = "att"; routed = "def"; }
-  else if (!A.length) { winner = "def"; routed = "att"; }
-  else if (mD <= 0) { winner = "att"; routed = "def"; }
-  else if (mA <= 0) { winner = "def"; routed = "att"; }
-  else {
-    // no rout after the last round: the fresher, higher-morale army holds the
-    // ground; the defender wins a true tie (the attacker failed to break them).
-    winner = mA > mD + 0.5 ? "att" : "def";
-  }
-
-  // Grind cost: a long, contested fight thins even the victor's ranks.
-  const grind = Math.floor(round / 3);
-  if (grind > 0) {
-    if (winner === "att" && A.length > 1) applyCasualties(A, Math.min(grind, A.length - 1), ctx.postureA).forEach(u => lossesA.push(u));
-    if (winner === "def" && D.length > 1) applyCasualties(D, Math.min(grind, D.length - 1), ctx.postureD).forEach(u => lossesD.push(u));
-  }
-  // Rout & pursuit — a broken army flees, losing some more but leaving a remnant.
-  if (routed === "def" && D.length > 1) applyCasualties(D, Math.ceil(D.length * 0.2), ctx.postureD).forEach(u => lossesD.push(u));
-  if (routed === "att" && A.length > 1) applyCasualties(A, Math.ceil(A.length * 0.2), ctx.postureA).forEach(u => lossesA.push(u));
-
-  return { winner, routed, rounds, attLosses: lossesA, defLosses: lossesD,
-    attSurv: A, defSurv: D, mA: Math.round(mA), mD: Math.round(mD) };
+  B.rounds = rounds;
+  return SR.battleResult(B);
 };
 
 /* ---------------------------------------------------------------------
@@ -1847,35 +2101,78 @@ SR.executeAttack = function (S, fromId, toId, uids, attCid, opts) {
 
   // stand → field battle
   return SR.resolveField(S, fromId, toId, attArmy, attCid, defCid, {
-    surprise: !!opts.surprise, postureA: opts.postureA || "Line", postureD: opts.postureD || "Line",
+    surprise: !!opts.surprise, attPlan: opts.plan, defPlan: opts.defPlan,
     attCmd, attTrait, report, occupyOnWin: true, bringDaimyo,
+    interactive: !!opts.interactive,
   });
 };
 
-/* Resolve a field of battle and apply everything. */
-SR.resolveField = function (S, fromId, toId, attArmy, attCid, defCid, o) {
-  const to = S.provinces[toId], from = S.provinces[fromId];
+/* Build the battle context (deployments, command, traits, terrain, weather)
+ * for a field of battle. Shared by the auto resolver and the interactive UI. */
+SR.buildFieldCtx = function (S, fromId, toId, attArmy, attCid, defCid, o) {
+  const to = S.provinces[toId];
   const defArmy = to.units.slice();
   const defDaimyoHere = defCid && S.clans[defCid].daimyoAlive && S.clans[defCid].daimyoLoc === toId;
   const defCmd = defDaimyoHere ? S.clans[defCid].command : 1;
   const defTrait = defCid ? S.clans[defCid].trait : "";
-  const report = o.report || { lines: [] };
-
-  const res = SR.simulateBattle({
+  const terr = SR.stat(toId).terrain;
+  const humanSide = attCid === S.humanClan ? "att" : (defCid === S.humanClan ? "def" : null);
+  return {
     attUnits: attArmy, defUnits: defArmy,
     attCmd: o.attCmd, defCmd,
     attTrait: o.attTrait, defTrait,
     attMS: S.clans[attCid].ms, defMS: defCid ? S.clans[defCid].ms : 0,
-    terrain: SR.stat(toId).terrain, weather: S.weather,
-    surprise: o.surprise, postureA: o.postureA, postureD: o.postureD,
+    terrain: terr, weather: S.weather,
+    surprise: o.surprise,
+    // a player's battle plan concentrates their force; the AI auto-deploys
+    attDeploy: o.attPlan ? SR.planDeploy(attArmy, "att", terr, o.attPlan) : undefined,
+    defDeploy: o.defPlan ? SR.planDeploy(defArmy, "def", terr, o.defPlan) : undefined,
     castleBonus: o.assault ? to.castle : 0, assault: !!o.assault,
-  });
+    humanSide, defDaimyoHere,
+  };
+};
 
-  report.sim = res; report.terrain = SR.stat(toId).terrain;
+/* Resolve a field of battle and apply everything.
+ * If o.interactive (and a human is fighting) is set, the battle is NOT resolved
+ * here — instead the report carries the context so the UI can play it out
+ * round-by-round with a clickable die, then call SR.applyFieldResult itself. */
+SR.resolveField = function (S, fromId, toId, attArmy, attCid, defCid, o) {
+  const to = S.provinces[toId];
+  const defArmy = to.units.slice();
+  const report = o.report || { lines: [] };
+  const ctx = SR.buildFieldCtx(S, fromId, toId, attArmy, attCid, defCid, o);
+
+  report.terrain = SR.stat(toId).terrain;
   report.attStart = attArmy.length; report.defStart = defArmy.length;
 
+  const apply = { fromId, toId, attArmy, defArmy, attCid, defCid, o, defDaimyoHere: ctx.defDaimyoHere };
+
+  if (o.interactive && ctx.humanSide) {
+    // Hand the battle to the interactive screen: it will beginBattle(ctx),
+    // step through it with player-rolled dice, then finish via applyFieldResult.
+    report.interactive = true;
+    report.ctx = ctx;
+    report.apply = apply;
+    return report;
+  }
+
+  const res = SR.simulateBattle(ctx);
+  SR.applyFieldResult(S, report, res, apply);
+  return report;
+};
+
+/* Apply the outcome of a resolved field of battle (prestige, honour, leader
+ * fate, occupy / siege / retreat, logging). res is the legacy battleResult. */
+SR.applyFieldResult = function (S, report, res, a) {
+  const { fromId, toId, attArmy, defArmy, attCid, defCid, o, defDaimyoHere } = a;
+  const to = S.provinces[toId], from = S.provinces[fromId];
+  report.interactive = false;   // this report is resolved & applied now
+  report.sim = res;
+  report.attStart = report.attStart != null ? report.attStart : attArmy.length;
+  report.defStart = report.defStart != null ? report.defStart : defArmy.length;
+
   // remove attacker's committed units from origin (they marched)
-  from.units = from.units.filter(u => !attArmy.some(a => a.uid === u.uid));
+  from.units = from.units.filter(u => !attArmy.some(x => x.uid === u.uid));
 
   const survA = res.attSurv, survD = res.defSurv;
 
@@ -2234,12 +2531,12 @@ SR.runOp = function (S, cid, opKey, targetProv, kobanCommit) {
     SR.log(S, `${c.name}'s ${op.name} on ${SR.stat(targetProv).name} fails.`, "spy");
   }
 
-  if (exposed && targetIsClan) {
+  if (exposed && targetIsClan && targetClan !== cid) {
     const cost = op.risk ? 4 : 2;
     c.honour = SR.clamp(c.honour - cost, 0, 20);
-    S.clans[targetClan].relations[cid].attitude -= 40;
-    c.relations[targetClan] && (c.relations[targetClan].pact = "none");
-    S.clans[targetClan].relations[cid] && (S.clans[targetClan].relations[cid].pact = "none");
+    const rTC = S.clans[targetClan].relations[cid];       // may be absent — guard it
+    if (rTC) { rTC.attitude -= 40; rTC.pact = "none"; }
+    if (c.relations[targetClan]) c.relations[targetClan].pact = "none";
     if (targetClan === S.humanClan) c.prestige -= 1;
     report.lines.push(`Your hand is exposed! −${cost} Honour, and ${S.clans[targetClan].name} now has a casus belli.`);
     SR.log(S, `${c.name}'s spy is exposed by ${S.clans[targetClan].name} (−${cost} Honour).`, "bad");
@@ -2552,7 +2849,7 @@ SR.aiMilitary = function (S, cid) {
       };
       if (q.owner === S.humanClan) {
         // defer to the human to respond
-        S.pendingDefenses.push({ fromId, toId, uids, attCid: cid, opts });
+        (S.pendingDefenses || (S.pendingDefenses = [])).push({ fromId, toId, uids, attCid: cid, opts });
         movable.forEach(u => S.movedUnits[u.uid] = true);   // committed
       } else {
         SR.executeAttack(S, fromId, toId, uids, cid, opts);
@@ -3465,7 +3762,8 @@ UI.openMarch = function (fromId, toId) {
   const S = SR.state, cid = S.humanClan;
   const hostile = SR.isHostile(S, toId, cid);
   const movable = SR.movableUnits(S, fromId);
-  UI.marchState = { fromId, toId, sel: movable.map(u => u.uid), posture: "Line", surprise: false, bringDaimyo: false };
+  UI.marchState = { fromId, toId, sel: movable.map(u => u.uid), surprise: false, bringDaimyo: false,
+    plan: { formation: "Line", main: "C", reserve: true } };
   UI.renderMarch();
 };
 UI.renderMarch = function () {
@@ -3487,9 +3785,15 @@ UI.renderMarch = function () {
     ${hostile ? "Defenders: " + defenders + "." : ""}</div>
     <div class="field"><label>Commit which units (${m.sel.length}/${movable.length})</label><div class="unit-pick">${picks || "<span class='small'>none available</span>"}</div></div>
     ${hostile ? `
-    <div class="field"><label>Formation (posture)</label><div class="chips">
-      ${["Deep", "Line", "Wide"].map(p => `<span class="chip ${m.posture === p ? "sel" : ""}" data-post="${p}">${p}</span>`).join("")}
-      </div><div class="small">Deep resists shock (narrow) · Line balanced · Wide brings more to bear on open ground (brittle).</div></div>
+    <div class="field"><label>Battle plan — where to concentrate</label><div class="chips">
+      ${[["L", "◀ Left"], ["C", "▲ Centre"], ["R", "Right ▶"]].map(([k, t]) => `<span class="chip ${m.plan.main === k ? "sel" : ""}" data-main="${k}">${t}</span>`).join("")}
+      </div><div class="small">Your best troops & cavalry mass on the chosen flank — break it, then roll up their line.</div></div>
+    <div class="field"><label>Formation</label><div class="chips">
+      ${[["Line", "Line (balanced)"], ["Wide", "Wide (aggressive)"], ["Deep", "Deep (defensive)"]].map(([k, t]) => `<span class="chip ${m.plan.formation === k ? "sel" : ""}" data-form="${k}">${t}</span>`).join("")}
+      </div><div class="small">Deep resists a charge (narrow) · Line balanced · Wide overlaps but is brittle.</div></div>
+    <div class="field"><label>Reserve</label><div class="chips">
+      <span class="chip ${m.plan.reserve ? "sel" : ""}" data-res="1">Hold a reserve (reinforces a losing sector)</span>
+      <span class="chip ${!m.plan.reserve ? "sel" : ""}" data-res="0">Commit everything</span></div></div>
     <div class="field"><label>Manner of attack</label><div class="chips">
       <span class="chip ${!m.surprise ? "sel" : ""}" data-sur="0">Declared (Honour safe)</span>
       <span class="chip ${m.surprise ? "sel" : ""}" data-sur="1">Surprise (−2 Honour, ambush)</span></div></div>
@@ -3508,7 +3812,9 @@ UI.renderMarch = function () {
     if (m.sel.includes(uid)) m.sel = m.sel.filter(x => x !== uid); else m.sel.push(uid);
     UI.renderMarch();
   });
-  mb.querySelectorAll("[data-post]").forEach(el => el.onclick = () => { m.posture = el.dataset.post; UI.renderMarch(); });
+  mb.querySelectorAll("[data-main]").forEach(el => el.onclick = () => { m.plan.main = el.dataset.main; UI.renderMarch(); });
+  mb.querySelectorAll("[data-form]").forEach(el => el.onclick = () => { m.plan.formation = el.dataset.form; UI.renderMarch(); });
+  mb.querySelectorAll("[data-res]").forEach(el => el.onclick = () => { m.plan.reserve = el.dataset.res === "1"; UI.renderMarch(); });
   mb.querySelectorAll("[data-sur]").forEach(el => el.onclick = () => { m.surprise = el.dataset.sur === "1"; UI.renderMarch(); });
   mb.querySelectorAll("[data-daimyo]").forEach(el => el.onclick = () => { m.bringDaimyo = !m.bringDaimyo; UI.renderMarch(); });
   $("#march-go").onclick = () => GAME.humanMarch(m);
@@ -3519,6 +3825,8 @@ UI.renderMarch = function () {
  * ------------------------------------------------------------------- */
 UI.showBattleReport = function (report, onDone) {
   const S = SR.state;
+  // A live field battle the human is fighting — play it out on the dice board.
+  if (report && report.interactive && report.ctx) { UI.runBattle(report, onDone); return; }
   if (UI.audio) UI.audio.play(report && report.outcome === "occupied" ? "capture" : "battle");
   if (!report || !report.sim) {
     // walkover / siege-start / occupation
@@ -3565,6 +3873,230 @@ UI.showBattleReport = function (report, onDone) {
   };
 };
 
+/* ---------------------------------------------------------------------
+ * INTERACTIVE FIELD OF BATTLE — the player rolls a clickable d6 each round.
+ * Deterministic sector strength + one bounded die of friction per side.
+ * Deploy is already set from the March plan; each round you may commit the
+ * Reserve or wheel a broken flank, then roll to resolve. AI auto-rolls.
+ * ------------------------------------------------------------------- */
+UI.PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+UI.dieCells = function (n) {
+  if (!(n >= 1 && n <= 6)) return `<span class="d6-mark">✕</span>`;
+  let s = ""; for (let i = 0; i < 9; i++) s += `<span class="pip${UI.PIPS[n].includes(i) ? " on" : ""}"></span>`; return s;
+};
+
+UI.runBattle = function (report, onDone) {
+  const S = SR.state;
+  const ctx = report.ctx;
+  const B = SR.beginBattle(ctx);
+  const humanSide = B.humanSide, foeSide = humanSide === "att" ? "def" : "att";
+  const attName = report.attCid ? S.clans[report.attCid].name : "Attackers";
+  const defName = report.defCid ? S.clans[report.defCid].name : "Independents";
+  const sideName = (sk) => sk === "att" ? attName : defName;
+  const youName = sideName(humanSide), foeName = sideName(foeSide);
+  if (UI.audio) UI.audio.play("battle");
+
+  let phase = "choose";      // choose → shown → over
+  let order = null;          // pending order for this round
+  let rolling = false, finalized = false, closedHandled = false;
+  let lastRR = null;         // last round result
+  const narr = [];           // running narration (player perspective)
+
+  /* Sector strengths for the upcoming round (preview) or current state. */
+  function board(preview) {
+    if (preview) B.round++;
+    const rows = SR.SECTORS.map(sec => ({
+      sec, name: SR.sectorName[sec],
+      a: SR.sectorSS(B, "att", sec), d: SR.sectorSS(B, "def", sec),
+      aU: SR.secUnits(B, "att", sec), dU: SR.secUnits(B, "def", sec),
+    }));
+    if (preview) B.round--;
+    return rows;
+  }
+  function unitGlyphs(units) {
+    if (!units.length) return `<span class="bt-empty">—</span>`;
+    const by = {}; units.forEach(u => by[u.type] = (by[u.type] || 0) + 1);
+    return Object.keys(by).map(t => `<span class="bt-ug" style="background:${UI.unitColor(t)}" title="${esc(DATA.units[t].name)}">${DATA.units[t].glyph}${by[t] > 1 ? "<b>" + by[t] + "</b>" : ""}</span>`).join("");
+  }
+  function partsText(parts) {
+    const ks = Object.keys(parts); if (!ks.length) return "";
+    return ks.map(k => `${k} ${parts[k] >= 0 ? "+" : ""}${parts[k]}`).join(" · ");
+  }
+  function moraleBar(sk) {
+    const m = Math.max(0, Math.round(B.morale[sk])), m0 = B.morale0[sk] || 1;
+    const pct = Math.max(3, Math.min(100, Math.round(100 * m / m0)));
+    return `<div class="bt-mor ${sk === humanSide ? "you" : "foe"}">
+      <div class="bt-mor-l">${sk === humanSide ? "Your morale" : esc(foeName) + " morale"} <b>${m}</b></div>
+      <div class="bt-mor-bar"><span style="width:${pct}%"></span></div></div>`;
+  }
+  function sectorHTML(preview) {
+    const rows = board(preview);
+    const mainYou = B.side[humanSide].mainSec, mainFoe = B.side[foeSide].mainSec;
+    return `<div class="bt-board">` + rows.map(r => {
+      const attYou = humanSide === "att";
+      const topSS = attYou ? r.a : r.d, botSS = attYou ? r.d : r.a;
+      const topU = attYou ? r.aU : r.dU, botU = attYou ? r.dU : r.aU;
+      const isMainYou = r.sec === mainYou, isMainFoe = r.sec === mainFoe;
+      return `<div class="bt-sec">
+        <div class="bt-sec-h">${esc(r.name)}${isMainYou ? ' <span class="bt-tag you">your main</span>' : ""}${isMainFoe ? ' <span class="bt-tag foe">enemy main</span>' : ""}</div>
+        <div class="bt-side-row you">
+          <div class="bt-units">${unitGlyphs(topU)}</div>
+          <div class="bt-ss" title="${esc(partsText(topSS.parts))}">${topSS.ss}</div>
+        </div>
+        ${preview ? `<div class="bt-parts">${esc(partsText(topSS.parts))}</div>` : ""}
+        <div class="bt-clash">⚔</div>
+        <div class="bt-side-row foe">
+          <div class="bt-units">${unitGlyphs(botU)}</div>
+          <div class="bt-ss" title="${esc(partsText(botSS.parts))}">${botSS.ss}</div>
+        </div>
+      </div>`;
+    }).join("") + `</div>`;
+  }
+  function ordersHTML() {
+    const canRes = B.deploy[humanSide].RES.length > 0;
+    const canWheel = !!B.broke[humanSide];
+    if (!canRes && !canWheel) return `<div class="bt-orders"><span class="bto-label">The lines are locked — roll to resolve.</span></div>`;
+    let h = `<div class="bt-orders"><span class="bto-label">Orders:</span>
+      <span class="bto ${!order ? "sel" : ""}" data-ord="hold">Hold</span>`;
+    if (canRes) h += ["L", "C", "R"].map(s => `<span class="bto ${order && order.type === "reserve" && order.sector === s ? "sel" : ""}" data-ord="res:${s}">Reserve → ${esc(SR.sectorName[s])} (${B.deploy[humanSide].RES.length})</span>`).join("");
+    if (canWheel) h += `<span class="bto ${order && order.type === "wheel" ? "sel" : ""}" data-ord="wheel">Wheel broken flank → Centre</span>`;
+    return h + `</div>`;
+  }
+  function narrHTML() {
+    if (!narr.length) return "";
+    return `<div class="bt-log">` + narr.map(n => `<div class="bt-line ${n.cls}">${esc(n.text)}</div>`).join("") + `</div>`;
+  }
+
+  function finalize() {
+    if (finalized) return; finalized = true;
+    if (!B.done) { let g = 0; while (!B.done && g++ < 6) SR.stepBattle(B); }
+    const res = SR.battleResult(B);
+    report.interactive = false;
+    SR.applyFieldResult(S, report, res, report.apply);
+  }
+  function closeDone() {
+    closedHandled = true; UI._onClose = null; UI.closeModal();
+    UI.render();
+    if (report.pendingSeppuku) { UI.openSeppuku(report.pendingSeppuku, onDone); return; }
+    onDone && onDone();
+  }
+  const onClose = () => {   // X-button / stray close → finish the fight fairly
+    if (closedHandled) return; closedHandled = true;
+    finalize();
+    UI.render();
+    if (report.pendingSeppuku) { UI.openSeppuku(report.pendingSeppuku, onDone); return; }
+    onDone && onDone();
+  };
+
+  function render() {
+    const terr = report.terrain;
+    let body = `<div class="bt-wrap">
+      <div class="bt-morales">${moraleBar(humanSide)}${moraleBar(foeSide)}</div>
+      ${sectorHTML(phase === "choose")}`;
+
+    if (phase === "choose") {
+      body += ordersHTML() + `
+        <div class="bt-dice">
+          <div class="bt-die-wrap">
+            <div class="d6 you clickable" id="bt-roll" role="button" tabindex="0" title="Click to roll">${UI.dieCells(1)}</div>
+            <div class="bt-die-lbl">You — <b>click to roll</b></div>
+          </div>
+          <div class="bt-swords">⚔</div>
+          <div class="bt-die-wrap">
+            <div class="d6 foe" id="bt-foe"><span class="d6-mark">?</span></div>
+            <div class="bt-die-lbl">${esc(foeName)}</div>
+          </div>
+        </div>`;
+    } else {
+      const youDie = humanSide === "att" ? lastRR.dieA : lastRR.dieD;
+      const foeDie = humanSide === "att" ? lastRR.dieD : lastRR.dieA;
+      body += `<div class="bt-dice">
+          <div class="bt-die-wrap">
+            <div class="d6 you landed">${UI.dieCells(youDie)}</div>
+            <div class="bt-die-lbl">You rolled <b>${youDie >= 1 ? youDie : "—"}</b></div>
+          </div>
+          <div class="bt-swords">⚔</div>
+          <div class="bt-die-wrap">
+            <div class="d6 foe landed">${UI.dieCells(foeDie)}</div>
+            <div class="bt-die-lbl">${esc(foeName)} rolled <b>${foeDie >= 1 ? foeDie : "—"}</b></div>
+          </div>
+        </div>`;
+    }
+    body += narrHTML();
+
+    if (phase === "over") {
+      const humanWon = B.winner === humanSide;
+      body += `<div class="bt-outcome ${humanWon ? "win" : "lose"}">${humanWon ? "Victory!" : "The field is lost."}${B.routed === foeSide ? " The enemy routs!" : B.routed === humanSide ? " Your army breaks!" : ""}</div>
+        ${report.postText ? `<p class="small" style="margin-top:6px">${esc(report.postText)}</p>` : ""}
+        ${report.generalFate && report.generalFate !== "escape" ? `<p class="small"><b>A leader ${report.generalFate === "seppuku" ? "commits seppuku" : report.generalFate === "captured" ? "is captured" : "falls in the rout"}.</b></p>` : ""}
+        ${report.honourNote ? `<p class="warn small">${esc(report.honourNote)}</p>` : ""}`;
+    }
+    body += `</div>`;
+
+    let foot;
+    if (phase === "choose") foot = `<button class="ghost" id="bt-auto">Resolve automatically</button>`;
+    else if (phase === "shown") foot = B.done ? `<button class="primary" id="bt-next">See the outcome →</button>` : `<button class="primary" id="bt-next">Press the attack →</button>`;
+    else foot = `<button class="primary" id="bt-fin">Continue</button>`;
+
+    UI.modal({ title: `The Field of Battle — ${esc(terr)}${report.surprise ? " · surprise!" : ""}`, body, foot, onClose });
+
+    if (phase === "choose") {
+      const mb = $("#modal-body");
+      mb.querySelectorAll("[data-ord]").forEach(el => el.onclick = () => {
+        const v = el.dataset.ord;
+        if (v === "hold") order = null;
+        else if (v.startsWith("res:")) order = { type: "reserve", sector: v.slice(4) };
+        else if (v === "wheel") order = { type: "wheel", sector: B.broke[humanSide] };
+        render();
+      });
+      const die = $("#bt-roll");
+      const roll = () => doRoll();
+      die.onclick = roll;
+      die.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); roll(); } };
+      $("#bt-auto").onclick = () => { finalize(); phase = "over"; render(); };
+    } else if (phase === "shown") {
+      $("#bt-next").onclick = () => {
+        if (B.done) { finalize(); phase = "over"; }
+        else { order = null; phase = "choose"; }
+        render();
+      };
+    } else {
+      $("#bt-fin").onclick = closeDone;
+    }
+  }
+
+  function doRoll() {
+    if (rolling) return; rolling = true;
+    const die = $("#bt-roll");
+    if (die) { die.classList.add("rolling"); die.classList.remove("clickable"); }
+    if (UI.audio) UI.audio.play("battle");
+    let ticks = 0;
+    const iv = setInterval(() => { if (die) die.innerHTML = UI.dieCells(SR.rint(1, 6)); if (++ticks >= 8) clearInterval(iv); }, 70);
+    setTimeout(() => {
+      const v = SR.rint(1, 6);
+      SR.applyOrders(B, order ? { [humanSide]: order } : {});
+      const rr = SR.resolveRound(B, { [humanSide]: v });
+      lastRR = rr;
+      const youDie = humanSide === "att" ? rr.dieA : rr.dieD;
+      narr.push({ cls: "hd", text: `Round ${rr.round}${rr.ambush ? (humanSide === "att" ? " — you strike from ambush!" : " — ambushed!") : ""} — you rolled ${youDie >= 1 ? youDie : "—"}.` });
+      rr.results.forEach(x => {
+        const youWon = x.winner === humanSide;
+        const yourTot = humanSide === "att" ? x.totA : x.totD, foeTot = humanSide === "att" ? x.totD : x.totA;
+        let t = `${x.name}: your ${yourTot} vs their ${foeTot} — `;
+        if (x.margin === 0) t += "a bloody stand-off";
+        else t += youWon ? `you win by ${x.margin}` : `they win by ${x.margin}`;
+        if (x.loseCas) { const loserIsYou = (x.winner === "att" ? "def" : "att") === humanSide; t += `, ${loserIsYou ? "you lose" : "they lose"} ${x.loseCas}`; }
+        if (x.broke) t += youWon ? " — you shatter their line!" : " — your line breaks!";
+        narr.push({ cls: youWon ? "good" : "bad", text: t + (t.endsWith("!") ? "" : ".") });
+      });
+      rolling = false; order = null; phase = "shown";
+      render();
+    }, 640);
+  }
+
+  render();
+};
+
 UI.openSeppuku = function (pending, onDone) {
   const S = SR.state;
   UI.modal({
@@ -3604,7 +4136,7 @@ UI.openDefense = function (ev, onDone) {
     mb.querySelectorAll("[data-r]").forEach(el => el.onclick = () => { st.response = el.dataset.r; render(); });
     mb.querySelectorAll("[data-post]").forEach(el => el.onclick = () => { st.postureD = el.dataset.post; render(); });
     $("#def-go").onclick = () => {
-      const opts = Object.assign({}, ev.opts, { response: st.response, postureD: st.postureD });
+      const opts = Object.assign({}, ev.opts, { response: st.response, defPlan: { formation: st.postureD, main: "C", reserve: true }, interactive: true });
       const report = SR.executeAttack(S, ev.fromId, toId, ev.uids, ev.attCid, opts);
       UI.render();
       UI.showBattleReport(report, onDone);
@@ -4227,7 +4759,7 @@ GAME.humanMarch = function (m) {
   const { fromId, toId, sel } = m;
   if (!sel.length) return;
   if (typeof NET !== "undefined" && NET.online) {          // online: server resolves & pushes the report
-    NET.doAction("move", { fromId, toId, uids: sel, opts: { surprise: m.surprise, postureA: m.posture, bringDaimyo: m.bringDaimyo } });
+    NET.doAction("move", { fromId, toId, uids: sel, opts: { surprise: m.surprise, plan: m.plan, bringDaimyo: m.bringDaimyo } });
     return;
   }
   const hostile = SR.isHostile(S, toId, cid);
@@ -4238,7 +4770,7 @@ GAME.humanMarch = function (m) {
     return;
   }
   const report = SR.executeAttack(S, fromId, toId, sel, cid, {
-    surprise: m.surprise, postureA: m.posture, bringDaimyo: m.bringDaimyo,
+    surprise: m.surprise, plan: m.plan, bringDaimyo: m.bringDaimyo, interactive: true,
   });
   UI.render();
   UI.showBattleReport(report, () => { UI.render(); if (SR.state.gameOver) GAME.showGameOver(); });

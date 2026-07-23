@@ -153,7 +153,7 @@ SR.aiMilitary = function (S, cid) {
       };
       if (q.owner === S.humanClan) {
         // defer to the human to respond
-        S.pendingDefenses.push({ fromId, toId, uids, attCid: cid, opts });
+        (S.pendingDefenses || (S.pendingDefenses = [])).push({ fromId, toId, uids, attCid: cid, opts });
         movable.forEach(u => S.movedUnits[u.uid] = true);   // committed
       } else {
         SR.executeAttack(S, fromId, toId, uids, cid, opts);

@@ -6,11 +6,11 @@
 /* ---- province-level economic helpers ------------------------------ */
 SR.provKoban = function (S, id) {
   const ps = S.provinces[id], f = SR.stat(id).feature;
-  let k = 1; // base tax
+  let k = 2; // base tax per pacified province (raised so an army is affordable)
   const b = ps.buildings;
-  if (b.market) k += DATA.buildings.market.koban;   // +1
-  if (b.port) k += DATA.buildings.port.koban;       // +2 (0 if blockaded — naval simplified here)
-  if (ps.hasMine) k += 2;                           // worked silver/gold Feature
+  if (b.market) k += 2;                             // Market: a steady coin income
+  if (b.port) k += 3;                               // Port: the richest peaceful income
+  if (ps.hasMine) k += 3;                           // worked silver/gold Feature
   k += DATA.featureKoban[f] || 0;                   // free_port +2, crossroads/roads/foreign +1
   return k;
 };

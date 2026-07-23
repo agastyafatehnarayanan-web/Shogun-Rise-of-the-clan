@@ -56,7 +56,7 @@ SR.newGameA = function (opts) {
       daimyo: c.daimyo, command: c.command, trait: c.trait, lean: c.lean, identity: c.identity,
       ms: c.ms, ec: c.ec, nv: c.nv, dp: c.dp, in: c.in,
       isHuman: cid === opts.clan, isNeutral: false, alive: true,
-      koban: 6, rice: 12, honour: 10, prestige: 0, courtRank: 0,
+      koban: 9, rice: 12, honour: 10, prestige: 0, courtRank: 0,
       agents: [], spymaster: false,
       daimyoLoc: c.homes[0], daimyoAlive: true,
       relations: {}, marriages: [], vassals: [], overlord: null, treachery: 0,
