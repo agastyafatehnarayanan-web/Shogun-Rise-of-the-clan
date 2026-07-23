@@ -9,7 +9,13 @@ const path = require("path");
 const ROOT = __dirname;
 
 const css = fs.readFileSync(path.join(ROOT, "css/style.css"), "utf8");
-const scripts = ["data", "state", "engine", "battle", "espionage", "diplomacy", "ai", "modeb", "ui", "main"]
+
+// Embed the illustrated map as a data: URI so the single-file build and the
+// Artifact stay fully self-contained (no external requests; works offline).
+const mapB64 = fs.readFileSync(path.join(ROOT, "assets/nippon-map.jpg")).toString("base64");
+const mapInit = `window.__NIPPON_MAP__ = "data:image/jpeg;base64,${mapB64}";`;
+
+const scripts = mapInit + "\n\n" + ["data", "state", "engine", "battle", "espionage", "diplomacy", "ai", "modeb", "ui", "main"]
   .map(n => fs.readFileSync(path.join(ROOT, "js", n + ".js"), "utf8")).join("\n\n");
 
 const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");

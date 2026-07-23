@@ -146,3 +146,9 @@ dist/shogun.html    # single-file playable build
 ```
 
 *A digital adaptation of the fan rulebook “Shōgun: Rise of the Clans — Master Edition v3.2.” Built for play and study.*
+
+---
+
+## Copyright
+
+COPYRIGHT: © Agastya Fateh Narayanan 22 July 2026. All content available on this website is meticulously curated and is subject to stringent data protection laws and Copyright regulations. Unauthorized use, reproduction, or distribution of any content from this site without proper permission from Agastya Fateh Narayanan and any owners of any videos or pictures is strictly prohibited.

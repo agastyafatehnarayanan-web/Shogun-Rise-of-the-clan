@@ -115,65 +115,66 @@ DATA.buildings = {
  *  sea     : the sea zone it touches (for blockade / naval supply)
  *  river   : land neighbours reached across a river border (river-assault)
  *  strait  : land neighbours reached across a strait (blockable by a fleet)
- *  x,y     : layout on the 1000×720 board (Kyūshū SW → Mutsu NE)
+ *  x,y     : label/tint anchor on the 1536×1024 illustrated map
+ *  rx,ry   : radius of the province's soft control-tint over the art
  * ------------------------------------------------------------------- */
 DATA.provinces = {
   /* --- Kyūshū --- */
   satsuma:  { name: "Satsuma", jp: "薩摩", koku: 2, terrain: "Coast", castle: 2, feature: "foreign_trade",
-              gun: true, sea: 4, x: 95, y: 650, adj: ["bungo"] },
+              gun: true, sea: 4, x: 205, y: 812, rx: 72, ry: 60, adj: ["bungo"] },
   bungo:    { name: "Bungo", jp: "豊後", koku: 3, terrain: "Coast", castle: 1, feature: "foreign_port",
-              gun: true, sea: 4, x: 150, y: 555, adj: ["satsuma", "aki"], strait: ["aki"] },
+              gun: true, sea: 4, x: 322, y: 690, rx: 52, ry: 60, adj: ["satsuma", "aki"], strait: ["aki"] },
   /* --- Shikoku --- */
   tosa:     { name: "Tosa", jp: "土佐", koku: 2, terrain: "Coast", castle: 1, feature: "pirate_haven",
-              sea: 5, x: 300, y: 655, adj: ["aki"], strait: ["aki"] },
+              sea: 5, x: 478, y: 742, rx: 98, ry: 52, adj: ["aki"], strait: ["aki"] },
   /* --- Chūgoku (western Honshū) --- */
   iwami:    { name: "Iwami", jp: "石見", koku: 1, terrain: "Mountain", castle: 1, feature: "silver",
-              sea: 2, x: 175, y: 450, adj: ["izumo", "aki"] },
+              sea: 2, x: 255, y: 535, rx: 70, ry: 52, adj: ["izumo", "aki"] },
   izumo:    { name: "Izumo", jp: "出雲", koku: 2, terrain: "Coast", castle: 1, feature: "land_of_gods",
-              sea: 2, x: 255, y: 400, adj: ["iwami", "harima"] },
+              sea: 2, x: 335, y: 490, rx: 58, ry: 46, adj: ["iwami", "harima"] },
   aki:      { name: "Aki", jp: "安芸", koku: 2, terrain: "Coast", castle: 2, feature: "naval_base",
-              sea: 6, x: 265, y: 550, adj: ["iwami", "bizen", "bungo", "tosa"], strait: ["bungo", "tosa"] },
+              sea: 6, x: 300, y: 618, rx: 70, ry: 60, adj: ["iwami", "bizen", "bungo", "tosa"], strait: ["bungo", "tosa"] },
   bizen:    { name: "Bizen", jp: "備前", koku: 3, terrain: "Coast", castle: 1, feature: "swordsmiths",
-              sea: 6, x: 360, y: 505, adj: ["aki", "harima"] },
+              sea: 6, x: 400, y: 588, rx: 52, ry: 50, adj: ["aki", "harima"] },
   harima:   { name: "Harima", jp: "播磨", koku: 4, terrain: "Plains", castle: 2, feature: "himeji",
-              sea: 6, x: 445, y: 480, adj: ["izumo", "bizen", "settsu"] },
+              sea: 6, x: 620, y: 560, rx: 56, ry: 54, adj: ["izumo", "bizen", "settsu"] },
   /* --- Kinki / Kansai --- */
   settsu:   { name: "Settsu", jp: "摂津", koku: 3, terrain: "Coast", castle: 1, feature: "free_port",
-              gun: true, sea: 6, x: 515, y: 525, adj: ["harima", "yamashiro", "kii"] },
+              gun: true, sea: 6, x: 700, y: 608, rx: 44, ry: 44, adj: ["harima", "yamashiro", "kii"] },
   kii:      { name: "Kii", jp: "紀伊", koku: 2, terrain: "Forest", castle: 1, feature: "warrior_monks",
-              gun: true, hard: true, sea: 7, x: 540, y: 620, adj: ["settsu", "ise"] },
+              gun: true, hard: true, sea: 7, x: 668, y: 726, rx: 78, ry: 60, adj: ["settsu", "ise"] },
   yamashiro:{ name: "Yamashiro", jp: "山城", koku: 2, terrain: "Plains", castle: 2, feature: "capital",
-              kyoto: true, x: 560, y: 460, adj: ["settsu", "omi"], river: ["omi"] },
+              kyoto: true, x: 652, y: 548, rx: 40, ry: 40, adj: ["settsu", "omi"], river: ["omi"] },
   omi:      { name: "Ōmi", jp: "近江", koku: 4, terrain: "Plains", castle: 2, feature: "crossroads",
-              x: 625, y: 415, adj: ["yamashiro", "kaga", "mino", "ise"], river: ["yamashiro"] },
+              x: 712, y: 512, rx: 54, ry: 52, adj: ["yamashiro", "kaga", "mino", "ise"], river: ["yamashiro"] },
   ise:      { name: "Ise", jp: "伊勢", koku: 3, terrain: "Coast", castle: 1, feature: "sacred_coast",
-              sea: 7, x: 640, y: 550, adj: ["omi", "kii", "owari"] },
+              sea: 7, x: 688, y: 668, rx: 54, ry: 54, adj: ["omi", "kii", "owari"] },
   /* --- Hokuriku / Chūbu --- */
   kaga:     { name: "Kaga", jp: "加賀", koku: 3, terrain: "Plains", castle: 1, feature: "ikko",
-              hard: true, snowbound: true, sea: 2, x: 560, y: 300, adj: ["omi", "mino", "echigo"] },
+              hard: true, snowbound: true, sea: 2, x: 758, y: 402, rx: 58, ry: 54, adj: ["omi", "mino", "echigo"] },
   mino:     { name: "Mino", jp: "美濃", koku: 4, terrain: "Plains", castle: 2, feature: "east_road",
-              x: 685, y: 370, adj: ["omi", "kaga", "owari", "shinano"], river: ["owari"] },
+              x: 842, y: 542, rx: 64, ry: 54, adj: ["omi", "kaga", "owari", "shinano"], river: ["owari"] },
   owari:    { name: "Owari", jp: "尾張", koku: 5, terrain: "Plains", castle: 2, feature: "farmland",
-              gun: true, x: 710, y: 480, adj: ["mino", "ise", "mikawa"], river: ["mino"] },
+              gun: true, x: 800, y: 652, rx: 48, ry: 48, adj: ["mino", "ise", "mikawa"], river: ["mino"] },
   mikawa:   { name: "Mikawa", jp: "三河", koku: 3, terrain: "Plains", castle: 1, feature: "hardy_levies",
-              minorCoast: true, sea: 8, x: 775, y: 530, adj: ["owari", "suruga"] },
+              minorCoast: true, sea: 8, x: 896, y: 618, rx: 54, ry: 44, adj: ["owari", "suruga"] },
   /* --- Kōshin / Tōkai --- */
   shinano:  { name: "Shinano", jp: "信濃", koku: 2, terrain: "Mountain", castle: 1, feature: "mountain_forts",
-              horse: true, snowbound: true, x: 720, y: 320, adj: ["kai", "mino", "echigo", "musashi"] },
+              horse: true, snowbound: true, x: 888, y: 460, rx: 72, ry: 66, adj: ["kai", "mino", "echigo", "musashi"] },
   kai:      { name: "Kai", jp: "甲斐", koku: 1, terrain: "Mountain", castle: 2, feature: "horse_land",
-              horse: true, x: 810, y: 440, adj: ["suruga", "shinano", "musashi"] },
+              horse: true, x: 1035, y: 572, rx: 56, ry: 50, adj: ["suruga", "shinano", "musashi"] },
   suruga:   { name: "Suruga", jp: "駿河", koku: 3, terrain: "Coast", castle: 1, feature: "tokaido",
-              sea: 8, x: 855, y: 560, adj: ["mikawa", "kai", "sagami"] },
+              sea: 8, x: 1032, y: 668, rx: 54, ry: 44, adj: ["mikawa", "kai", "sagami"] },
   /* --- Kantō --- */
   sagami:   { name: "Sagami", jp: "相模", koku: 3, terrain: "Plains", castle: 3, feature: "great_castle",
-              minorCoast: true, sea: 8, x: 905, y: 515, adj: ["suruga", "musashi"], river: ["musashi"] },
+              minorCoast: true, sea: 8, x: 1122, y: 622, rx: 48, ry: 44, adj: ["suruga", "musashi"], river: ["musashi"] },
   musashi:  { name: "Musashi", jp: "武蔵", koku: 5, terrain: "Plains", castle: 1, feature: "great_plain",
-              minorCoast: true, sea: 8, x: 895, y: 400, adj: ["kai", "shinano", "sagami", "mutsu"], river: ["sagami"] },
+              minorCoast: true, sea: 8, x: 1148, y: 525, rx: 58, ry: 54, adj: ["kai", "shinano", "sagami", "mutsu"], river: ["sagami"] },
   /* --- Tōhoku / North --- */
   echigo:   { name: "Echigo", jp: "越後", koku: 3, terrain: "Mountain", castle: 3, feature: "elite_infantry",
-              snowbound: true, sea: 1, x: 690, y: 205, adj: ["kaga", "shinano", "mutsu"] },
+              snowbound: true, sea: 1, x: 1045, y: 360, rx: 78, ry: 60, adj: ["kaga", "shinano", "mutsu"] },
   mutsu:    { name: "Mutsu", jp: "陸奥", koku: 2, terrain: "Mountain", castle: 1, feature: "gold",
-              horse: true, snowbound: true, sea: 1, x: 930, y: 250, adj: ["echigo", "musashi"] },
+              horse: true, snowbound: true, sea: 1, x: 1248, y: 302, rx: 82, ry: 92, adj: ["echigo", "musashi"] },
 };
 
 /* ---------------------------------------------------------------------

@@ -113,73 +113,61 @@ UI.ownerColor = function (S, owner) {
   const cl = S.clans[owner];
   return { c: cl.color, c2: cl.color2 };
 };
+UI.MAP_W = 1536; UI.MAP_H = 1024;
 UI.renderMap = function () {
   const S = SR.state, svg = $("#map");
+  // The illustrated board. build.js injects window.__NIPPON_MAP__ (a data: URI)
+  // for the single-file bundle; the modular version loads the file directly.
+  const mapSrc = (typeof window !== "undefined" && window.__NIPPON_MAP__) || "assets/nippon-map.jpg";
 
-  /* --- decorative layer: sea-zone labels, title cartouche, compass --- */
-  let decor = "";
-  for (const z in DATA.seaZones) {
-    const sz = DATA.seaZones[z];
-    decor += `<g class="sea-label"><text class="sz-jp" x="${sz.x}" y="${sz.y}">${sz.jp}</text>
-      <text class="sz-en" x="${sz.x}" y="${sz.y + 13}">${sz.name}</text></g>`;
-  }
-  // title cartouche (top-left of the sea)
-  decor += `<g class="cartouche">
-    <rect x="26" y="20" width="196" height="70" rx="6"/>
-    <text class="ct-jp" x="124" y="56">日本国</text>
-    <text class="ct-en" x="124" y="78">NIPPON — Realm of the Rising Sun</text></g>`;
-  // compass rose (top-right)
-  const cx = 946, cy = 60;
-  decor += `<g class="compass" transform="translate(${cx},${cy})">
-    <circle r="27" class="cmp-ring"/>
-    <path class="cmp-star" d="M0,-24 L5,-5 L24,0 L5,5 L0,24 L-5,5 L-24,0 L-5,-5 Z"/>
-    <path class="cmp-star2" d="M0,-24 L4,-4 L0,0 L-4,-4 Z"/>
-    <text class="cmp-n" x="0" y="-30">北</text><text class="cmp-s" x="0" y="40">南</text>
-    <text class="cmp-e" x="34" y="4">東</text><text class="cmp-w" x="-34" y="4">西</text></g>`;
+  const defs = `<defs>
+    <filter id="softtint" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="11"/>
+    </filter>
+  </defs>`;
+  const bg = `<image href="${mapSrc}" x="0" y="0" width="${UI.MAP_W}" height="${UI.MAP_H}" preserveAspectRatio="none"/>`;
 
-  /* --- links: roads, river borders, strait crossings --- */
-  let links = "";
-  const drawn = {};
-  for (const id in DATA.provinces) {
-    const p = DATA.provinces[id];
-    for (const nb of p.adj) {
-      const key = [id, nb].sort().join("|");
-      if (drawn[key]) continue; drawn[key] = 1;
-      const q = DATA.provinces[nb];
-      const isStrait = (p.strait && p.strait.includes(nb)) || (q.strait && q.strait.includes(id));
-      const isRiver = (p.river && p.river.includes(nb)) || (q.river && q.river.includes(id));
-      const cls = isStrait ? "strait" : isRiver ? "river" : "road";
-      links += `<line class="prov-link ${cls}" x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}"/>`;
-    }
-  }
-
-  /* --- province tokens --- */
-  let nodes = "";
+  let tints = "", rings = "", labels = "", hits = "";
   for (const id in DATA.provinces) {
     const p = DATA.provinces[id], ps = S.provinces[id];
+    const owned = ps.owner && ps.status !== "neutral";
     const col = UI.ownerColor(S, ps.owner);
+    const sel = UI.selected === id;
     const reachable = UI.moveMode && SR.stat(UI.moveMode).adj.includes(id) &&
       SR.canReach(S, UI.moveMode, id, S.humanClan).ok;
-    const sel = UI.selected === id;
     const daimyoHere = ps.owner && S.clans[ps.owner].daimyoAlive && S.clans[ps.owner].daimyoLoc === id;
-    const nUnits = ps.units.length;
-    const feat = p.feature ? UI.featGlyph(p.feature) : "";
-    const w = 78, hh = 46, x0 = p.x - w / 2, y0 = p.y - hh / 2;
-    nodes += `<g class="prov ${sel ? "sel" : ""} ${reachable ? "reach" : ""}" data-id="${id}">
-      <rect class="pbody" x="${x0}" y="${y0}" width="${w}" height="${hh}" rx="9"
-        fill="${col.c}" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))"/>
-      ${ps.siege ? `<rect class="siege-ring" x="${x0 - 4}" y="${y0 - 4}" width="${w + 8}" height="${hh + 8}" rx="12"/>` : ""}
-      <text class="pjp" x="${p.x}" y="${p.y - 12}">${esc(p.jp || "")}</text>
-      <text class="pname ${p.kyoto ? "pkyoto" : ""}" x="${p.x}" y="${p.y - 1}">${p.kyoto ? "⛩ " : ""}${esc(p.name)}</text>
-      <text class="pinfo" x="${p.x}" y="${p.y + 11}">禾${SR.provKoku(S, id)} · ⚔${nUnits}${daimyoHere ? " ★" : ""}</text>
-      <text class="pcastle" x="${p.x}" y="${p.y + 22}">${"▲".repeat(ps.castle) || "—"}${feat ? "  " + feat : ""}</text>
+    const visible = UI.unitVisible(S, id) || !ps.owner;   // neutral garrisons are public
+
+    // soft territory tint in the controlling clan's colour
+    if (owned) tints += `<ellipse class="tint" cx="${p.x}" cy="${p.y}" rx="${p.rx}" ry="${p.ry}" fill="${col.c}" filter="url(#softtint)"/>`;
+
+    // selection / march-reach / siege outlines
+    if (reachable) rings += `<ellipse class="ring reach" cx="${p.x}" cy="${p.y}" rx="${p.rx + 5}" ry="${p.ry + 5}"/>`;
+    if (sel)       rings += `<ellipse class="ring sel" cx="${p.x}" cy="${p.y}" rx="${p.rx + 7}" ry="${p.ry + 7}"/>`;
+    if (ps.siege)  rings += `<ellipse class="ring siege" cx="${p.x}" cy="${p.y}" rx="${p.rx + 3}" ry="${p.ry + 3}"/>`;
+
+    // label pill (name + live stats), sized to fit its text
+    const name = (p.kyoto ? "⛩ " : "") + p.name;
+    const stat = `禾${SR.provKoku(S, id)} ⚔${visible ? ps.units.length : "?"}` +
+      `${ps.castle ? " " + "▲".repeat(ps.castle) : ""}${daimyoHere ? " ★" : ""}`;
+    const w = Math.round(Math.max(name.length * 9.5, stat.length * 9) + 22);
+    labels += `<g class="plabel ${sel ? "sel" : ""}">
+      <rect class="pill" x="${p.x - w / 2}" y="${p.y - 20}" width="${w}" height="40" rx="8"
+        style="stroke:${owned ? col.c : "#726a58"}"/>
+      <text class="pn" x="${p.x}" y="${p.y - 3}">${esc(name)}</text>
+      <text class="ps" x="${p.x}" y="${p.y + 15}">${esc(stat)}</text>
     </g>`;
+
+    // transparent click target covering the province (topmost)
+    hits += `<g class="prov ${sel ? "sel" : ""} ${reachable ? "reach" : ""}" data-id="${id}">
+      <ellipse class="hit" cx="${p.x}" cy="${p.y}" rx="${p.rx}" ry="${p.ry}"/></g>`;
   }
-  svg.innerHTML = decor + links + nodes;
+
+  svg.innerHTML = defs + bg + tints + rings + labels + hits;
   svg.querySelectorAll(".prov").forEach(g => g.onclick = () => UI.onProvinceClick(g.dataset.id));
 
-  $("#map-legend").innerHTML = `<b>禾</b> rice · <b>⚔</b> units · <b>▲</b> castle · <b>★</b> daimyō · <b>⛩</b> Kyoto
-    <br><span style="color:#7fb0c4">〜 river border</span> · <span style="color:#8fb8c0">┄ strait</span> · <span style="color:#e8b53a">▢ siege</span>`;
+  $("#map-legend").innerHTML = `<b>Colour</b> = who controls the province.
+    <br><b>禾</b> rice · <b>⚔</b> units · <b>▲</b> castle · <b>★</b> daimyō · <b>⛩</b> Kyoto · <span style="color:#e8b53a">◯ siege</span>`;
 };
 UI.featGlyph = function (f) {
   return (DATA.features[f] && DATA.features[f].glyph) || "";
@@ -748,7 +736,17 @@ UI.initGame = function () {
   $$(".tab").forEach(t => t.onclick = () => { UI.tab = t.dataset.tab; $$(".tab").forEach(x => x.classList.remove("active")); t.classList.add("active"); UI.renderTab(); });
   $("#end-season-btn").onclick = () => GAME.endSeason();
   $("#objectives-btn").onclick = () => UI.modal({ title: "Objectives", body: `<div class="panel">${UI.objectivesHTML(SR.state)}</div>`, foot: `<button class="primary" onclick="UI.closeModal()">Close</button>` });
+  const cbtn = $("#copyright-btn"); if (cbtn) cbtn.onclick = () => UI.showCopyright();
   $("#modal-x").onclick = () => UI.closeModal();
+};
+
+UI.COPYRIGHT = "COPYRIGHT: © Agastya Fateh Narayanan 22 July 2026. All content available on this website is meticulously curated and is subject to stringent data protection laws and Copyright regulations. Unauthorized use, reproduction, or distribution of any content from this site without proper permission from Agastya Fateh Narayanan and any owners of any videos or pictures is strictly prohibited.";
+UI.showCopyright = function () {
+  UI.modal({
+    title: "Copyright & Terms",
+    body: `<div class="small" style="font-size:13px;line-height:1.7">${esc(UI.COPYRIGHT)}</div>`,
+    foot: `<button class="primary" onclick="UI.closeModal()">Understood</button>`,
+  });
 };
 
 if (typeof module !== "undefined") module.exports = UI;
