@@ -292,3 +292,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #tut-nav{display:flex;align-items:center;gap:8px;margin-top:12px}
 #tut-count{font-size:11px;color:var(--ink2)}
 #tut-nav button{padding:7px 13px;font-size:12.5px}
+
+/* ---------- ONLINE LOBBY ---------- */
+.net-in{background:#f6eed9;border:1px solid var(--paper-line);border-radius:7px;padding:9px 11px;
+  font-size:13px;color:var(--ink);flex:1;min-width:0;font-family:var(--font-b)}
+.net-in:focus{outline:none;border-color:var(--vermilion)}

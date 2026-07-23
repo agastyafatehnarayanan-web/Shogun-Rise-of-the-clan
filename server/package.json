@@ -1,0 +1,16 @@
+{
+  "name": "shogun-multiplayer-server",
+  "version": "1.0.0",
+  "description": "Authoritative WebSocket server for Shōgun: Rise of the Clans online multiplayer. Reuses the browser game engine (../js/*.js).",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.21.1"
+  }
+}

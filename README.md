@@ -38,6 +38,22 @@ Rebuild the single-file bundle after editing the source:
 node build.js   # writes dist/shogun.html and dist/artifact.html
 ```
 
+## Play online (multiplayer)
+
+You can play against other people on their own devices, in **public** rooms
+(anyone can join) or **private** rooms (the host approves each player). It needs
+the small game server in [`server/`](server/README.md), which reuses the same
+engine and pushes each player a fog-of-war view.
+
+1. Deploy `server/` to any free Node host (Render/Railway/Fly — see
+   [`server/README.md`](server/README.md)).
+2. Set `window.SHOGUN_SERVER = "wss://your-server…"` in `js/netconfig.js`.
+3. On the title screen, click **Play Online** → Host or Join by code.
+
+Empty seats are filled by AI, so a game can start with a single human. Without a
+server configured, the game is single-player only (the hosted showcase build is
+single-player).
+
 ---
 
 ## How to win

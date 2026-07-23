@@ -58,6 +58,7 @@ UI.initTitle = function () {
     b.classList.add("active");
   });
   $("#start-btn").onclick = () => GAME.start();
+  const ob = $("#online-btn"); if (ob) ob.onclick = () => { if (typeof NET !== "undefined") NET.openLobby(); };
   $("#help-btn").onclick = () => UI.showHelp();
 };
 
@@ -249,13 +250,7 @@ UI.tabProvince = function (S) {
     ${acts}
   </div>`;
 };
-UI.unitVisible = function (S, id) {
-  const ps = S.provinces[id];
-  if (ps.owner === S.humanClan) return true;
-  if (SR.allied(S, S.humanClan, ps.owner)) return true;
-  if (ps._revealed && ps._revealed >= SR.absSeason(S)) return true;
-  return false;
-};
+UI.unitVisible = function (S, id) { return SR.visibleTo(S, S.humanClan, id); };
 UI.revealNote = (S, id) => UI.unitVisible(S, id) ? "" : "";
 
 UI.provinceActions = function (S, id, ps) {

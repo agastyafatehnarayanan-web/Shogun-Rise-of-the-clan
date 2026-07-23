@@ -8,6 +8,7 @@ const GAME = {};
 window.addEventListener("DOMContentLoaded", () => {
   UI.initTitle();
   UI.initGame();
+  if (typeof NET !== "undefined") NET.installWrappers();   // online action routing (inert offline)
   UI.showScreen("title-screen");
 });
 
@@ -53,6 +54,10 @@ GAME.humanMarch = function (m) {
   UI.moveMode = null;
   const { fromId, toId, sel } = m;
   if (!sel.length) return;
+  if (typeof NET !== "undefined" && NET.online) {          // online: server resolves & pushes the report
+    NET.doAction("move", { fromId, toId, uids: sel, opts: { surprise: m.surprise, postureA: m.posture, bringDaimyo: m.bringDaimyo } });
+    return;
+  }
   const hostile = SR.isHostile(S, toId, cid);
   if (!hostile) {
     SR.performMove(S, fromId, toId, sel, cid);
@@ -71,6 +76,7 @@ GAME.humanMarch = function (m) {
 GAME.endSeason = function () {
   const S = SR.state;
   if (S.gameOver) return;
+  if (typeof NET !== "undefined" && NET.online) { NET.endTurn(); return; }   // online: end my turn
   UI.moveMode = null;
   $("#end-season-btn").disabled = true;
   UI.toast("The rival clans make their moves…");

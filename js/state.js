@@ -237,6 +237,18 @@ SR.allied = function (S, a, b) {
   const r = S.clans[a] && S.clans[a].relations[b];
   return r && (r.pact === "alliance" || r.pact === "marriage");
 };
+
+/* Fog of war: may clan `cid` see the true garrison of province `id`?
+ * Own / allied / neutral (public) / recon-revealed. Shared by the client
+ * (display) and the multiplayer server (per-player redaction). */
+SR.visibleTo = function (S, cid, id) {
+  const ps = S.provinces[id];
+  if (!ps.owner) return true;                 // neutral garrisons are public
+  if (ps.owner === cid) return true;
+  if (SR.allied(S, cid, ps.owner)) return true;
+  if (ps._revealed && SR.absSeason && ps._revealed >= SR.absSeason(S)) return true;
+  return false;
+};
 SR.atPeace = function (S, a, b) {
   if (!a || !b) return false;
   const r = S.clans[a] && S.clans[a].relations[b];
