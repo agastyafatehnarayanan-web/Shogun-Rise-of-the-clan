@@ -14,6 +14,7 @@ window.addEventListener("DOMContentLoaded", () => {
 /* ---- start a new campaign ------------------------------------------ */
 GAME.start = function () {
   const s = UI.setup;
+  if (UI.audio) UI.audio.init();      // create the AudioContext from this click
   if (s.mode === "B") SR.newGameB({ clan: s.clan, retainers: s.ret, lengthYears: s.len });
   else SR.newGameA({ clan: s.clan, lengthYears: s.len });
   UI.selected = SR.state.clans[SR.state.humanClan].daimyoLoc;
@@ -27,6 +28,8 @@ GAME.start = function () {
 GAME.startSeason = function (first) {
   const S = SR.state;
   SR.beginSeason(S);
+  if (UI.audio) UI.audio.play("season");
+  if (UI.seasonBanner) UI.seasonBanner(DATA.seasons[S.seasonIdx], S.year);
   if (S.mode === "B") {
     SR.modeBSeasonStart(S);
     // if the lord just died at the top of the final year, resolve immediately
@@ -39,6 +42,7 @@ GAME.startSeason = function (first) {
   $("#hint").textContent = S.mode === "B"
     ? `Year ${S.year}, ${DATA.seasons[S.seasonIdx]} — hold your fiefs, answer the lord, and scheme. Press End Season when ready.`
     : `Year ${S.year}, ${DATA.seasons[S.seasonIdx]} — take your actions, then press End Season.`;
+  if (first && UI.tutorial) setTimeout(() => UI.tutorial.maybeStart(), 500);
   if (SR.state.gameOver) GAME.showGameOver();
 };
 
@@ -134,6 +138,7 @@ GAME.showGameOver = function () {
   const scores = S.finalScores || SR.livingClans(S).map(c => ({ cid: c, ...SR.scoreTotal(S, c) })).sort((a, b) => b.total - a.total);
   const winCid = S.winner;
   const youWin = winCid === S.humanClan;
+  if (UI.audio && youWin) UI.audio.play("victory");
   const rows = scores.map((s, i) => {
     const c = S.clans[s.cid];
     return `<div class="score-row ${s.cid === winCid ? "win" : ""}">

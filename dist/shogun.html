@@ -278,6 +278,28 @@ button:disabled{opacity:.45;cursor:not-allowed}
   z-index:60;opacity:0;transition:.25s;pointer-events:none;max-width:80%}
 #toast.show{opacity:1}
 
+/* ---------- SEASON BANNER (polish) ---------- */
+#season-banner{position:fixed;top:34%;left:50%;transform:translate(-50%,-10px);z-index:55;
+  text-align:center;pointer-events:none;opacity:0;transition:opacity .4s, transform .4s}
+#season-banner.show{opacity:1;transform:translate(-50%,0)}
+#season-banner .sb-jp{font-family:var(--font-h);font-size:64px;color:var(--gold);
+  text-shadow:0 3px 16px #000,0 0 30px rgba(201,162,39,.4);letter-spacing:8px}
+#season-banner .sb-en{font-family:var(--font-h);font-size:20px;color:var(--washi);letter-spacing:6px;
+  text-shadow:0 2px 8px #000;margin-top:-4px}
+
+/* ---------- TUTORIAL COACH-MARKS ---------- */
+#tut-layer{position:fixed;inset:0;z-index:70;display:none}
+#tut-spot{position:absolute;border-radius:10px;border:2px solid var(--gold);
+  box-shadow:0 0 0 4000px rgba(8,6,4,.66),0 0 22px rgba(201,162,39,.5) inset;transition:.2s}
+#tut-card{position:absolute;width:340px;max-width:92vw;background:var(--washi);
+  background-image:linear-gradient(var(--washi),var(--washi2));border:1px solid var(--gold2);
+  border-radius:12px;padding:14px 16px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#tut-title{font-family:var(--font-h);font-size:17px;letter-spacing:1px;margin-bottom:6px;color:var(--vermilion)}
+#tut-text{font-size:13px;line-height:1.55;color:var(--ink)}
+#tut-nav{display:flex;align-items:center;gap:8px;margin-top:12px}
+#tut-count{font-size:11px;color:var(--ink2)}
+#tut-nav button{padding:7px 13px;font-size:12.5px}
+
 </style>
 </head>
 <body>
@@ -379,6 +401,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <footer id="bottombar">
     <div id="hint">Select a province to begin.</div>
     <div class="bb-actions">
+      <button id="mute-btn" class="ghost" title="Sound on/off">🔊</button>
+      <button id="help2-btn" class="ghost" title="How to play">?</button>
       <button id="copyright-btn" class="ghost" title="Copyright & terms">©</button>
       <button id="objectives-btn" class="ghost">Objectives</button>
       <button id="end-season-btn" class="primary">End Season ▸</button>
@@ -678,6 +702,31 @@ DATA.clans = {
     strength: "The southern spear — Military Strength 5 with early foreign guns; a safe far-south base.",
     weakness: "Poor & isolated — Economy 2 and Diplomacy 2 all but shut the political road.",
     color: "#d35400", color2: "#8a3600", crest: "丸" },
+  /* --- expansion houses (added content) --- */
+  tokugawa:{ name: "Tokugawa", homes: ["mikawa"], daimyo: "Tokugawa Ieyasu",
+    command: 3, trait: "Siege & Defence", identity: "samurai", lean: "Any (patient)",
+    ms: 3, ec: 4, nv: 2, dp: 4, in: 3,
+    strength: "The patient tiger — balanced on every axis, cheap pacts, and steady defence; outlasts rivals.",
+    weakness: "No single peak — wins by endurance, not blitz; pinched between Oda, Takeda, and Hōjō.",
+    color: "#3d5a80", color2: "#28405c", crest: "葵" },
+  date:    { name: "Date", homes: ["mutsu"], daimyo: "Date Masamune",
+    command: 3, trait: "Cavalry", identity: "cavalry", lean: "Conquest",
+    ms: 4, ec: 3, nv: 2, dp: 2, in: 3,
+    strength: "The one-eyed dragon of the north — strong cavalry from Mutsu's horse country, a safe far corner.",
+    weakness: "Snowbound & distant — Mutsu seals each Winter and the capital is a world away.",
+    color: "#4a3f8f", color2: "#332c66", crest: "竹" },
+  chosokabe:{ name: "Chōsokabe", homes: ["tosa"], daimyo: "Chōsokabe Motochika",
+    command: 2, trait: "Infantry", identity: "ashigaru", lean: "Conquest / Sea",
+    ms: 4, ec: 2, nv: 3, dp: 2, in: 3,
+    strength: "Masters of the 'one-whole-country' levy — fierce ashigaru and pirate ships from Shikoku.",
+    weakness: "Poor island base — thin economy and diplomacy; must break out before the mainland unites.",
+    color: "#9c7a1a", color2: "#6e5612", crest: "柏" },
+  otomo:   { name: "Ōtomo", homes: ["bungo"], daimyo: "Ōtomo Sōrin",
+    command: 2, trait: "Teppō", identity: "teppo", lean: "Wealth / Trade",
+    ms: 3, ec: 4, nv: 3, dp: 3, in: 2,
+    strength: "The Christian trade-lord of Kyūshū — foreign guns and Nanban wealth from Bungo's port.",
+    weakness: "Soft army & neighbours — Military Strength 3 and Shimazu at the door to the south.",
+    color: "#922b21", color2: "#661c16", crest: "大" },
 };
 
 /* Honour bands (0–20). endScore is direct end-game Prestige (Part XIV). */
@@ -3453,6 +3502,7 @@ UI.renderMarch = function () {
  * ------------------------------------------------------------------- */
 UI.showBattleReport = function (report, onDone) {
   const S = SR.state;
+  if (UI.audio) UI.audio.play(report && report.outcome === "occupied" ? "capture" : "battle");
   if (!report || !report.sim) {
     // walkover / siege-start / occupation
     UI.modal({
@@ -3626,6 +3676,12 @@ UI.initGame = function () {
   $("#end-season-btn").onclick = () => GAME.endSeason();
   $("#objectives-btn").onclick = () => UI.modal({ title: "Objectives", body: `<div class="panel">${UI.objectivesHTML(SR.state)}</div>`, foot: `<button class="primary" onclick="UI.closeModal()">Close</button>` });
   const cbtn = $("#copyright-btn"); if (cbtn) cbtn.onclick = () => UI.showCopyright();
+  const hb = $("#help2-btn"); if (hb) hb.onclick = () => UI.showHelp();
+  const mb = $("#mute-btn");
+  if (mb && UI.audio) {
+    UI.audio.loadMute(); mb.textContent = UI.audio.muted ? "🔇" : "🔊";
+    mb.onclick = () => { const m = UI.audio.toggle(); mb.textContent = m ? "🔇" : "🔊"; };
+  }
   $("#modal-x").onclick = () => UI.closeModal();
 };
 
@@ -3638,7 +3694,229 @@ UI.showCopyright = function () {
   });
 };
 
+/* Transient season banner (a little polish at each season change). */
+UI.seasonBanner = function (season, year) {
+  const jp = { Spring: "春", Summer: "夏", Autumn: "秋", Winter: "冬" }[season] || "";
+  let el = document.getElementById("season-banner");
+  if (!el) { el = document.createElement("div"); el.id = "season-banner"; document.body.appendChild(el); }
+  el.innerHTML = `<div class="sb-jp">${jp}</div><div class="sb-en">${esc(season)} · Year ${year}</div>`;
+  el.classList.add("show");
+  clearTimeout(UI._bannerT);
+  UI._bannerT = setTimeout(() => el.classList.remove("show"), 1500);
+};
+
 if (typeof module !== "undefined") module.exports = UI;
+
+
+/* =====================================================================
+ * Audio — fully synthesized with the Web Audio API (no external files, so
+ * it stays self-contained, CSP-safe, and works offline). A gentle ambient
+ * pad plus SFX for seasons, battle, building, capture, and victory.
+ * A mute toggle lives in the top bar and is remembered in localStorage.
+ * ===================================================================== */
+
+UI.audio = {
+  ctx: null, master: null, muted: false, ambient: null,
+
+  loadMute() { try { this.muted = localStorage.getItem("sr_muted") === "1"; } catch (e) {} },
+
+  // Must be created from a user gesture (browsers block autoplay).
+  init() {
+    if (this.ctx) { if (this.ctx.state === "suspended") this.ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try { this.ctx = new AC(); } catch (e) { return; }
+    this.master = this.ctx.createGain();
+    this.master.gain.value = this.muted ? 0 : 0.5;
+    this.master.connect(this.ctx.destination);
+    this.startAmbient();
+  },
+
+  setMuted(m) {
+    this.muted = m;
+    try { localStorage.setItem("sr_muted", m ? "1" : "0"); } catch (e) {}
+    if (this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.5, this.ctx.currentTime, 0.05);
+  },
+  toggle() { this.init(); this.setMuted(!this.muted); return this.muted; },
+
+  /* one plucked/blown tone with an exponential decay */
+  tone(freq, dur, type, gain, delay, glideTo) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime + (delay || 0);
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type || "triangle";
+    o.frequency.setValueAtTime(freq, t);
+    if (glideTo) o.frequency.exponentialRampToValueAtTime(glideTo, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain || 0.2, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + 0.05);
+  },
+
+  /* a short filtered noise burst (drum body / gunfire) */
+  noise(dur, gain, delay, cutoff) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime + (delay || 0);
+    const n = Math.floor(this.ctx.sampleRate * dur);
+    const buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const src = this.ctx.createBufferSource(); src.buffer = buf;
+    const f = this.ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = cutoff || 1200;
+    const g = this.ctx.createGain(); g.gain.value = gain || 0.2;
+    src.connect(f); f.connect(g); g.connect(this.master);
+    src.start(t);
+  },
+
+  // pentatonic (min-yo) scale in Hz for koto-like flourishes
+  SCALE: [220, 261.6, 293.7, 349.2, 392, 440, 523.3, 587.3],
+
+  play(name) {
+    if (!this.ctx || this.muted) return;
+    switch (name) {
+      case "season":  // a soft two-note koto pluck
+        this.tone(this.SCALE[4], 1.1, "triangle", 0.16, 0);
+        this.tone(this.SCALE[6], 1.4, "triangle", 0.12, 0.12);
+        break;
+      case "battle":  // taiko thud + a rattle
+        this.tone(90, 0.5, "sine", 0.5, 0, 45);
+        this.noise(0.25, 0.25, 0.02, 900);
+        this.tone(70, 0.4, "sine", 0.35, 0.18, 40);
+        break;
+      case "gun":     // teppō volley
+        this.noise(0.12, 0.35, 0, 2200); this.noise(0.1, 0.25, 0.09, 1800);
+        break;
+      case "build":   // wood-block / construction
+        this.tone(660, 0.12, "square", 0.12, 0); this.tone(440, 0.16, "square", 0.1, 0.06);
+        break;
+      case "recruit": // a short horn call
+        this.tone(330, 0.3, "sawtooth", 0.14, 0, 392);
+        break;
+      case "capture": // a rising flourish when a province falls
+        [0, 2, 4, 6].forEach((s, i) => this.tone(this.SCALE[s], 0.5, "triangle", 0.16, i * 0.09));
+        this.tone(90, 0.6, "sine", 0.35, 0, 50);
+        break;
+      case "victory": // a fuller ascending run
+        [0, 2, 3, 5, 6, 7].forEach((s, i) => this.tone(this.SCALE[s], 0.9, "triangle", 0.18, i * 0.13));
+        break;
+      case "click":
+        this.tone(520, 0.06, "sine", 0.07, 0);
+        break;
+    }
+  },
+
+  /* a slow, very quiet evolving pad — the atmosphere under the game */
+  startAmbient() {
+    if (!this.ctx || this.ambient) return;
+    const g = this.ctx.createGain(); g.gain.value = 0.05; g.connect(this.master);
+    const lp = this.ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 520; lp.connect(g);
+    const freqs = [110, 164.8, 220]; // A2 / E3 / A3 drone
+    freqs.forEach((f, i) => {
+      const o = this.ctx.createOscillator(); o.type = "triangle";
+      o.frequency.value = f * (1 + (i - 1) * 0.004); // slight detune
+      // slow tremolo so the pad breathes
+      const lfo = this.ctx.createOscillator(); lfo.frequency.value = 0.05 + i * 0.02;
+      const lg = this.ctx.createGain(); lg.gain.value = f * 0.003;
+      lfo.connect(lg); lg.connect(o.frequency);
+      o.connect(lp); o.start(); lfo.start();
+    });
+    this.ambient = g;
+  },
+};
+
+if (typeof module !== "undefined" && typeof UI !== "undefined") module.exports = UI.audio;
+
+
+/* =====================================================================
+ * Tutorial — a first-run coach-mark overlay that spotlights the key parts
+ * of the screen and explains the loop. Shown once (remembered in
+ * localStorage); replayable from the "?" button.
+ * ===================================================================== */
+
+UI.tutorial = {
+  i: 0, layer: null,
+  steps: [
+    { el: null, title: "Welcome, daimyō",
+      text: "You lead one clan in the Warring States. Everything converts to <b>Prestige</b> — hold the most by the final year to win, or seize a sudden victory by conquest or wealth." },
+    { el: "#map-wrap", title: "The map of Nippon",
+      text: "This is the realm. Each province is washed in the <b>colour of the clan that controls it</b>. Click any province to inspect it; your own glow when selected." },
+    { el: "#side", title: "Your province & actions",
+      text: "The side panel shows the selected province. From one you hold you can <b>Recruit</b> troops, <b>Build</b> (markets, temples, castles), and <b>March / Attack</b> a neighbour." },
+    { el: "#tabs", title: "The other levers",
+      text: "Tabs switch to <b>Powers</b> (rivals), <b>Diplomacy</b> (pacts & marriages), the <b>Shadow</b> (spies & assassins), and the <b>Court</b> (climb ranks to Shōgun)." },
+    { el: "#end-season-btn", title: "Turn the season",
+      text: "When you're done, <b>End Season</b>. Rivals move, the season turns, and each <b>Autumn you harvest</b> rice and koban. Feed your armies or they starve." },
+    { el: ".bb-actions", title: "You're ready",
+      text: "Replay this any time with <b>?</b>, toggle music with <b>🔊</b>. Fortune favours the bold — now go and unite Japan." },
+  ],
+
+  seen() { try { return localStorage.getItem("sr_tut_seen") === "1"; } catch (e) { return false; } },
+  markSeen() { try { localStorage.setItem("sr_tut_seen", "1"); } catch (e) {} },
+  maybeStart() { if (!this.seen()) this.start(); },
+
+  start() {
+    this.i = 0;
+    if (!this.layer) {
+      this.layer = document.createElement("div");
+      this.layer.id = "tut-layer";
+      this.layer.innerHTML =
+        `<div id="tut-spot"></div>
+         <div id="tut-card">
+           <div id="tut-title"></div><div id="tut-text"></div>
+           <div id="tut-nav">
+             <span id="tut-count"></span>
+             <span style="flex:1"></span>
+             <button id="tut-skip" class="ghost">Skip</button>
+             <button id="tut-back" class="ghost">Back</button>
+             <button id="tut-next" class="primary">Next</button>
+           </div>
+         </div>`;
+      document.body.appendChild(this.layer);
+      this.layer.querySelector("#tut-skip").onclick = () => this.close();
+      this.layer.querySelector("#tut-back").onclick = () => { this.i = Math.max(0, this.i - 1); this.render(); };
+      this.layer.querySelector("#tut-next").onclick = () => {
+        if (this.i >= this.steps.length - 1) this.close();
+        else { this.i++; this.render(); }
+      };
+      window.addEventListener("resize", () => { if (this.layer && this.layer.style.display !== "none") this.render(); });
+    }
+    this.layer.style.display = "block";
+    this.render();
+  },
+
+  render() {
+    const s = this.steps[this.i];
+    const spot = this.layer.querySelector("#tut-spot");
+    const card = this.layer.querySelector("#tut-card");
+    this.layer.querySelector("#tut-title").innerHTML = s.title;
+    this.layer.querySelector("#tut-text").innerHTML = s.text;
+    this.layer.querySelector("#tut-count").textContent = `${this.i + 1} / ${this.steps.length}`;
+    this.layer.querySelector("#tut-back").style.visibility = this.i === 0 ? "hidden" : "visible";
+    this.layer.querySelector("#tut-next").textContent = this.i >= this.steps.length - 1 ? "Begin" : "Next";
+
+    const el = s.el && document.querySelector(s.el);
+    if (el) {
+      const r = el.getBoundingClientRect(), pad = 6;
+      spot.style.display = "block";
+      spot.style.left = (r.left - pad) + "px"; spot.style.top = (r.top - pad) + "px";
+      spot.style.width = (r.width + pad * 2) + "px"; spot.style.height = (r.height + pad * 2) + "px";
+      // place the card near the highlight, kept on-screen
+      let cx = Math.min(Math.max(r.left, 12), window.innerWidth - 360);
+      let cy = r.bottom + 12;
+      if (cy + 190 > window.innerHeight) cy = Math.max(12, r.top - 200);
+      card.style.left = cx + "px"; card.style.top = cy + "px";
+      card.style.transform = "none";
+    } else {
+      spot.style.display = "none";
+      card.style.left = "50%"; card.style.top = "50%"; card.style.transform = "translate(-50%,-50%)";
+    }
+  },
+
+  close() { this.markSeen(); if (this.layer) this.layer.style.display = "none"; },
+};
+
+if (typeof module !== "undefined" && typeof UI !== "undefined") module.exports = UI.tutorial;
 
 
 /* =====================================================================
@@ -3657,6 +3935,7 @@ window.addEventListener("DOMContentLoaded", () => {
 /* ---- start a new campaign ------------------------------------------ */
 GAME.start = function () {
   const s = UI.setup;
+  if (UI.audio) UI.audio.init();      // create the AudioContext from this click
   if (s.mode === "B") SR.newGameB({ clan: s.clan, retainers: s.ret, lengthYears: s.len });
   else SR.newGameA({ clan: s.clan, lengthYears: s.len });
   UI.selected = SR.state.clans[SR.state.humanClan].daimyoLoc;
@@ -3670,6 +3949,8 @@ GAME.start = function () {
 GAME.startSeason = function (first) {
   const S = SR.state;
   SR.beginSeason(S);
+  if (UI.audio) UI.audio.play("season");
+  if (UI.seasonBanner) UI.seasonBanner(DATA.seasons[S.seasonIdx], S.year);
   if (S.mode === "B") {
     SR.modeBSeasonStart(S);
     // if the lord just died at the top of the final year, resolve immediately
@@ -3682,6 +3963,7 @@ GAME.startSeason = function (first) {
   $("#hint").textContent = S.mode === "B"
     ? `Year ${S.year}, ${DATA.seasons[S.seasonIdx]} — hold your fiefs, answer the lord, and scheme. Press End Season when ready.`
     : `Year ${S.year}, ${DATA.seasons[S.seasonIdx]} — take your actions, then press End Season.`;
+  if (first && UI.tutorial) setTimeout(() => UI.tutorial.maybeStart(), 500);
   if (SR.state.gameOver) GAME.showGameOver();
 };
 
@@ -3777,6 +4059,7 @@ GAME.showGameOver = function () {
   const scores = S.finalScores || SR.livingClans(S).map(c => ({ cid: c, ...SR.scoreTotal(S, c) })).sort((a, b) => b.total - a.total);
   const winCid = S.winner;
   const youWin = winCid === S.humanClan;
+  if (UI.audio && youWin) UI.audio.play("victory");
   const rows = scores.map((s, i) => {
     const c = S.clans[s.cid];
     return `<div class="score-row ${s.cid === winCid ? "win" : ""}">

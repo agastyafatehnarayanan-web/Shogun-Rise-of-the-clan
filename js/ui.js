@@ -564,6 +564,7 @@ UI.renderMarch = function () {
  * ------------------------------------------------------------------- */
 UI.showBattleReport = function (report, onDone) {
   const S = SR.state;
+  if (UI.audio) UI.audio.play(report && report.outcome === "occupied" ? "capture" : "battle");
   if (!report || !report.sim) {
     // walkover / siege-start / occupation
     UI.modal({
@@ -737,6 +738,12 @@ UI.initGame = function () {
   $("#end-season-btn").onclick = () => GAME.endSeason();
   $("#objectives-btn").onclick = () => UI.modal({ title: "Objectives", body: `<div class="panel">${UI.objectivesHTML(SR.state)}</div>`, foot: `<button class="primary" onclick="UI.closeModal()">Close</button>` });
   const cbtn = $("#copyright-btn"); if (cbtn) cbtn.onclick = () => UI.showCopyright();
+  const hb = $("#help2-btn"); if (hb) hb.onclick = () => UI.showHelp();
+  const mb = $("#mute-btn");
+  if (mb && UI.audio) {
+    UI.audio.loadMute(); mb.textContent = UI.audio.muted ? "🔇" : "🔊";
+    mb.onclick = () => { const m = UI.audio.toggle(); mb.textContent = m ? "🔇" : "🔊"; };
+  }
   $("#modal-x").onclick = () => UI.closeModal();
 };
 
@@ -747,6 +754,17 @@ UI.showCopyright = function () {
     body: `<div class="small" style="font-size:13px;line-height:1.7">${esc(UI.COPYRIGHT)}</div>`,
     foot: `<button class="primary" onclick="UI.closeModal()">Understood</button>`,
   });
+};
+
+/* Transient season banner (a little polish at each season change). */
+UI.seasonBanner = function (season, year) {
+  const jp = { Spring: "春", Summer: "夏", Autumn: "秋", Winter: "冬" }[season] || "";
+  let el = document.getElementById("season-banner");
+  if (!el) { el = document.createElement("div"); el.id = "season-banner"; document.body.appendChild(el); }
+  el.innerHTML = `<div class="sb-jp">${jp}</div><div class="sb-en">${esc(season)} · Year ${year}</div>`;
+  el.classList.add("show");
+  clearTimeout(UI._bannerT);
+  UI._bannerT = setTimeout(() => el.classList.remove("show"), 1500);
 };
 
 if (typeof module !== "undefined") module.exports = UI;
