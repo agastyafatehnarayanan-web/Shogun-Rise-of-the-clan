@@ -1040,20 +1040,27 @@ UI.openSiege = function (id) {
     const st = SR.siegeStatus(S, id);
     if (!st) { UI.closeModal(); UI.render(); return; }
     const acted = st.actedThisSeason;
+    const koban = S.clans[S.humanClan].koban;
+    const bar = (label, val, cls) => `<div class="sg-gauge"><span>${label}</span><div class="sg-meter"><span class="${cls}" style="width:${Math.round(val / 6 * 100)}%"></span></div><b>${val}/6</b></div>`;
     const body = `
       <div class="sg-status">
         <div class="sg-row"><span>Castle walls</span><b>${st.castle > 0 ? "level " + st.castle : "breached!"}</b></div>
         <div class="sg-row"><span>Garrison inside</span><b>${st.garrison} unit${st.garrison === 1 ? "" : "s"}</b></div>
         <div class="sg-row"><span>Your siege army</span><b>${st.besiegers} units${st.trains ? ` · ${st.trains} siege train${st.trains > 1 ? "s" : ""}` : " · no siege trains"}</b></div>
-        <div class="sg-row"><span>Their supply</span><b class="${st.starving ? "warn" : ""}">${st.starving ? "cut off — starving" : "still supplied"}</b></div>
-        ${st.blockaded ? `<div class="small okc">Your blockade is strangling the town.</div>` : ""}
+        ${bar("Food", st.supply, "food")}
+        ${bar("Will", st.spirit, "will")}
+        <div class="small" style="margin-top:3px;color:var(--ink2)">Empty their <b>Food</b> or their <b>Will</b> and the town falls.</div>
       </div>
-      <p class="small">${acted ? "Your siege lines have given their orders this season — you may still storm or lift." : "Choose one order this season, or storm / lift at any time."}</p>
+      <p class="small">${acted ? "Your siege lines have given their order this season — you may still storm or lift." : "Give one order this season; storm or lift at any time."}</p>
       <div class="sg-acts">
-        <button class="act sg-btn" id="sg-starve" ${acted ? "disabled" : ""}><span class="ai">🚫</span>Blockade &amp; starve<small>Cut their supply — hunger wears the garrison down. Safe but slow.</small></button>
-        <button class="act sg-btn" id="sg-bombard" ${acted ? "disabled" : ""}><span class="ai">💥</span>Bombard the walls<small>${st.trains ? "Batter the castle down with your siege trains." : "Weak without siege trains — bring siege weapons."}</small></button>
-        <button class="act sg-btn" id="sg-terms"><span class="ai">🏳</span>Offer terms<small>Demand surrender — likelier if they starve or the walls have fallen.</small></button>
-        <button class="act sg-btn" id="sg-storm"><span class="ai">🏯</span>Storm the walls<small>Assault now — bloody; the garrison fights with full walls.</small></button>
+        <button class="act sg-btn" id="sg-starve" ${acted ? "disabled" : ""}><span class="ai">🚫</span>Blockade &amp; starve<small>Choke off supply — Food drops fast. Safe and steady.</small></button>
+        <button class="act sg-btn" id="sg-bombard" ${acted ? "disabled" : ""}><span class="ai">💥</span>Bombard the walls<small>${st.trains ? "Siege trains batter the castle down." : "Weak without siege trains — bring siege weapons."}</small></button>
+        <button class="act sg-btn" id="sg-mine" ${acted ? "disabled" : ""}><span class="ai">⛏</span>Sap &amp; mine the walls<small>Tunnel under the walls — no guns needed, but chancy. Can collapse a whole section.</small></button>
+        <button class="act sg-btn" id="sg-rumours" ${acted ? "disabled" : ""}><span class="ai">🗣</span>Spread rumours<small>Agents sap the garrison's Will (stronger with high Intrigue).</small></button>
+        <button class="act sg-btn" id="sg-poison" ${acted ? "disabled" : ""}><span class="ai">☠</span>Poison the wells<small>Foul their water — Food & Will fall hard, but −2 Honour (dishonourable).</small></button>
+        <button class="act sg-btn" id="sg-incite" ${acted || koban < 3 ? "disabled" : ""}><span class="ai">🤝</span>Bribe &amp; incite treachery<small>3 koban${koban < 3 ? " — not enough" : ""} — buy men inside; they may open the gates or desert.</small></button>
+        <button class="act sg-btn" id="sg-terms"><span class="ai">🏳</span>Offer terms<small>Demand surrender — likelier as Food & Will run low.</small></button>
+        <button class="act sg-btn" id="sg-storm"><span class="ai">🏯</span>Storm the walls<small>Assault now — bloody; a starved, dispirited garrison fights far worse.</small></button>
         <button class="act sg-btn" id="sg-lift"><span class="ai">↩</span>Lift the siege<small>Withdraw your army back home.</small></button>
       </div>`;
     UI.modal({ title: "Siege of " + esc(SR.stat(id).name), body, foot: `<button class="primary" onclick="UI.closeModal()">Close</button>` });
@@ -1063,14 +1070,12 @@ UI.openSiege = function (id) {
       if (r.lifted) { UI.closeModal(); UI.render(); UI.toast("Siege lifted."); return; }
       if (r.report) { UI.closeModal(); UI.render(); UI.showBattleReport(r.report, done); return; }
       if (r.surrender) { UI.closeModal(); UI.render();
-        UI.modal({ title: "The Gates Open", body: r.lines.map(l => `<p>${esc(l)}</p>`).join(""), foot: `<button class="primary" onclick="UI.closeModal()">Continue</button>` }); return; }
+        UI.modal({ title: "The Town Falls", body: r.lines.map(l => `<p>${esc(l)}</p>`).join(""), foot: `<button class="primary" onclick="UI.closeModal()">Continue</button>` }); return; }
       UI.render(); if (r.lines && r.lines.length) UI.toast(r.lines[0]); render();
     };
-    $("#sg-starve").onclick = () => act("starve");
-    $("#sg-bombard").onclick = () => act("bombard");
-    $("#sg-terms").onclick = () => act("terms");
-    $("#sg-storm").onclick = () => act("storm");
-    $("#sg-lift").onclick = () => act("lift");
+    ["starve", "bombard", "mine", "rumours", "poison", "incite", "terms", "storm", "lift"].forEach(a => {
+      const el = document.getElementById("sg-" + a); if (el) el.onclick = () => act(a);
+    });
   };
   render();
 };

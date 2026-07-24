@@ -351,6 +351,13 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .act.sg-btn .ai{font-size:16px;margin-top:1px}
 .act.sg-btn small{display:block;color:var(--ink2);font-size:11px;margin-top:2px}
 .act.sg-btn:disabled{opacity:.5}
+.sg-gauge{display:flex;align-items:center;gap:8px;font-size:12px;padding:2px 0}
+.sg-gauge>span{color:var(--ink2);width:34px}
+.sg-gauge>b{width:28px;text-align:right;font-size:11px}
+.sg-meter{flex:1;height:9px;background:#e6d7b4;border:1px solid var(--paper-line);border-radius:5px;overflow:hidden}
+.sg-meter span{display:block;height:100%;transition:width .3s ease}
+.sg-meter span.food{background:linear-gradient(90deg,#c9a227,#a5811a)}
+.sg-meter span.will{background:linear-gradient(90deg,#7d8fb3,#4f6b9a)}
 
 /* scoring / game over */
 .score-row{display:flex;align-items:center;gap:9px;padding:8px 6px;border-bottom:1px solid var(--paper-line)}

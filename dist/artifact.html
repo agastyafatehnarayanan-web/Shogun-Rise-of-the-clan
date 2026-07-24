@@ -352,6 +352,13 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .act.sg-btn .ai{font-size:16px;margin-top:1px}
 .act.sg-btn small{display:block;color:var(--ink2);font-size:11px;margin-top:2px}
 .act.sg-btn:disabled{opacity:.5}
+.sg-gauge{display:flex;align-items:center;gap:8px;font-size:12px;padding:2px 0}
+.sg-gauge>span{color:var(--ink2);width:34px}
+.sg-gauge>b{width:28px;text-align:right;font-size:11px}
+.sg-meter{flex:1;height:9px;background:#e6d7b4;border:1px solid var(--paper-line);border-radius:5px;overflow:hidden}
+.sg-meter span{display:block;height:100%;transition:width .3s ease}
+.sg-meter span.food{background:linear-gradient(90deg,#c9a227,#a5811a)}
+.sg-meter span.will{background:linear-gradient(90deg,#7d8fb3,#4f6b9a)}
 
 /* scoring / game over */
 .score-row{display:flex;align-items:center;gap:9px;padding:8px 6px;border-bottom:1px solid var(--paper-line)}
@@ -2411,6 +2418,9 @@ SR.siegeTick = function (S, id) {
     SR.log(S, `The siege of ${SR.stat(id).name} is lifted.`, "info"); ps.siege = null; return;
   }
   sg.turns += 1;
+  SR.siegeInit(sg);
+  // a besieged town burns through its stores each season (faster if cut off)
+  sg.supply = Math.max(0, sg.supply - (SR.inSupply(S, id, ps.owner) ? 1 : 2));
   const siegeTrains = SR.countType(sg.army, "siege");
   const greatCastle = SR.stat(id).feature === "great_castle";
   const hojoDef = ps.owner === "hojo";
@@ -2423,12 +2433,11 @@ SR.siegeTick = function (S, id) {
     if (reduce > 0) { ps.castle = Math.max(0, ps.castle - reduce);
       SR.log(S, `Siege guns batter ${SR.stat(id).name}: castle now level ${ps.castle}.`,
         attCid === S.humanClan ? "info" : "info"); }
-  } else {
-    // starvation — cut supply garrison wastes away
-    if (!SR.inSupply(S, id, ps.owner)) {
-      if (ps.units.length) { ps.units.pop(); SR.log(S, `${SR.stat(id).name}'s garrison starves (a unit lost).`, "info"); }
-      else ps.castle = Math.max(0, ps.castle - 1);
-    }
+  }
+  // starvation once the stores run dry
+  if (sg.supply <= 0) {
+    if (ps.units.length) { ps.units.pop(); SR.log(S, `${SR.stat(id).name}'s garrison starves (a unit lost).`, ps.owner === S.humanClan ? "bad" : "info"); }
+    else ps.castle = Math.max(0, ps.castle - 1);
   }
   // besiegers take mild attrition in winter
   if (S.weather.winter && sg.army.length && SR.chance(0.4)) sg.army.pop();
@@ -2489,55 +2498,108 @@ SR.liftSiege = function (S, id) {
  * siege panel; the AI drives its own sieges via siegeTick.
  * ------------------------------------------------------------------- */
 SR.siegeSeasonKey = S => S.year * 10 + S.seasonIdx;
+/* A besieged garrison tracks Food (supply) and Will (spirit), each 0–6. Drive
+ * either to zero and the town falls — starvation, or a loss of nerve. */
+SR.siegeInit = function (sg) { if (sg.supply == null) sg.supply = 6; if (sg.spirit == null) sg.spirit = 6; };
 SR.siegeStatus = function (S, id) {
   const ps = S.provinces[id], sg = ps.siege; if (!sg) return null;
+  SR.siegeInit(sg);
   return {
     castle: ps.castle, garrison: ps.units.length, besiegers: (sg.army || []).length,
     trains: SR.countType(sg.army || [], "siege"), turns: sg.turns || 0,
-    starving: !SR.inSupply(S, id, ps.owner), blockaded: !!sg.starve,
-    actedThisSeason: sg.season === SR.siegeSeasonKey(S),
+    supply: sg.supply, spirit: sg.spirit,
+    blockaded: !!sg.starve, actedThisSeason: sg.season === SR.siegeSeasonKey(S),
   };
+};
+/* The town capitulates — the besieger walks in. */
+SR.siegeCapitulate = function (S, id, sg, attCid, honour) {
+  const ps = S.provinces[id];
+  ps.siege = null; ps.units = [];
+  SR.occupy(S, id, sg.army, attCid, sg.fromId, sg.bringDaimyo);
+  S.clans[attCid].prestige += 1;
+  if (honour) S.clans[attCid].honour = SR.clamp(S.clans[attCid].honour + honour, 0, 20);
 };
 SR.siegeAction = function (S, id, action) {
   const ps = S.provinces[id], sg = ps.siege;
   if (!sg) return { ok: false, reason: "No siege here." };
-  const attCid = sg.by, defCid = ps.owner;
+  SR.siegeInit(sg);
+  const attCid = sg.by, defCid = ps.owner, c = S.clans[attCid];
+  const intr = (c && c.in) || 1;
   if (action === "lift") { SR.liftSiege(S, id); return { ok: true, lifted: true }; }
   if (action === "storm") { const report = SR.siegeAssault(S, id, true); return { ok: true, report }; }
   const key = SR.siegeSeasonKey(S);
-  if (sg.season === key) return { ok: false, reason: "Your siege lines have already acted this season." };
+  if (sg.season === key) return { ok: false, reason: "Your siege lines have already given their order this season." };
+  // bribery is paid up front — check before committing the season
+  if (action === "incite" && c.koban < 3) return { ok: false, reason: "Need 3 koban to buy agents inside the walls." };
   sg.season = key; sg.turns = (sg.turns || 0) + 1;
   const lines = [];
+  // a besieged town always eats into its stores
+  sg.supply = Math.max(0, sg.supply - 1);
+
   if (action === "starve") {
-    sg.starve = true;
-    if (!SR.inSupply(S, id, defCid)) {
-      if (ps.units.length) { const u = ps.units.pop(); lines.push(`Cut off and starving, ${DATA.units[u.type].name} of the garrison wastes away.`); }
-      else { ps.castle = Math.max(0, ps.castle - 1); lines.push(`Starved of food and men, the defences fail — castle now level ${ps.castle}.`); }
-    } else {
-      lines.push(`You tighten the blockade of ${SR.stat(id).name}, strangling its supply. Hold, and hunger will do your work.`);
-    }
+    sg.starve = true; sg.supply = Math.max(0, sg.supply - 1);
+    lines.push(`You tighten the blockade of ${SR.stat(id).name} — its storehouses run low (Food ${sg.supply}/6).`);
   } else if (action === "bombard") {
     const trains = SR.countType(sg.army, "siege");
     const great = SR.stat(id).feature === "great_castle" || defCid === "hojo";
     let reduce = trains > 0 ? 1 + (trains > 1 ? 1 : 0) : (SR.chance(0.4) ? 1 : 0);
     if (great) reduce = Math.max(0, reduce - 1);
-    if (reduce > 0) { ps.castle = Math.max(0, ps.castle - reduce); lines.push(`Your guns pound the walls of ${SR.stat(id).name} — castle now level ${ps.castle}.`); }
-    else lines.push(trains > 0 ? `The great walls of ${SR.stat(id).name} shrug off today's fire.` : `Without siege trains your bombardment achieves little — bring siege weapons to breach the walls.`);
+    if (reduce > 0) { ps.castle = Math.max(0, ps.castle - reduce); sg.spirit = Math.max(0, sg.spirit - 1); lines.push(`Your guns pound the walls of ${SR.stat(id).name} — castle now level ${ps.castle}.`); }
+    else lines.push(trains > 0 ? `The great walls shrug off today's fire.` : `Without siege trains your bombardment does little — bring siege weapons.`);
+  } else if (action === "mine") {
+    // sappers tunnel under the walls — no siege train needed, but chancy
+    const r = Math.random();
+    if (r < 0.15) { ps.castle = Math.max(0, ps.castle - 2); sg.spirit = Math.max(0, sg.spirit - 1); lines.push(`The mine fires — a whole section of wall collapses in smoke and thunder! (castle now ${ps.castle})`); }
+    else if (r < 0.55) { ps.castle = Math.max(0, ps.castle - 1); lines.push(`Your sappers bring down a stretch of wall (castle now ${ps.castle}).`); }
+    else if (r < 0.68) { if (sg.army.length > 1) sg.army.pop(); lines.push(`The tunnel floods and collapses — you lose a party of sappers.`); }
+    else lines.push(`The sappers dig on beneath ${SR.stat(id).name}; the earth is stubborn.`);
+  } else if (action === "poison") {
+    // foul the wells — brutal and dishonourable
+    sg.supply = Math.max(0, sg.supply - 2); sg.spirit = Math.max(0, sg.spirit - 1);
+    c.honour = SR.clamp(c.honour - 2, 0, 20); c.treachery = (c.treachery || 0) + 1;
+    if (ps.units.length && SR.chance(0.4)) { ps.units.pop(); lines.push(`Poison in the wells of ${SR.stat(id).name} — sickness sweeps the garrison and a unit dies. (−2 Honour)`); }
+    else lines.push(`You foul the town's water. Thirst and sickness gnaw at the defenders. (−2 Honour)`);
+  } else if (action === "rumours") {
+    // agents spread despair — scales with your Intrigue
+    const d = 1 + (intr >= 3 ? 1 : 0) + (intr >= 5 ? 1 : 0);
+    sg.spirit = Math.max(0, sg.spirit - d);
+    lines.push(`Your agents whisper of doom through ${SR.stat(id).name} — the garrison's will falters (Will ${sg.spirit}/6).`);
+  } else if (action === "incite") {
+    c.koban -= 3;
+    const chance = Math.min(0.9, 0.15 + (6 - sg.spirit) / 6 * 0.4 + (6 - sg.supply) / 6 * 0.15 + intr * 0.05);
+    if (SR.chance(chance)) {
+      if (sg.spirit <= 1 || ps.castle === 0 || SR.chance(0.4)) {
+        lines.push(`Bribed officers throw open the gates of ${SR.stat(id).name}! The town is yours.`);
+        SR.siegeCapitulate(S, id, sg, attCid, 0);
+        SR.log(S, `${c.name} suborns the garrison of ${SR.stat(id).name} — the gates open!`, attCid === S.humanClan ? "good" : "info");
+        return { ok: true, surrender: true, lines };
+      }
+      const loss = Math.min(ps.units.length, 1 + (SR.chance(0.5) ? 1 : 0));
+      for (let i = 0; i < loss; i++) ps.units.pop();
+      sg.spirit = Math.max(0, sg.spirit - 2);
+      lines.push(`Desertion! ${loss} unit${loss > 1 ? "s slip" : " slips"} out of ${SR.stat(id).name} in the night, and the rest lose heart.`);
+    } else lines.push(`Your agents are caught and hanged from the walls — the bribe (3 koban) is wasted.`);
   } else if (action === "terms") {
-    const gPow = SR.armyPower(ps.units), bPow = SR.armyPower(sg.army);
-    let chance = 0.12 + (sg.starve ? 0.25 : 0) + Math.max(0, (bPow - gPow) / Math.max(1, bPow)) * 0.35 + (ps.castle === 0 ? 0.25 : 0);
-    if (SR.honourBand && SR.honourBand(S.clans[attCid].honour).min >= 10) chance += 0.08;
-    if (SR.chance(Math.min(0.92, chance))) {
-      ps.siege = null; ps.units = [];
-      SR.occupy(S, id, sg.army, attCid, sg.fromId, sg.bringDaimyo);
-      S.clans[attCid].prestige += 1; S.clans[attCid].honour = SR.clamp(S.clans[attCid].honour + 1, 0, 20);
+    const chance = Math.min(0.95, 0.1 + (6 - sg.supply) / 6 * 0.4 + (6 - sg.spirit) / 6 * 0.3 + (ps.castle === 0 ? 0.2 : 0) + (SR.honourBand && SR.honourBand(c.honour).min >= 10 ? 0.08 : 0));
+    if (SR.chance(chance)) {
       lines.push(`The garrison of ${SR.stat(id).name} accepts honourable terms and opens the gates! (+Prestige, +Honour)`);
-      SR.log(S, `${S.clans[attCid].name} negotiates the surrender of ${SR.stat(id).name}.`, attCid === S.humanClan ? "good" : "info");
+      SR.siegeCapitulate(S, id, sg, attCid, 1);
+      SR.log(S, `${c.name} negotiates the surrender of ${SR.stat(id).name}.`, attCid === S.humanClan ? "good" : "info");
       return { ok: true, surrender: true, lines };
     }
     lines.push(`The defenders of ${SR.stat(id).name} refuse your terms and hold fast.`);
   }
-  if (ps.castle <= 0) lines.push(`The walls are breached — you may now storm the town to take it.`);
+
+  // consequences of an empty larder or a broken will
+  if (sg.supply <= 0 && ps.units.length) { ps.units.pop(); lines.push(`Starvation grips ${SR.stat(id).name} — a unit of the garrison perishes.`); }
+  if (sg.spirit <= 0) {
+    lines.push(`Their will broken, the garrison of ${SR.stat(id).name} lays down its arms!`);
+    SR.siegeCapitulate(S, id, sg, attCid, 0);
+    SR.log(S, `The garrison of ${SR.stat(id).name} surrenders to ${c.name}.`, attCid === S.humanClan ? "good" : "info");
+    return { ok: true, surrender: true, lines };
+  }
+  if (ps.castle <= 0 && ps.units.length) lines.push(`The walls are breached — storm the town to take it.`);
+  else if (ps.castle <= 0 && !ps.units.length) { SR.siegeCapitulate(S, id, sg, attCid, 0); lines.push(`${SR.stat(id).name} falls — no walls, no garrison left to hold it.`); return { ok: true, surrender: true, lines }; }
   SR.log(S, lines[0] || "The siege grinds on.", "info");
   return { ok: true, lines };
 };
@@ -4501,20 +4563,27 @@ UI.openSiege = function (id) {
     const st = SR.siegeStatus(S, id);
     if (!st) { UI.closeModal(); UI.render(); return; }
     const acted = st.actedThisSeason;
+    const koban = S.clans[S.humanClan].koban;
+    const bar = (label, val, cls) => `<div class="sg-gauge"><span>${label}</span><div class="sg-meter"><span class="${cls}" style="width:${Math.round(val / 6 * 100)}%"></span></div><b>${val}/6</b></div>`;
     const body = `
       <div class="sg-status">
         <div class="sg-row"><span>Castle walls</span><b>${st.castle > 0 ? "level " + st.castle : "breached!"}</b></div>
         <div class="sg-row"><span>Garrison inside</span><b>${st.garrison} unit${st.garrison === 1 ? "" : "s"}</b></div>
         <div class="sg-row"><span>Your siege army</span><b>${st.besiegers} units${st.trains ? ` · ${st.trains} siege train${st.trains > 1 ? "s" : ""}` : " · no siege trains"}</b></div>
-        <div class="sg-row"><span>Their supply</span><b class="${st.starving ? "warn" : ""}">${st.starving ? "cut off — starving" : "still supplied"}</b></div>
-        ${st.blockaded ? `<div class="small okc">Your blockade is strangling the town.</div>` : ""}
+        ${bar("Food", st.supply, "food")}
+        ${bar("Will", st.spirit, "will")}
+        <div class="small" style="margin-top:3px;color:var(--ink2)">Empty their <b>Food</b> or their <b>Will</b> and the town falls.</div>
       </div>
-      <p class="small">${acted ? "Your siege lines have given their orders this season — you may still storm or lift." : "Choose one order this season, or storm / lift at any time."}</p>
+      <p class="small">${acted ? "Your siege lines have given their order this season — you may still storm or lift." : "Give one order this season; storm or lift at any time."}</p>
       <div class="sg-acts">
-        <button class="act sg-btn" id="sg-starve" ${acted ? "disabled" : ""}><span class="ai">🚫</span>Blockade &amp; starve<small>Cut their supply — hunger wears the garrison down. Safe but slow.</small></button>
-        <button class="act sg-btn" id="sg-bombard" ${acted ? "disabled" : ""}><span class="ai">💥</span>Bombard the walls<small>${st.trains ? "Batter the castle down with your siege trains." : "Weak without siege trains — bring siege weapons."}</small></button>
-        <button class="act sg-btn" id="sg-terms"><span class="ai">🏳</span>Offer terms<small>Demand surrender — likelier if they starve or the walls have fallen.</small></button>
-        <button class="act sg-btn" id="sg-storm"><span class="ai">🏯</span>Storm the walls<small>Assault now — bloody; the garrison fights with full walls.</small></button>
+        <button class="act sg-btn" id="sg-starve" ${acted ? "disabled" : ""}><span class="ai">🚫</span>Blockade &amp; starve<small>Choke off supply — Food drops fast. Safe and steady.</small></button>
+        <button class="act sg-btn" id="sg-bombard" ${acted ? "disabled" : ""}><span class="ai">💥</span>Bombard the walls<small>${st.trains ? "Siege trains batter the castle down." : "Weak without siege trains — bring siege weapons."}</small></button>
+        <button class="act sg-btn" id="sg-mine" ${acted ? "disabled" : ""}><span class="ai">⛏</span>Sap &amp; mine the walls<small>Tunnel under the walls — no guns needed, but chancy. Can collapse a whole section.</small></button>
+        <button class="act sg-btn" id="sg-rumours" ${acted ? "disabled" : ""}><span class="ai">🗣</span>Spread rumours<small>Agents sap the garrison's Will (stronger with high Intrigue).</small></button>
+        <button class="act sg-btn" id="sg-poison" ${acted ? "disabled" : ""}><span class="ai">☠</span>Poison the wells<small>Foul their water — Food & Will fall hard, but −2 Honour (dishonourable).</small></button>
+        <button class="act sg-btn" id="sg-incite" ${acted || koban < 3 ? "disabled" : ""}><span class="ai">🤝</span>Bribe &amp; incite treachery<small>3 koban${koban < 3 ? " — not enough" : ""} — buy men inside; they may open the gates or desert.</small></button>
+        <button class="act sg-btn" id="sg-terms"><span class="ai">🏳</span>Offer terms<small>Demand surrender — likelier as Food & Will run low.</small></button>
+        <button class="act sg-btn" id="sg-storm"><span class="ai">🏯</span>Storm the walls<small>Assault now — bloody; a starved, dispirited garrison fights far worse.</small></button>
         <button class="act sg-btn" id="sg-lift"><span class="ai">↩</span>Lift the siege<small>Withdraw your army back home.</small></button>
       </div>`;
     UI.modal({ title: "Siege of " + esc(SR.stat(id).name), body, foot: `<button class="primary" onclick="UI.closeModal()">Close</button>` });
@@ -4524,14 +4593,12 @@ UI.openSiege = function (id) {
       if (r.lifted) { UI.closeModal(); UI.render(); UI.toast("Siege lifted."); return; }
       if (r.report) { UI.closeModal(); UI.render(); UI.showBattleReport(r.report, done); return; }
       if (r.surrender) { UI.closeModal(); UI.render();
-        UI.modal({ title: "The Gates Open", body: r.lines.map(l => `<p>${esc(l)}</p>`).join(""), foot: `<button class="primary" onclick="UI.closeModal()">Continue</button>` }); return; }
+        UI.modal({ title: "The Town Falls", body: r.lines.map(l => `<p>${esc(l)}</p>`).join(""), foot: `<button class="primary" onclick="UI.closeModal()">Continue</button>` }); return; }
       UI.render(); if (r.lines && r.lines.length) UI.toast(r.lines[0]); render();
     };
-    $("#sg-starve").onclick = () => act("starve");
-    $("#sg-bombard").onclick = () => act("bombard");
-    $("#sg-terms").onclick = () => act("terms");
-    $("#sg-storm").onclick = () => act("storm");
-    $("#sg-lift").onclick = () => act("lift");
+    ["starve", "bombard", "mine", "rumours", "poison", "incite", "terms", "storm", "lift"].forEach(a => {
+      const el = document.getElementById("sg-" + a); if (el) el.onclick = () => act(a);
+    });
   };
   render();
 };
