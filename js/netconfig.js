@@ -7,4 +7,4 @@
  *     window.SHOGUN_SERVER = "wss://your-shogun-server.onrender.com";
  * (Use wss:// when your site is served over https, as GitHub Pages is.)
  * ------------------------------------------------------------------- */
-window.SHOGUN_SERVER = window.SHOGUN_SERVER || "";
+window.SHOGUN_SERVER = window.SHOGUN_SERVER || "wss://shogun-rise-of-the-dynasty-1.onrender.com";
