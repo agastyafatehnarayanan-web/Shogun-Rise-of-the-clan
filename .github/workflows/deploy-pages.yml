@@ -43,6 +43,11 @@ jobs:
       - name: Rebuild the single-file bundle
         run: node build.js
 
+      - name: Cache-bust asset URLs with the commit id
+        # Stamp index.html's ?v=… on css/js with this commit's short SHA so
+        # returning visitors always fetch the freshly deployed files.
+        run: sed -i "s/?v=[0-9A-Za-z]*/?v=${GITHUB_SHA:0:8}/g" index.html
+
       - name: Configure Pages
         # Pages is enabled on the repo (Settings → Pages → Source: GitHub Actions),
         # so this just reads the site config; no enablement needed.
