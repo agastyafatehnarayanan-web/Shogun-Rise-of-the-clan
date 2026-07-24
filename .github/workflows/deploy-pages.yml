@@ -44,7 +44,11 @@ jobs:
         run: node build.js
 
       - name: Configure Pages
+        # enablement: true turns Pages on automatically (the token has pages:write),
+        # so no manual Settings → Pages click is needed for the first deploy.
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload the site
         uses: actions/upload-pages-artifact@v3
