@@ -504,7 +504,7 @@ SR.executeAttack = function (S, fromId, toId, uids, attCid, opts) {
     from.units = from.units.filter(u => !uids.includes(u.uid));
     to.siege = { by: attCid, army: attArmy, turns: 0, fromId, bringDaimyo };
     if (bringDaimyo) S.clans[attCid].daimyoLoc = toId;
-    report.outcome = "siege"; report.text = `${S.clans[defCid ? defCid : "neutral"] ? S.clans[defCid].name + " withdraws" : "The garrison withdraws"} behind the walls of ${SR.stat(toId).name}. Lay siege!`;
+    report.outcome = "siege"; report.text = `${S.clans[defCid ? defCid : "neutral"] ? S.clans[defCid].name + " withdraws" : "The garrison withdraws"} behind the walls of ${SR.stat(toId).name}. Lay siege! Select the province and use “Siege command” each season.`;
     SR.log(S, `${S.clans[attCid].name} lays siege to ${SR.stat(toId).name}.`, attCid === S.humanClan ? "info" : "info");
     return report;
   }
@@ -607,7 +607,7 @@ SR.applyFieldResult = function (S, report, res, a) {
       to.units = survD;
       to.siege = { by: attCid, army: survA, turns: 0, fromId, bringDaimyo: o.bringDaimyo };
       if (o.bringDaimyo) S.clans[attCid].daimyoLoc = toId;
-      report.postText = `The field is won, but ${SR.stat(toId).name}'s castle (level ${to.castle}) still stands. Your army invests the walls.`;
+      report.postText = `The field is won, but ${SR.stat(toId).name}'s castle (level ${to.castle}) still stands. Your army invests the walls — select the province and use “Siege command” each season.`;
       SR.log(S, `${S.clans[attCid].name} wins the field at ${SR.stat(toId).name}; siege begins.`, attCid === S.humanClan ? "good" : "info");
     } else {
       // occupy

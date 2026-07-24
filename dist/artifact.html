@@ -2281,7 +2281,7 @@ SR.executeAttack = function (S, fromId, toId, uids, attCid, opts) {
     from.units = from.units.filter(u => !uids.includes(u.uid));
     to.siege = { by: attCid, army: attArmy, turns: 0, fromId, bringDaimyo };
     if (bringDaimyo) S.clans[attCid].daimyoLoc = toId;
-    report.outcome = "siege"; report.text = `${S.clans[defCid ? defCid : "neutral"] ? S.clans[defCid].name + " withdraws" : "The garrison withdraws"} behind the walls of ${SR.stat(toId).name}. Lay siege!`;
+    report.outcome = "siege"; report.text = `${S.clans[defCid ? defCid : "neutral"] ? S.clans[defCid].name + " withdraws" : "The garrison withdraws"} behind the walls of ${SR.stat(toId).name}. Lay siege! Select the province and use “Siege command” each season.`;
     SR.log(S, `${S.clans[attCid].name} lays siege to ${SR.stat(toId).name}.`, attCid === S.humanClan ? "info" : "info");
     return report;
   }
@@ -2384,7 +2384,7 @@ SR.applyFieldResult = function (S, report, res, a) {
       to.units = survD;
       to.siege = { by: attCid, army: survA, turns: 0, fromId, bringDaimyo: o.bringDaimyo };
       if (o.bringDaimyo) S.clans[attCid].daimyoLoc = toId;
-      report.postText = `The field is won, but ${SR.stat(toId).name}'s castle (level ${to.castle}) still stands. Your army invests the walls.`;
+      report.postText = `The field is won, but ${SR.stat(toId).name}'s castle (level ${to.castle}) still stands. Your army invests the walls — select the province and use “Siege command” each season.`;
       SR.log(S, `${S.clans[attCid].name} wins the field at ${SR.stat(toId).name}; siege begins.`, attCid === S.humanClan ? "good" : "info");
     } else {
       // occupy
@@ -3865,7 +3865,12 @@ UI.tabProvince = function (S) {
   const feat = p.feature ? `<div class="tag feat" title="${esc(DATA.features[p.feature].desc)}">${DATA.features[p.feature].name}</div>` : "";
   const siegeInfo = ps.siege ? `<div class="tag status-occupied">Under siege by ${S.clans[ps.siege.by].name}</div>` : "";
   let acts = "";
-  if (mine) acts = UI.provinceActions(S, id, ps);
+  if (ps.siege && ps.siege.by === S.humanClan) {
+    // you are besieging this (enemy/neutral) province — surface the siege command
+    acts = `<div class="act-grid" style="margin-bottom:8px">
+        <button class="act" data-a="siege" data-id="${id}"><span class="ai">⚔</span>Siege command</button></div>` +
+      UI.enemyProvinceActions(S, id, ps);
+  } else if (mine) acts = UI.provinceActions(S, id, ps);
   else acts = UI.enemyProvinceActions(S, id, ps);
 
   return `<div class="panel">

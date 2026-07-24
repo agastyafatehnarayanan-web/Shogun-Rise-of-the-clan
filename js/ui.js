@@ -232,7 +232,12 @@ UI.tabProvince = function (S) {
   const feat = p.feature ? `<div class="tag feat" title="${esc(DATA.features[p.feature].desc)}">${DATA.features[p.feature].name}</div>` : "";
   const siegeInfo = ps.siege ? `<div class="tag status-occupied">Under siege by ${S.clans[ps.siege.by].name}</div>` : "";
   let acts = "";
-  if (mine) acts = UI.provinceActions(S, id, ps);
+  if (ps.siege && ps.siege.by === S.humanClan) {
+    // you are besieging this (enemy/neutral) province — surface the siege command
+    acts = `<div class="act-grid" style="margin-bottom:8px">
+        <button class="act" data-a="siege" data-id="${id}"><span class="ai">⚔</span>Siege command</button></div>` +
+      UI.enemyProvinceActions(S, id, ps);
+  } else if (mine) acts = UI.provinceActions(S, id, ps);
   else acts = UI.enemyProvinceActions(S, id, ps);
 
   return `<div class="panel">
