@@ -310,6 +310,48 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .bt-outcome{font-family:var(--font-h);font-size:19px;text-align:center;padding:11px;border-radius:8px;margin-top:6px}
 .bt-outcome.win{background:#d6e6cf;color:#2e5227}
 .bt-outcome.lose{background:#efd0c6;color:#7a2c1c}
+.bt-line.dice{font-style:italic}
+.bt-line.dice.good{color:#8a5a12;background:#f6ecc9}
+.bt-line.dice.bad{color:#7a2c1c;background:#f1e0d0}
+
+/* ---- Deployment board (tap-to-place) ---- */
+#modal-card:has(.dp-wrap){max-width:770px}
+.dp-wrap{display:flex;flex-direction:column;gap:8px}
+.dp-hint{font-size:12px;color:var(--ink2);background:#efe6cd;border:1px solid var(--paper-line);border-radius:7px;padding:6px 9px}
+.dp-pool{background:#efe6cd;border:1px dashed var(--paper-line);border-radius:8px;padding:6px 8px;cursor:pointer}
+.dp-zh{font-family:var(--font-h);font-size:12px;color:var(--ink2);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.dp-post{background:var(--ink);color:var(--washi);border-radius:10px;padding:1px 8px;font-size:10.5px;cursor:pointer;font-family:var(--font-b)}
+.dp-board{display:flex;gap:8px}
+.dp-zone{flex:1;min-width:120px;background:#f4ecd6;border:1px solid var(--paper-line);border-radius:8px;padding:6px 7px;cursor:pointer;min-height:60px}
+.dp-zone:hover,.dp-pool:hover{border-color:var(--gold)}
+.dp-units{display:flex;flex-wrap:wrap;gap:4px;min-height:24px}
+.dp-unit{display:inline-flex;align-items:center;gap:4px;background:#f6eed9;border:1px solid var(--paper-line);border-radius:14px;padding:2px 8px 2px 3px;font-size:11.5px;cursor:pointer}
+.dp-unit.sel{background:var(--ink);color:var(--washi);border-color:var(--ink)}
+.dp-unit.sel .unit-glyph{outline:1px solid var(--gold)}
+.dp-star{cursor:pointer;color:#bfae82;font-size:11px}
+.dp-star.on{color:var(--gold2)}
+.dp-empty{color:var(--ink2);opacity:.5;font-size:11.5px}
+.dp-works{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.dp-work{font-size:10.5px;background:#e7dab5;border:1px solid var(--gold2);border-radius:10px;padding:1px 6px;color:#5c4a1c}
+.dp-work b{cursor:pointer;margin-left:4px;color:var(--vermilion)}
+.dp-worksbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#efe6cd;border:1px solid var(--paper-line);border-radius:8px;padding:6px 8px}
+.dp-wl{font-size:11.5px;color:var(--ink2);font-family:var(--font-h)}
+.dp-wbtn{font-size:11px;background:#f6eed9;border:1px solid var(--paper-line);border-radius:12px;padding:3px 9px;cursor:pointer}
+.dp-wbtn:hover{border-color:var(--gold)}
+.dp-wbtn.sel{background:var(--ink);color:var(--washi);border-color:var(--ink)}
+.dp-wbtn.dis{opacity:.4;pointer-events:none}
+.dp-opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+
+/* ---- Siege command ---- */
+.sg-status{background:#efe6cd;border:1px solid var(--paper-line);border-radius:8px;padding:8px 11px;margin-bottom:8px}
+.sg-row{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0}
+.sg-row span{color:var(--ink2)}
+.sg-row b.warn{color:var(--vermilion)}
+.sg-acts{display:flex;flex-direction:column;gap:7px}
+.act.sg-btn{display:flex;align-items:flex-start;gap:8px;text-align:left;padding:9px 11px;font-size:13px;line-height:1.3}
+.act.sg-btn .ai{font-size:16px;margin-top:1px}
+.act.sg-btn small{display:block;color:var(--ink2);font-size:11px;margin-top:2px}
+.act.sg-btn:disabled{opacity:.5}
 
 /* scoring / game over */
 .score-row{display:flex;align-items:center;gap:9px;padding:8px 6px;border-bottom:1px solid var(--paper-line)}
@@ -671,6 +713,24 @@ DATA.buildings = {
     desc: "+3 Prestige, +2 Honour; strong pacification aid." },
   academy:    { name: "Tea House / Academy", cost: 3, prestige: 2, culture: true,
     desc: "+2 Prestige (the Culture path)." },
+  fort:       { name: "Fort", cost: 3, prestige: 1, fieldDef: 3, extraWorks: 1,
+    desc: "Earthwork fort: +3 defence when you fight a field battle here, and +1 field-work to raise in that battle." },
+};
+
+/* ---------------------------------------------------------------------
+ * FIELD WORKS — structures you raise on the battlefield, placed into a
+ * flank during deployment. A limited budget per battle (defender gets more;
+ * a Fort in the province grants one extra), so WHERE you build them matters.
+ * ------------------------------------------------------------------- */
+DATA.fieldWorks = {
+  palisade:    { name: "Palisade", glyph: "▤", def: 3,
+    desc: "Timber wall — +3 defence in this flank." },
+  stakes:      { name: "Anti-cavalry stakes", glyph: "≜", antiShock: 6,
+    desc: "Sharpened stakes — cancel up to 6 points of enemy cavalry Shock in this flank." },
+  emplacement: { name: "Gun emplacement", glyph: "⊡", fire: 3,
+    desc: "Earthwork for the guns — +3 firepower in this flank." },
+  redoubt:     { name: "Redoubt", glyph: "◈", def: 2, steady: 2,
+    desc: "Strongpoint — +2 defence and steadies morale (softens a break here)." },
 };
 
 /* ---------------------------------------------------------------------
@@ -1445,6 +1505,9 @@ SR.processSieges = function (S) {
   for (const id in S.provinces) {
     const ps = S.provinces[id];
     if (!ps.siege) continue;
+    // The human directs their own sieges by hand via the siege panel; only the
+    // AI's sieges tick automatically. (Online play has no local human sentinel.)
+    if (ps.siege.by === S.humanClan && S.humanClan !== "__SERVER__") continue;
     SR.siegeTick(S, id);
   }
 };
@@ -1733,8 +1796,9 @@ SR.roleVal = (type, role) => { const u = DATA.units[type]; return role === "def"
 
 /* A sensible default deployment: cavalry take a flank, guns + a strong line
  * hold the centre, a reserve is kept back if the army is large enough. */
+SR.emptyWorks = () => ({ L: [], C: [], R: [] });
 SR.autoDeploy = function (units, role, terrain) {
-  const d = { L: [], C: [], R: [], RES: [], pL: "Line", pC: "Line", pR: "Line" };
+  const d = { L: [], C: [], R: [], RES: [], pL: "Line", pC: "Line", pR: "Line", front: { L: [], C: [], R: [] }, works: SR.emptyWorks() };
   const cav = units.filter(u => DATA.units[u.type].tags.includes("shock"));
   const foot = units.filter(u => !DATA.units[u.type].tags.includes("shock"));
   cav.forEach(u => d.R.push(u.uid));                       // horse on the right flank
@@ -1758,7 +1822,7 @@ SR.planDeploy = function (units, role, terrain, plan) {
   plan = plan || {};
   const main = ["L", "C", "R"].includes(plan.main) ? plan.main : "C";
   const form = ["Line", "Wide", "Deep"].includes(plan.formation) ? plan.formation : "Line";
-  const d = { L: [], C: [], R: [], RES: [], pL: form, pC: form, pR: form };
+  const d = { L: [], C: [], R: [], RES: [], pL: form, pC: form, pR: form, front: { L: [], C: [], R: [] }, works: SR.emptyWorks() };
   const others = ["L", "C", "R"].filter(s => s !== main);
   const cav = units.filter(u => DATA.units[u.type].tags.includes("shock"));
   const rest = units.filter(u => !DATA.units[u.type].tags.includes("shock"));
@@ -1778,15 +1842,40 @@ SR.secUnits = function (B, sk, sec) {
   return live.filter(u => ids.includes(u.uid));
 };
 
+/* Field works a side raised in a sector, summed to their effects. */
+SR.sectorWorks = function (B, sk, sec) {
+  const list = (B.deploy[sk].works && B.deploy[sk].works[sec]) || [];
+  const acc = { def: 0, fire: 0, antiShock: 0, steady: 0, keys: list.slice() };
+  for (const wk of list) { const w = DATA.fieldWorks[wk]; if (!w) continue;
+    acc.def += w.def || 0; acc.fire += w.fire || 0; acc.antiShock += w.antiShock || 0; acc.steady += w.steady || 0; }
+  return acc;
+};
+
 /* Deterministic Sector Strength for one side in one sector this round. */
 SR.sectorSS = function (B, sk, sec) {
   const S = B.side[sk], role = S.role, posture = B.deploy[sk]["p" + sec];
   const units = SR.secUnits(B, sk, sec);
-  if (!units.length) return { ss: 0, front: 0, parts: {} };
+  const works = SR.sectorWorks(B, sk, sec);
+  if (!units.length) {
+    // an empty flank still holds its works (a manned wall with no troops is just a wall)
+    if (works.def || works.fire) { const parts = {}; let ss = 0;
+      if (works.def) { ss += works.def; parts.works = works.def; }
+      return { ss, front: 0, parts, count: 0, steady: works.steady }; }
+    return { ss: 0, front: 0, parts: {}, count: 0, steady: works.steady };
+  }
   const T = DATA.terrain[B.terrain];
   let front = T.frontage; if (posture === "Deep") front = Math.max(1, front - 1); if (posture === "Wide") front += 1;
-  const sorted = [...units].sort((a, b) => SR.roleVal(b.type, role) - SR.roleVal(a.type, role));
-  const eng = sorted.slice(0, front), sup = sorted.slice(front);
+  // Player-chosen front rank comes first; the rest fill by fighting value.
+  const chosen = (B.deploy[sk].front && B.deploy[sk].front[sec]) || [];
+  let ordered;
+  if (chosen.length) {
+    const inFront = units.filter(u => chosen.includes(u.uid));
+    const rest = units.filter(u => !chosen.includes(u.uid)).sort((a, b) => SR.roleVal(b.type, role) - SR.roleVal(a.type, role));
+    ordered = inFront.concat(rest);
+  } else {
+    ordered = [...units].sort((a, b) => SR.roleVal(b.type, role) - SR.roleVal(a.type, role));
+  }
+  const eng = ordered.slice(0, front), sup = ordered.slice(front);
   const parts = {};
   let ss = SR.sum(eng, u => SR.roleVal(u.type, role)); parts.line = ss;
   // Attacker's initiative: they chose the ground and the moment to strike.
@@ -1794,14 +1883,16 @@ SR.sectorSS = function (B, sk, sec) {
   // terrain
   if (role === "def") { const t = T.defBonus; ss += t; if (t) parts.terrain = t; }
   else if (B.terrain === "Mountain" || B.terrain === "River") { ss -= 2; parts.terrain = -2; }
-  // shock: charging cavalry, round 1, max 2, ½ in mtn/forest — but enemy guns/
-  // archers in this sector shoot the horses (each Teppō cancels 3, each Archer 1).
+  // shock: charging cavalry, round 1, max 2, ½ in mtn/forest — but enemy guns,
+  // archers, and anti-cavalry stakes in this flank blunt the charge.
   if (B.round <= 1) {
     const cav = Math.min(2, units.filter(u => DATA.units[u.type].tags.includes("shock")).length);
     if (cav) {
       let sh = Math.round(cav * 3 * (["Mountain", "Forest"].includes(B.terrain) ? 0.5 : 1));
-      const foe = SR.secUnits(B, sk === "att" ? "def" : "att", sec);
-      const antiShock = foe.filter(u => u.type === "teppo").length * 3 + foe.filter(u => u.type === "archers").length;
+      const foeSk = sk === "att" ? "def" : "att";
+      const foe = SR.secUnits(B, foeSk, sec);
+      const foeWorks = SR.sectorWorks(B, foeSk, sec);
+      const antiShock = foe.filter(u => u.type === "teppo").length * 3 + foe.filter(u => u.type === "archers").length + foeWorks.antiShock;
       sh = Math.max(0, sh - antiShock);
       if (sh) { ss += sh; parts.shock = sh; } else if (antiShock) parts.shock = 0;
     }
@@ -1811,12 +1902,17 @@ SR.sectorSS = function (B, sk, sec) {
   for (const u of units) { const d = DATA.units[u.type];
     if (d.tags.includes("volley")) { if (!B.wet && B.round % 2 === 1) fire += 3 + (B.deploy[sk === "att" ? "def" : "att"]["p" + sec] === "Deep" ? 1 : 0); }
     else if (d.tags.includes("ranged")) fire += 2; }
+  fire += works.fire;                                  // gun emplacements add to the volley
   if (fire) { ss += fire; parts.fire = fire; if (S.trait === "Teppō") { ss += 1; parts.fire += 1; } }
+  // field works: palisades / redoubts add defence to whoever raised them
+  if (works.def) { ss += works.def; parts.works = works.def; }
   // depth (Deep), infantry/defence traits
   if (posture === "Deep" && sup.length) { const dep = Math.min(3, sup.length); ss += dep; parts.depth = dep; }
   if (S.trait === "Infantry") { const inf = Math.round(0.5 * units.filter(u => ["ashigaru", "samurai"].includes(u.type)).length); if (inf) { ss += inf; parts.infantry = inf; } }
   if (S.trait === "Siege & Defence" && role === "def") { ss += 2; parts.defence = 2; }
   if (role === "def" && B.castleBonus && B.assault) { const cb = B.castleBonus * 2; ss += cb; parts.walls = cb; }
+  // a Fort in the province strengthens the defender's strongpoint
+  if (role === "def" && B.fortDef && sec === S.mainSec) { ss += B.fortDef; parts.fort = B.fortDef; }
   // leadership in the main-effort sector
   if (sec === S.mainSec && S.cmd) { ss += S.cmd; parts.command = S.cmd; }
   // wheel bonus (won a flank last round → roll into the centre)
@@ -1825,7 +1921,7 @@ SR.sectorSS = function (B, sk, sec) {
   if (S.prowessSec === sec && B.round === 1 && S.ms) { ss += S.ms; parts.prowess = S.ms; }
   // fatigue
   const fat = Math.min(3, B.fatigue[sk][sec] || 0); if (fat) { ss -= fat; parts.fatigue = -fat; }
-  return { ss: Math.max(0, ss), front, parts, count: units.length };
+  return { ss: Math.max(0, ss), front, parts, count: units.length, steady: works.steady };
 };
 
 SR.beginBattle = function (ctx) {
@@ -1844,6 +1940,7 @@ SR.beginBattle = function (ctx) {
       att: ctx.attDeploy || SR.autoDeploy(A, "att", ctx.terrain),
       def: ctx.defDeploy || SR.autoDeploy(D, "def", ctx.terrain),
     },
+    fortDef: ctx.fortDef || 0,
     morale: {
       att: 10 + Math.min(3, SR.countType(A, "samurai")) + (ctx.attCmd || 0) + (ctx.attMS || 0),
       def: 10 + Math.min(3, SR.countType(D, "samurai")) + (ctx.defCmd || 0) + (ctx.defMS || 0) + (ctx.castleBonus || 0),
@@ -1853,7 +1950,10 @@ SR.beginBattle = function (ctx) {
     losses: { att: [], def: [] }, morale0: {},
   };
   ["att", "def"].forEach(sk => {
-    B.side[sk].mainSec = mainOf(B.deploy[sk]);
+    const dep = B.deploy[sk];                 // normalise deploys from the UI / plan
+    if (!dep.front) dep.front = { L: [], C: [], R: [] };
+    if (!dep.works) dep.works = SR.emptyWorks();
+    B.side[sk].mainSec = mainOf(dep);
     B.side[sk].prowessSec = B.side[sk].mainSec; // spend Prowess on the main effort
   });
   B.morale0 = { att: B.morale.att, def: B.morale.def };
@@ -1908,6 +2008,11 @@ SR.resolveRound = function (B, dice) {
     const totA = a.ss + dieA, totD = d.ss + dieD;
     const margin = Math.abs(totA - totD);
     const winSide = totA >= totD ? "att" : "def", loseSide = winSide === "att" ? "def" : "att";
+    // Did the dice decide it? (winner by pure strength vs winner after the roll)
+    const ssWin = a.ss >= d.ss ? "att" : "def";
+    const flip = ssWin !== winSide;               // the roll overturned the stronger line
+    const decidedByDice = flip || a.ss === d.ss;  // roll broke a tie or flipped the result
+    const loserSteady = (loseSide === "att" ? a.steady : d.steady) || 0;   // redoubt
     const loseUnits = SR.secUnits(B, loseSide, sec), winUnits = SR.secUnits(B, winSide, sec);
     let loseCas = Math.min(Math.floor(margin / 4), loseUnits.length);
     if (B.deploy[loseSide]["p" + sec] === "Deep") loseCas = Math.max(0, loseCas - 1);
@@ -1916,13 +2021,14 @@ SR.resolveRound = function (B, dice) {
     SR.removeSecCas(B, winSide, sec, winCas);
     let mLoss = Math.min(margin, 6);
     if (B.deploy[loseSide]["p" + sec] === "Deep") mLoss = Math.max(0, mLoss - 2);
+    mLoss = Math.max(0, mLoss - loserSteady);     // a redoubt steadies the shaken flank
     if (margin > 0) B.morale[loseSide] -= mLoss;
     B.fatigue.att[sec]++; B.fatigue.def[sec]++;
     const lostFront = SR.secUnits(B, loseSide, sec).length === 0;
-    const broke = margin >= 8 || lostFront;
+    const broke = (margin >= 8 + loserSteady * 2) || lostFront;   // works make a flank harder to break
     if (broke) { if (B.deploy[loseSide]["p" + sec] === "Wide") B.morale[loseSide] -= 2; B.broke[winSide] = sec; }
     results.push({ sector: sec, name: SR.sectorName[sec], attSS: a.ss, defSS: d.ss, attParts: a.parts, defParts: d.parts,
-      dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke,
+      dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke, flip, decidedByDice,
       text: `${SR.sectorName[sec]}: ${totA} vs ${totD} — ${winSide === "att" ? "you" : "they"}` +
             `${margin === 0 ? " hold, a bloody stand-off" : " win by " + margin + (loseCas ? `, ${loseSide === "att" ? "you lose" : "they lose"} ${loseCas}` : "")}` +
             `${broke ? " — the line breaks!" : ""}.` });
@@ -2102,6 +2208,7 @@ SR.executeAttack = function (S, fromId, toId, uids, attCid, opts) {
   // stand → field battle
   return SR.resolveField(S, fromId, toId, attArmy, attCid, defCid, {
     surprise: !!opts.surprise, attPlan: opts.plan, defPlan: opts.defPlan,
+    attDeploy: opts.deploy, defDeploy: opts.defDeploy,   // full hand-made deployments
     attCmd, attTrait, report, occupyOnWin: true, bringDaimyo,
     interactive: !!opts.interactive,
   });
@@ -2117,6 +2224,9 @@ SR.buildFieldCtx = function (S, fromId, toId, attArmy, attCid, defCid, o) {
   const defTrait = defCid ? S.clans[defCid].trait : "";
   const terr = SR.stat(toId).terrain;
   const humanSide = attCid === S.humanClan ? "att" : (defCid === S.humanClan ? "def" : null);
+  // a Fort in the defended province strengthens the defender and grants a work
+  const hasFort = !!(to.buildings && to.buildings.fort);
+  const fortDef = hasFort ? DATA.buildings.fort.fieldDef : 0;
   return {
     attUnits: attArmy, defUnits: defArmy,
     attCmd: o.attCmd, defCmd,
@@ -2124,10 +2234,13 @@ SR.buildFieldCtx = function (S, fromId, toId, attArmy, attCid, defCid, o) {
     attMS: S.clans[attCid].ms, defMS: defCid ? S.clans[defCid].ms : 0,
     terrain: terr, weather: S.weather,
     surprise: o.surprise,
-    // a player's battle plan concentrates their force; the AI auto-deploys
-    attDeploy: o.attPlan ? SR.planDeploy(attArmy, "att", terr, o.attPlan) : undefined,
-    defDeploy: o.defPlan ? SR.planDeploy(defArmy, "def", terr, o.defPlan) : undefined,
+    // a full hand-made deployment wins; else a simple plan; else the AI auto-deploys
+    attDeploy: o.attDeploy || (o.attPlan ? SR.planDeploy(attArmy, "att", terr, o.attPlan) : undefined),
+    defDeploy: o.defDeploy || (o.defPlan ? SR.planDeploy(defArmy, "def", terr, o.defPlan) : undefined),
     castleBonus: o.assault ? to.castle : 0, assault: !!o.assault,
+    fortDef,
+    // field-work budget: attacker 1, defender 2 (+1 with a Fort)
+    attWorks: 1, defWorks: 2 + (hasFort ? DATA.buildings.fort.extraWorks : 0),
     humanSide, defDaimyoHere,
   };
 };
@@ -2367,6 +2480,97 @@ SR.liftSiege = function (S, id) {
   if (home && home.owner === sg.by) home.units.push(...sg.army);
   ps.siege = null;
   SR.log(S, `${S.clans[sg.by].name} lifts the siege of ${SR.stat(id).name}.`, "info");
+};
+
+/* ---------------------------------------------------------------------
+ * INTERACTIVE SIEGE — the besieger chooses how to break a castle each
+ * season: blockade & starve, bombard the walls, offer terms, or storm.
+ * One order per season (storm/lift are always available). Reused by the
+ * siege panel; the AI drives its own sieges via siegeTick.
+ * ------------------------------------------------------------------- */
+SR.siegeSeasonKey = S => S.year * 10 + S.seasonIdx;
+SR.siegeStatus = function (S, id) {
+  const ps = S.provinces[id], sg = ps.siege; if (!sg) return null;
+  return {
+    castle: ps.castle, garrison: ps.units.length, besiegers: (sg.army || []).length,
+    trains: SR.countType(sg.army || [], "siege"), turns: sg.turns || 0,
+    starving: !SR.inSupply(S, id, ps.owner), blockaded: !!sg.starve,
+    actedThisSeason: sg.season === SR.siegeSeasonKey(S),
+  };
+};
+SR.siegeAction = function (S, id, action) {
+  const ps = S.provinces[id], sg = ps.siege;
+  if (!sg) return { ok: false, reason: "No siege here." };
+  const attCid = sg.by, defCid = ps.owner;
+  if (action === "lift") { SR.liftSiege(S, id); return { ok: true, lifted: true }; }
+  if (action === "storm") { const report = SR.siegeAssault(S, id, true); return { ok: true, report }; }
+  const key = SR.siegeSeasonKey(S);
+  if (sg.season === key) return { ok: false, reason: "Your siege lines have already acted this season." };
+  sg.season = key; sg.turns = (sg.turns || 0) + 1;
+  const lines = [];
+  if (action === "starve") {
+    sg.starve = true;
+    if (!SR.inSupply(S, id, defCid)) {
+      if (ps.units.length) { const u = ps.units.pop(); lines.push(`Cut off and starving, ${DATA.units[u.type].name} of the garrison wastes away.`); }
+      else { ps.castle = Math.max(0, ps.castle - 1); lines.push(`Starved of food and men, the defences fail — castle now level ${ps.castle}.`); }
+    } else {
+      lines.push(`You tighten the blockade of ${SR.stat(id).name}, strangling its supply. Hold, and hunger will do your work.`);
+    }
+  } else if (action === "bombard") {
+    const trains = SR.countType(sg.army, "siege");
+    const great = SR.stat(id).feature === "great_castle" || defCid === "hojo";
+    let reduce = trains > 0 ? 1 + (trains > 1 ? 1 : 0) : (SR.chance(0.4) ? 1 : 0);
+    if (great) reduce = Math.max(0, reduce - 1);
+    if (reduce > 0) { ps.castle = Math.max(0, ps.castle - reduce); lines.push(`Your guns pound the walls of ${SR.stat(id).name} — castle now level ${ps.castle}.`); }
+    else lines.push(trains > 0 ? `The great walls of ${SR.stat(id).name} shrug off today's fire.` : `Without siege trains your bombardment achieves little — bring siege weapons to breach the walls.`);
+  } else if (action === "terms") {
+    const gPow = SR.armyPower(ps.units), bPow = SR.armyPower(sg.army);
+    let chance = 0.12 + (sg.starve ? 0.25 : 0) + Math.max(0, (bPow - gPow) / Math.max(1, bPow)) * 0.35 + (ps.castle === 0 ? 0.25 : 0);
+    if (SR.honourBand && SR.honourBand(S.clans[attCid].honour).min >= 10) chance += 0.08;
+    if (SR.chance(Math.min(0.92, chance))) {
+      ps.siege = null; ps.units = [];
+      SR.occupy(S, id, sg.army, attCid, sg.fromId, sg.bringDaimyo);
+      S.clans[attCid].prestige += 1; S.clans[attCid].honour = SR.clamp(S.clans[attCid].honour + 1, 0, 20);
+      lines.push(`The garrison of ${SR.stat(id).name} accepts honourable terms and opens the gates! (+Prestige, +Honour)`);
+      SR.log(S, `${S.clans[attCid].name} negotiates the surrender of ${SR.stat(id).name}.`, attCid === S.humanClan ? "good" : "info");
+      return { ok: true, surrender: true, lines };
+    }
+    lines.push(`The defenders of ${SR.stat(id).name} refuse your terms and hold fast.`);
+  }
+  if (ps.castle <= 0) lines.push(`The walls are breached — you may now storm the town to take it.`);
+  SR.log(S, lines[0] || "The siege grinds on.", "info");
+  return { ok: true, lines };
+};
+
+/* A sortie: the besieged garrison sallies out to break the siege. Auto-resolved
+ * (a surprise on the besiegers); win → siege broken, lose → thrown back inside. */
+SR.siegeSortie = function (S, id) {
+  const ps = S.provinces[id], sg = ps.siege; if (!sg) return { ok: false, reason: "No siege here." };
+  const defCid = ps.owner, attCid = sg.by;
+  const garrison = ps.units.slice(), besiegers = (sg.army || []).slice();
+  if (!garrison.length) return { ok: false, reason: "No garrison to sortie with." };
+  const daimyoHere = S.clans[defCid].daimyoAlive && S.clans[defCid].daimyoLoc === id;
+  const res = SR.simulateBattle({
+    attUnits: garrison, defUnits: besiegers,
+    attCmd: daimyoHere ? S.clans[defCid].command : 1, defCmd: sg.bringDaimyo ? S.clans[attCid].command : 1,
+    attTrait: S.clans[defCid].trait, defTrait: S.clans[attCid] ? S.clans[attCid].trait : "",
+    attMS: S.clans[defCid].ms, defMS: S.clans[attCid] ? S.clans[attCid].ms : 0,
+    terrain: SR.stat(id).terrain, weather: S.weather, surprise: true,
+  });
+  const report = { outcome: "", sim: res, terrain: SR.stat(id).terrain, toId: id, attCid: defCid, defCid: attCid,
+    attStart: garrison.length, defStart: besiegers.length, sortie: true };
+  if (res.winner === "att") {
+    ps.units = res.attSurv; S.clans[defCid].prestige += 2;
+    const home = S.provinces[sg.fromId]; if (home && home.owner === attCid) home.units.push(...res.defSurv);
+    ps.siege = null;
+    report.outcome = "attWin"; report.postText = `The sortie shatters the besiegers — the siege of ${SR.stat(id).name} is broken!`;
+    SR.log(S, `${S.clans[defCid].name}'s sortie breaks the siege of ${SR.stat(id).name}!`, defCid === S.humanClan ? "good" : "info");
+  } else {
+    ps.units = res.attSurv; sg.army = res.defSurv;
+    report.outcome = "defWin"; report.postText = `The sortie from ${SR.stat(id).name} is thrown back; the siege tightens.`;
+    SR.log(S, `${S.clans[defCid].name}'s sortie from ${SR.stat(id).name} is repulsed.`, defCid === S.humanClan ? "bad" : "info");
+  }
+  return { ok: true, report };
 };
 
 /* ---------------------------------------------------------------------
@@ -3517,8 +3721,10 @@ UI.provinceActions = function (S, id, ps) {
   let mySiege = "";
   if (ps.siege && ps.siege.by === S.humanClan) {
     mySiege = `<div class="act-grid" style="margin-bottom:8px">
-      <button class="act" data-a="assault" data-id="${id}"><span class="ai">🏯</span>Storm the walls</button>
-      <button class="act" data-a="lift" data-id="${id}"><span class="ai">↩</span>Lift siege</button></div>`;
+      <button class="act" data-a="siege" data-id="${id}"><span class="ai">⚔</span>Siege command</button></div>`;
+  } else if (ps.siege && ps.owner === S.humanClan) {
+    mySiege = `<div class="act-grid" style="margin-bottom:8px">
+      <button class="act" data-a="sortie" data-id="${id}"><span class="ai">🐎</span>Sortie — break the siege</button></div>`;
   }
   let g = `<div class="act-grid">`;
   g += `<button class="act" data-a="march" data-id="${id}" ${SR.movableUnits(S, id).length ? "" : "disabled"}><span class="ai">⚔</span>March / Attack</button>`;
@@ -3685,6 +3891,8 @@ UI.action = function (a, d) {
     case "raze": UI.confirm(`Raze ${SR.stat(d.id).name}? This destroys its buildings & income and costs 3 Honour.`, () => after(SR.doRaze(S, d.id, cid))); break;
     case "assault": UI.doAssault(d.id); break;
     case "lift": SR.liftSiege(S, d.id); UI.render(); break;
+    case "siege": UI.openSiege(d.id); break;
+    case "sortie": UI.doSortie(d.id); break;
     case "court": after(SR.doCourt(S, cid)); break;
     case "agent": after(SR.recruitAgent(S, cid)); break;
     case "spymaster": after(SR.hireSpymaster(S, cid)); break;
@@ -3757,13 +3965,107 @@ UI.openBuild = function (id) {
   });
 };
 
+/* ---------------------------------------------------------------------
+ * DEPLOYMENT BOARD — tap a unit, then a flank, to place it individually.
+ * Raise field works (palisade / stakes / gun emplacement / redoubt) into a
+ * flank, set each flank's posture, and mark front-rank units. Reused by the
+ * attacker (March) and the defender (Under Attack) screens.
+ * ------------------------------------------------------------------- */
+UI.newDeploy = function (units, worksBudget) {
+  return {
+    units: units.map(u => ({ uid: u.uid, type: u.type })),
+    pool: units.map(u => u.uid), L: [], C: [], R: [], RES: [],
+    front: { L: [], C: [], R: [] }, works: { L: [], C: [], R: [] },
+    post: { L: "Line", C: "Line", R: "Line" },
+    worksBudget: worksBudget || 0, sel: null,
+  };
+};
+UI.dpWorksLeft = st => st.worksBudget - (st.works.L.length + st.works.C.length + st.works.R.length);
+UI.dpZoneOf = (st, uid) => ["L", "C", "R", "RES"].find(z => st[z].includes(uid));
+UI.dpAuto = function (st, terrain) {
+  const d = SR.autoDeploy(st.units.map(u => ({ uid: u.uid, type: u.type })), "att", terrain);
+  st.L = d.L.slice(); st.C = d.C.slice(); st.R = d.R.slice(); st.RES = d.RES.slice();
+  st.pool = []; st.front = { L: [], C: [], R: [] }; st.post = { L: d.pL, C: d.pC, R: d.pR }; st.sel = null;
+};
+UI.dpReady = st => st.pool.length === 0 && (st.L.length + st.C.length + st.R.length) > 0;
+UI.dpToObj = function (st) {
+  return { L: st.L.slice(), C: st.C.slice(), R: st.R.slice(), RES: st.RES.slice(),
+    pL: st.post.L, pC: st.post.C, pR: st.post.R,
+    front: { L: st.front.L.slice(), C: st.front.C.slice(), R: st.front.R.slice() },
+    works: { L: st.works.L.slice(), C: st.works.C.slice(), R: st.works.R.slice() } };
+};
+UI.dpHTML = function (st) {
+  const typeOf = uid => (st.units.find(u => u.uid === uid) || {}).type;
+  const chip = (uid, placed) => {
+    const t = typeOf(uid), d = DATA.units[t];
+    const on = st.sel && st.sel.kind === "unit" && st.sel.uid === uid ? " sel" : "";
+    const front = placed && ["L", "C", "R"].some(z => st.front[z].includes(uid));
+    return `<span class="dp-unit${on}" data-du="${uid}"><span class="unit-glyph" style="background:${UI.unitColor(t)}">${d.glyph}</span>${d.name}` +
+      `${placed ? `<b class="dp-star${front ? " on" : ""}" data-dfront="${uid}" title="Front rank — fights first, shields the rest">★</b>` : ""}</span>`;
+  };
+  const worksIn = z => st.works[z].map((wk, i) => { const w = DATA.fieldWorks[wk];
+    return `<span class="dp-work" title="${esc(w.desc)}">${w.glyph} ${esc(w.name)}<b data-drmwork="${z}:${i}">✕</b></span>`; }).join("");
+  const zone = (z, label) => `<div class="dp-zone" data-dzone="${z}">
+    <div class="dp-zh">${label}${z !== "RES" ? ` <b class="dp-post" data-dpost="${z}" title="Posture: Deep resists a charge · Wide overlaps · Line balanced">${st.post[z]}</b>` : ""}</div>
+    <div class="dp-units">${st[z].map(u => chip(u, true)).join("") || '<span class="dp-empty">—</span>'}</div>
+    ${z !== "RES" ? `<div class="dp-works">${worksIn(z)}</div>` : ""}</div>`;
+  const left = UI.dpWorksLeft(st);
+  const wbtns = Object.keys(DATA.fieldWorks).map(k => { const w = DATA.fieldWorks[k];
+    const on = st.sel && st.sel.kind === "work" && st.sel.key === k ? " sel" : "";
+    return `<span class="dp-wbtn${on}${left <= 0 ? " dis" : ""}" data-dwork="${k}" title="${esc(w.desc)}">${w.glyph} ${esc(w.name)}</span>`; }).join("");
+  return `<div class="dp-wrap">
+    <div class="dp-hint">${st.sel ? (st.sel.kind === "unit" ? "Now tap a flank to place this unit." : "Now tap a flank to raise this work.") : "Tap a unit, then tap a flank to place it. Tap ★ for front rank."}</div>
+    <div class="dp-pool" data-dzone="POOL"><div class="dp-zh">Not placed (${st.pool.length}) — tap here to pull a unit back</div>
+      <div class="dp-units">${st.pool.map(u => chip(u, false)).join("") || '<span class="dp-empty">all placed ✓</span>'}</div></div>
+    <div class="dp-board">${zone("L", "◀ Left")}${zone("C", "▲ Centre")}${zone("R", "Right ▶")}</div>
+    ${zone("RES", "Reserve — commit mid-battle to a losing flank")}
+    ${st.worksBudget ? `<div class="dp-worksbar"><span class="dp-wl">Field works — ${left} left:</span>${wbtns}</div>` : ""}
+  </div>`;
+};
+UI.wireDeploy = function (host, st, rerender) {
+  host.querySelectorAll("[data-du]").forEach(el => el.onclick = (e) => {
+    if (e.target.closest("[data-dfront]")) return;
+    if (st.sel) return;              // an item is in hand → let the click bubble to the flank (drop)
+    e.stopPropagation();             // nothing in hand → pick this unit up (don't reach the flank)
+    st.sel = { kind: "unit", uid: +el.dataset.du }; rerender();
+  });
+  host.querySelectorAll("[data-dfront]").forEach(el => el.onclick = (e) => {
+    e.stopPropagation(); const uid = +el.dataset.dfront, z = UI.dpZoneOf(st, uid);
+    if (z && z !== "RES") { const f = st.front[z], i = f.indexOf(uid); if (i >= 0) f.splice(i, 1); else f.push(uid); }
+    rerender();
+  });
+  host.querySelectorAll("[data-dzone]").forEach(el => el.onclick = () => {
+    const z = el.dataset.dzone;
+    if (st.sel && st.sel.kind === "unit") {
+      const uid = st.sel.uid;
+      ["L", "C", "R", "RES"].forEach(zz => { let i = st[zz].indexOf(uid); if (i >= 0) st[zz].splice(i, 1);
+        const fi = st.front[zz] ? st.front[zz].indexOf(uid) : -1; if (fi >= 0) st.front[zz].splice(fi, 1); });
+      const pi = st.pool.indexOf(uid); if (pi >= 0) st.pool.splice(pi, 1);
+      if (z === "POOL") st.pool.push(uid); else st[z].push(uid);
+      st.sel = null; rerender();
+    } else if (st.sel && st.sel.kind === "work") {
+      if (["L", "C", "R"].includes(z) && UI.dpWorksLeft(st) > 0) { st.works[z].push(st.sel.key); st.sel = null; rerender(); }
+    }
+  });
+  host.querySelectorAll("[data-dwork]").forEach(el => el.onclick = () => {
+    if (UI.dpWorksLeft(st) <= 0) return; st.sel = { kind: "work", key: el.dataset.dwork }; rerender();
+  });
+  host.querySelectorAll("[data-drmwork]").forEach(el => el.onclick = (e) => {
+    e.stopPropagation(); const [z, i] = el.dataset.drmwork.split(":"); st.works[z].splice(+i, 1); rerender();
+  });
+  host.querySelectorAll("[data-dpost]").forEach(el => el.onclick = (e) => {
+    e.stopPropagation(); const z = el.dataset.dpost, cyc = { Line: "Deep", Deep: "Wide", Wide: "Line" }; st.post[z] = cyc[st.post[z]]; rerender();
+  });
+};
+
 UI.marchState = null;
 UI.openMarch = function (fromId, toId) {
   const S = SR.state, cid = S.humanClan;
   const hostile = SR.isHostile(S, toId, cid);
   const movable = SR.movableUnits(S, fromId);
   UI.marchState = { fromId, toId, sel: movable.map(u => u.uid), surprise: false, bringDaimyo: false,
-    plan: { formation: "Line", main: "C", reserve: true } };
+    dep: hostile ? UI.newDeploy(movable, 1) : null };
+  if (hostile && UI.marchState.dep) UI.dpAuto(UI.marchState.dep, SR.stat(toId).terrain);   // start pre-arranged
   UI.renderMarch();
 };
 UI.renderMarch = function () {
@@ -3775,49 +4077,43 @@ UI.renderMarch = function () {
   const daimyoHere = S.clans[cid].daimyoAlive && S.clans[cid].daimyoLoc === fromId;
   const defenders = UI.unitVisible(S, toId) ? `${ps.units.length} units, power ${Math.round(SR.armyPower(ps.units))}${ps.castle ? ", castle lvl " + ps.castle : ""}` : "unknown strength" + (ps.castle ? ", castle lvl " + ps.castle : "");
 
-  const picks = movable.map(u => {
-    const d = DATA.units[u.type]; const on = m.sel.includes(u.uid);
-    return `<span class="upick ${on ? "sel" : ""}" data-uid="${u.uid}"><span class="unit-glyph" style="background:${UI.unitColor(u.type)}">${d.glyph}</span>${d.name}</span>`;
-  }).join("");
+  if (!hostile) {
+    const picks = movable.map(u => { const d = DATA.units[u.type]; const on = m.sel.includes(u.uid);
+      return `<span class="upick ${on ? "sel" : ""}" data-uid="${u.uid}"><span class="unit-glyph" style="background:${UI.unitColor(u.type)}">${d.glyph}</span>${d.name}</span>`; }).join("");
+    UI.modal({ title: "March",
+      body: `<div class="small" style="margin-bottom:10px">Marching into <b>${esc(SR.stat(toId).name)}</b> (${SR.stat(toId).terrain}) from ${esc(SR.stat(fromId).name)}.</div>
+        <div class="field"><label>Commit which units (${m.sel.length}/${movable.length})</label><div class="unit-pick">${picks || "<span class='small'>none available</span>"}</div></div>`,
+      foot: `<button class="ghost" onclick="UI.closeModal()">Cancel</button><button class="primary" id="march-go" ${m.sel.length ? "" : "disabled"}>March</button>` });
+    $("#modal-body").querySelectorAll("[data-uid]").forEach(el => el.onclick = () => { const uid = +el.dataset.uid;
+      if (m.sel.includes(uid)) m.sel = m.sel.filter(x => x !== uid); else m.sel.push(uid); UI.renderMarch(); });
+    $("#march-go").onclick = () => GAME.humanMarch(m);
+    return;
+  }
 
-  const body = `
-    <div class="small" style="margin-bottom:10px">${hostile ? "Attacking" : "Marching into"} <b>${esc(SR.stat(toId).name)}</b> (${SR.stat(toId).terrain}) from ${esc(SR.stat(fromId).name)}.
-    ${hostile ? "Defenders: " + defenders + "." : ""}</div>
-    <div class="field"><label>Commit which units (${m.sel.length}/${movable.length})</label><div class="unit-pick">${picks || "<span class='small'>none available</span>"}</div></div>
-    ${hostile ? `
-    <div class="field"><label>Battle plan — where to concentrate</label><div class="chips">
-      ${[["L", "◀ Left"], ["C", "▲ Centre"], ["R", "Right ▶"]].map(([k, t]) => `<span class="chip ${m.plan.main === k ? "sel" : ""}" data-main="${k}">${t}</span>`).join("")}
-      </div><div class="small">Your best troops & cavalry mass on the chosen flank — break it, then roll up their line.</div></div>
-    <div class="field"><label>Formation</label><div class="chips">
-      ${[["Line", "Line (balanced)"], ["Wide", "Wide (aggressive)"], ["Deep", "Deep (defensive)"]].map(([k, t]) => `<span class="chip ${m.plan.formation === k ? "sel" : ""}" data-form="${k}">${t}</span>`).join("")}
-      </div><div class="small">Deep resists a charge (narrow) · Line balanced · Wide overlaps but is brittle.</div></div>
-    <div class="field"><label>Reserve</label><div class="chips">
-      <span class="chip ${m.plan.reserve ? "sel" : ""}" data-res="1">Hold a reserve (reinforces a losing sector)</span>
-      <span class="chip ${!m.plan.reserve ? "sel" : ""}" data-res="0">Commit everything</span></div></div>
-    <div class="field"><label>Manner of attack</label><div class="chips">
-      <span class="chip ${!m.surprise ? "sel" : ""}" data-sur="0">Declared (Honour safe)</span>
-      <span class="chip ${m.surprise ? "sel" : ""}" data-sur="1">Surprise (−2 Honour, ambush)</span></div></div>
-    ${daimyoHere ? `<div class="field"><label>Leadership</label><div class="chips">
-      <span class="chip ${m.bringDaimyo ? "sel" : ""}" data-daimyo="1">Lead with ${esc(S.clans[cid].daimyo)} (+command, at risk)</span></div></div>` : ""}
-    ` : ""}`;
+  const ready = UI.dpReady(m.dep);
   UI.modal({
-    title: hostile ? "March to Battle" : "March",
-    body,
+    title: "March to Battle — " + esc(SR.stat(toId).terrain),
+    body: `<div class="small" style="margin-bottom:8px">Attacking <b>${esc(SR.stat(toId).name)}</b> from ${esc(SR.stat(fromId).name)}. Defenders: ${defenders}.</div>
+      ${UI.dpHTML(m.dep)}
+      <div class="dp-opts">
+        <span class="chip ${!m.surprise ? "sel" : ""}" data-sur="0">Declared</span>
+        <span class="chip ${m.surprise ? "sel" : ""}" data-sur="1">Surprise (−2 Honour, ambush)</span>
+        ${daimyoHere ? `<span class="chip ${m.bringDaimyo ? "sel" : ""}" data-daimyo="1">Lead with ${esc(S.clans[cid].daimyo)} (+cmd, at risk)</span>` : ""}
+      </div>`,
     foot: `<button class="ghost" onclick="UI.closeModal()">Cancel</button>
-      <button class="primary" id="march-go" ${m.sel.length ? "" : "disabled"}>${hostile ? "Engage!" : "March"}</button>`,
+      <button class="ghost" id="dp-auto">Auto-arrange</button>
+      <button class="primary" id="march-go" ${ready ? "" : "disabled"} title="${ready ? "" : "Place all your units first"}">Engage!</button>`,
   });
   const mb = $("#modal-body");
-  mb.querySelectorAll("[data-uid]").forEach(el => el.onclick = () => {
-    const uid = +el.dataset.uid;
-    if (m.sel.includes(uid)) m.sel = m.sel.filter(x => x !== uid); else m.sel.push(uid);
-    UI.renderMarch();
-  });
-  mb.querySelectorAll("[data-main]").forEach(el => el.onclick = () => { m.plan.main = el.dataset.main; UI.renderMarch(); });
-  mb.querySelectorAll("[data-form]").forEach(el => el.onclick = () => { m.plan.formation = el.dataset.form; UI.renderMarch(); });
-  mb.querySelectorAll("[data-res]").forEach(el => el.onclick = () => { m.plan.reserve = el.dataset.res === "1"; UI.renderMarch(); });
+  UI.wireDeploy(mb, m.dep, UI.renderMarch);
   mb.querySelectorAll("[data-sur]").forEach(el => el.onclick = () => { m.surprise = el.dataset.sur === "1"; UI.renderMarch(); });
   mb.querySelectorAll("[data-daimyo]").forEach(el => el.onclick = () => { m.bringDaimyo = !m.bringDaimyo; UI.renderMarch(); });
-  $("#march-go").onclick = () => GAME.humanMarch(m);
+  $("#dp-auto").onclick = () => { UI.dpAuto(m.dep, SR.stat(toId).terrain); UI.renderMarch(); };
+  $("#march-go").onclick = () => {
+    m.sel = [...m.dep.L, ...m.dep.C, ...m.dep.R, ...m.dep.RES];
+    m.deploy = UI.dpToObj(m.dep);
+    GAME.humanMarch(m);
+  };
 };
 
 /* ---------------------------------------------------------------------
@@ -4081,13 +4377,19 @@ UI.runBattle = function (report, onDone) {
       narr.push({ cls: "hd", text: `Round ${rr.round}${rr.ambush ? (humanSide === "att" ? " — you strike from ambush!" : " — ambushed!") : ""} — you rolled ${youDie >= 1 ? youDie : "—"}.` });
       rr.results.forEach(x => {
         const youWon = x.winner === humanSide;
+        const yourSS = humanSide === "att" ? x.attSS : x.defSS, foeSS = humanSide === "att" ? x.defSS : x.attSS;
+        const yourDie = humanSide === "att" ? x.dieA : x.dieD, foeDie = humanSide === "att" ? x.dieD : x.dieA;
         const yourTot = humanSide === "att" ? x.totA : x.totD, foeTot = humanSide === "att" ? x.totD : x.totA;
-        let t = `${x.name}: your ${yourTot} vs their ${foeTot} — `;
-        if (x.margin === 0) t += "a bloody stand-off";
+        // strength + 🎲 = total, spelled out so the dice's role is visible
+        let t = `${x.name}: you ${yourSS}+🎲${yourDie}=${yourTot} vs ${foeSS}+🎲${foeDie}=${foeTot} — `;
+        if (x.margin === 0) t += "a dead-even clash";
         else t += youWon ? `you win by ${x.margin}` : `they win by ${x.margin}`;
         if (x.loseCas) { const loserIsYou = (x.winner === "att" ? "def" : "att") === humanSide; t += `, ${loserIsYou ? "you lose" : "they lose"} ${x.loseCas}`; }
         if (x.broke) t += youWon ? " — you shatter their line!" : " — your line breaks!";
         narr.push({ cls: youWon ? "good" : "bad", text: t + (t.endsWith("!") ? "" : ".") });
+        // call out when the die — not the strength — decided the flank
+        if (x.decidedByDice) narr.push({ cls: youWon ? "dice good" : "dice bad",
+          text: youWon ? "  🎲 the dice won you this flank — the stronger line would have lost!" : "  🎲 the dice cost you this flank." });
       });
       rolling = false; order = null; phase = "shown";
       render();
@@ -4117,26 +4419,28 @@ UI.openDefense = function (ev, onDone) {
   const toId = ev.toId, ps = S.provinces[toId];
   const canFortify = ps.castle >= 1;
   const escapes = SR.stat(toId).adj.filter(a => S.provinces[a].owner === S.humanClan || (!S.provinces[a].owner && !S.provinces[a].units.length));
-  const st = UI.defState = { response: "stand", postureD: "Line" };
+  const worksBudget = 2 + (ps.buildings && ps.buildings.fort ? DATA.buildings.fort.extraWorks : 0);
+  const st = UI.defState = { response: "stand", dep: UI.newDeploy(ps.units, worksBudget) };
+  UI.dpAuto(st.dep, SR.stat(toId).terrain);
   const render = () => {
+    const standReady = st.response !== "stand" || UI.dpReady(st.dep);
     UI.modal({
       title: "Under Attack!",
-      body: `<p>${esc(attName)} march on <b>${esc(SR.stat(toId).name)}</b>${ev.opts && ev.opts.surprise ? ' <span class="warn">(a surprise attack!)</span>' : ""}. Your garrison: ${ps.units.length} units (power ${Math.round(SR.armyPower(ps.units))}), castle lvl ${ps.castle}.</p>
-        <div class="field"><label>Your response</label><div class="chips">
-          <span class="chip ${st.response === "stand" ? "sel" : ""}" data-r="stand">Stand & fight</span>
-          ${canFortify ? `<span class="chip ${st.response === "fortify" ? "sel" : ""}" data-r="fortify">Fortify (withdraw into castle → siege)</span>` : ""}
+      body: `<p class="small">${esc(attName)} march on <b>${esc(SR.stat(toId).name)}</b> (${SR.stat(toId).terrain})${ev.opts && ev.opts.surprise ? ' <span class="warn">— a surprise attack!</span>' : ""}. Garrison: ${ps.units.length} units, castle lvl ${ps.castle}${ps.buildings && ps.buildings.fort ? ", Fort (+3 def, +1 work)" : ""}.</p>
+        <div class="chips" style="margin-bottom:8px">
+          <span class="chip ${st.response === "stand" ? "sel" : ""}" data-r="stand">Stand &amp; fight</span>
+          ${canFortify ? `<span class="chip ${st.response === "fortify" ? "sel" : ""}" data-r="fortify">Fortify (→ siege)</span>` : ""}
           ${escapes.length ? `<span class="chip ${st.response.startsWith("retreat") ? "sel" : ""}" data-r="retreat:${escapes[0]}">Retreat to ${esc(SR.stat(escapes[0]).name)}</span>` : ""}
-        </div></div>
-        ${st.response === "stand" ? `<div class="field"><label>Formation</label><div class="chips">
-          ${["Deep", "Line", "Wide"].map(p => `<span class="chip ${st.postureD === p ? "sel" : ""}" data-post="${p}">${p}</span>`).join("")}
-        </div></div>` : ""}`,
-      foot: `<button class="primary" id="def-go">Confirm</button>`,
+        </div>
+        ${st.response === "stand" ? UI.dpHTML(st.dep) : "<p class='small'>You withdraw — no field deployment needed.</p>"}`,
+      foot: `${st.response === "stand" ? `<button class="ghost" id="dp-auto">Auto-arrange</button>` : ""}<button class="primary" id="def-go" ${standReady ? "" : "disabled"}>Confirm</button>`,
     });
     const mb = $("#modal-body");
     mb.querySelectorAll("[data-r]").forEach(el => el.onclick = () => { st.response = el.dataset.r; render(); });
-    mb.querySelectorAll("[data-post]").forEach(el => el.onclick = () => { st.postureD = el.dataset.post; render(); });
+    if (st.response === "stand") { UI.wireDeploy(mb, st.dep, render);
+      const au = $("#dp-auto"); if (au) au.onclick = () => { UI.dpAuto(st.dep, SR.stat(toId).terrain); render(); }; }
     $("#def-go").onclick = () => {
-      const opts = Object.assign({}, ev.opts, { response: st.response, defPlan: { formation: st.postureD, main: "C", reserve: true }, interactive: true });
+      const opts = Object.assign({}, ev.opts, { response: st.response, defDeploy: st.response === "stand" ? UI.dpToObj(st.dep) : undefined, interactive: true });
       const report = SR.executeAttack(S, ev.fromId, toId, ev.uids, ev.attCid, opts);
       UI.render();
       UI.showBattleReport(report, onDone);
@@ -4185,6 +4489,59 @@ UI.doAssault = function (id) {
     const report = SR.siegeAssault(S, id, true);
     UI.render();
     UI.showBattleReport(report, () => UI.render());
+  });
+};
+
+/* Interactive siege command — the besieger chooses how to break the castle. */
+UI.openSiege = function (id) {
+  const S = SR.state, ps = S.provinces[id];
+  if (!ps.siege || ps.siege.by !== S.humanClan) return;
+  const done = () => { UI.render(); if (SR.state.gameOver) GAME.showGameOver(); };
+  const render = () => {
+    const st = SR.siegeStatus(S, id);
+    if (!st) { UI.closeModal(); UI.render(); return; }
+    const acted = st.actedThisSeason;
+    const body = `
+      <div class="sg-status">
+        <div class="sg-row"><span>Castle walls</span><b>${st.castle > 0 ? "level " + st.castle : "breached!"}</b></div>
+        <div class="sg-row"><span>Garrison inside</span><b>${st.garrison} unit${st.garrison === 1 ? "" : "s"}</b></div>
+        <div class="sg-row"><span>Your siege army</span><b>${st.besiegers} units${st.trains ? ` · ${st.trains} siege train${st.trains > 1 ? "s" : ""}` : " · no siege trains"}</b></div>
+        <div class="sg-row"><span>Their supply</span><b class="${st.starving ? "warn" : ""}">${st.starving ? "cut off — starving" : "still supplied"}</b></div>
+        ${st.blockaded ? `<div class="small okc">Your blockade is strangling the town.</div>` : ""}
+      </div>
+      <p class="small">${acted ? "Your siege lines have given their orders this season — you may still storm or lift." : "Choose one order this season, or storm / lift at any time."}</p>
+      <div class="sg-acts">
+        <button class="act sg-btn" id="sg-starve" ${acted ? "disabled" : ""}><span class="ai">🚫</span>Blockade &amp; starve<small>Cut their supply — hunger wears the garrison down. Safe but slow.</small></button>
+        <button class="act sg-btn" id="sg-bombard" ${acted ? "disabled" : ""}><span class="ai">💥</span>Bombard the walls<small>${st.trains ? "Batter the castle down with your siege trains." : "Weak without siege trains — bring siege weapons."}</small></button>
+        <button class="act sg-btn" id="sg-terms"><span class="ai">🏳</span>Offer terms<small>Demand surrender — likelier if they starve or the walls have fallen.</small></button>
+        <button class="act sg-btn" id="sg-storm"><span class="ai">🏯</span>Storm the walls<small>Assault now — bloody; the garrison fights with full walls.</small></button>
+        <button class="act sg-btn" id="sg-lift"><span class="ai">↩</span>Lift the siege<small>Withdraw your army back home.</small></button>
+      </div>`;
+    UI.modal({ title: "Siege of " + esc(SR.stat(id).name), body, foot: `<button class="primary" onclick="UI.closeModal()">Close</button>` });
+    const act = (a) => {
+      const r = SR.siegeAction(S, id, a);
+      if (!r.ok) { UI.toast(r.reason); return; }
+      if (r.lifted) { UI.closeModal(); UI.render(); UI.toast("Siege lifted."); return; }
+      if (r.report) { UI.closeModal(); UI.render(); UI.showBattleReport(r.report, done); return; }
+      if (r.surrender) { UI.closeModal(); UI.render();
+        UI.modal({ title: "The Gates Open", body: r.lines.map(l => `<p>${esc(l)}</p>`).join(""), foot: `<button class="primary" onclick="UI.closeModal()">Continue</button>` }); return; }
+      UI.render(); if (r.lines && r.lines.length) UI.toast(r.lines[0]); render();
+    };
+    $("#sg-starve").onclick = () => act("starve");
+    $("#sg-bombard").onclick = () => act("bombard");
+    $("#sg-terms").onclick = () => act("terms");
+    $("#sg-storm").onclick = () => act("storm");
+    $("#sg-lift").onclick = () => act("lift");
+  };
+  render();
+};
+UI.doSortie = function (id) {
+  const S = SR.state;
+  UI.confirm(`Sortie from ${SR.stat(id).name}? Your garrison sallies out to break the besieging army — it catches them off guard, but if it fails you're thrown back with losses.`, () => {
+    const r = SR.siegeSortie(S, id);
+    if (!r.ok) { UI.toast(r.reason); return; }
+    UI.render();
+    UI.showBattleReport(r.report, () => { UI.render(); if (SR.state.gameOver) GAME.showGameOver(); });
   });
 };
 
@@ -4759,7 +5116,7 @@ GAME.humanMarch = function (m) {
   const { fromId, toId, sel } = m;
   if (!sel.length) return;
   if (typeof NET !== "undefined" && NET.online) {          // online: server resolves & pushes the report
-    NET.doAction("move", { fromId, toId, uids: sel, opts: { surprise: m.surprise, plan: m.plan, bringDaimyo: m.bringDaimyo } });
+    NET.doAction("move", { fromId, toId, uids: sel, opts: { surprise: m.surprise, deploy: m.deploy, bringDaimyo: m.bringDaimyo } });
     return;
   }
   const hostile = SR.isHostile(S, toId, cid);
@@ -4770,7 +5127,7 @@ GAME.humanMarch = function (m) {
     return;
   }
   const report = SR.executeAttack(S, fromId, toId, sel, cid, {
-    surprise: m.surprise, plan: m.plan, bringDaimyo: m.bringDaimyo, interactive: true,
+    surprise: m.surprise, deploy: m.deploy, bringDaimyo: m.bringDaimyo, interactive: true,
   });
   UI.render();
   UI.showBattleReport(report, () => { UI.render(); if (SR.state.gameOver) GAME.showGameOver(); });

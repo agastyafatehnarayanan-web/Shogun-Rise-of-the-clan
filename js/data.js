@@ -100,6 +100,24 @@ DATA.buildings = {
     desc: "+3 Prestige, +2 Honour; strong pacification aid." },
   academy:    { name: "Tea House / Academy", cost: 3, prestige: 2, culture: true,
     desc: "+2 Prestige (the Culture path)." },
+  fort:       { name: "Fort", cost: 3, prestige: 1, fieldDef: 3, extraWorks: 1,
+    desc: "Earthwork fort: +3 defence when you fight a field battle here, and +1 field-work to raise in that battle." },
+};
+
+/* ---------------------------------------------------------------------
+ * FIELD WORKS — structures you raise on the battlefield, placed into a
+ * flank during deployment. A limited budget per battle (defender gets more;
+ * a Fort in the province grants one extra), so WHERE you build them matters.
+ * ------------------------------------------------------------------- */
+DATA.fieldWorks = {
+  palisade:    { name: "Palisade", glyph: "▤", def: 3,
+    desc: "Timber wall — +3 defence in this flank." },
+  stakes:      { name: "Anti-cavalry stakes", glyph: "≜", antiShock: 6,
+    desc: "Sharpened stakes — cancel up to 6 points of enemy cavalry Shock in this flank." },
+  emplacement: { name: "Gun emplacement", glyph: "⊡", fire: 3,
+    desc: "Earthwork for the guns — +3 firepower in this flank." },
+  redoubt:     { name: "Redoubt", glyph: "◈", def: 2, steady: 2,
+    desc: "Strongpoint — +2 defence and steadies morale (softens a break here)." },
 };
 
 /* ---------------------------------------------------------------------

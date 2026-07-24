@@ -260,8 +260,10 @@ UI.provinceActions = function (S, id, ps) {
   let mySiege = "";
   if (ps.siege && ps.siege.by === S.humanClan) {
     mySiege = `<div class="act-grid" style="margin-bottom:8px">
-      <button class="act" data-a="assault" data-id="${id}"><span class="ai">🏯</span>Storm the walls</button>
-      <button class="act" data-a="lift" data-id="${id}"><span class="ai">↩</span>Lift siege</button></div>`;
+      <button class="act" data-a="siege" data-id="${id}"><span class="ai">⚔</span>Siege command</button></div>`;
+  } else if (ps.siege && ps.owner === S.humanClan) {
+    mySiege = `<div class="act-grid" style="margin-bottom:8px">
+      <button class="act" data-a="sortie" data-id="${id}"><span class="ai">🐎</span>Sortie — break the siege</button></div>`;
   }
   let g = `<div class="act-grid">`;
   g += `<button class="act" data-a="march" data-id="${id}" ${SR.movableUnits(S, id).length ? "" : "disabled"}><span class="ai">⚔</span>March / Attack</button>`;
@@ -428,6 +430,8 @@ UI.action = function (a, d) {
     case "raze": UI.confirm(`Raze ${SR.stat(d.id).name}? This destroys its buildings & income and costs 3 Honour.`, () => after(SR.doRaze(S, d.id, cid))); break;
     case "assault": UI.doAssault(d.id); break;
     case "lift": SR.liftSiege(S, d.id); UI.render(); break;
+    case "siege": UI.openSiege(d.id); break;
+    case "sortie": UI.doSortie(d.id); break;
     case "court": after(SR.doCourt(S, cid)); break;
     case "agent": after(SR.recruitAgent(S, cid)); break;
     case "spymaster": after(SR.hireSpymaster(S, cid)); break;
@@ -500,13 +504,107 @@ UI.openBuild = function (id) {
   });
 };
 
+/* ---------------------------------------------------------------------
+ * DEPLOYMENT BOARD — tap a unit, then a flank, to place it individually.
+ * Raise field works (palisade / stakes / gun emplacement / redoubt) into a
+ * flank, set each flank's posture, and mark front-rank units. Reused by the
+ * attacker (March) and the defender (Under Attack) screens.
+ * ------------------------------------------------------------------- */
+UI.newDeploy = function (units, worksBudget) {
+  return {
+    units: units.map(u => ({ uid: u.uid, type: u.type })),
+    pool: units.map(u => u.uid), L: [], C: [], R: [], RES: [],
+    front: { L: [], C: [], R: [] }, works: { L: [], C: [], R: [] },
+    post: { L: "Line", C: "Line", R: "Line" },
+    worksBudget: worksBudget || 0, sel: null,
+  };
+};
+UI.dpWorksLeft = st => st.worksBudget - (st.works.L.length + st.works.C.length + st.works.R.length);
+UI.dpZoneOf = (st, uid) => ["L", "C", "R", "RES"].find(z => st[z].includes(uid));
+UI.dpAuto = function (st, terrain) {
+  const d = SR.autoDeploy(st.units.map(u => ({ uid: u.uid, type: u.type })), "att", terrain);
+  st.L = d.L.slice(); st.C = d.C.slice(); st.R = d.R.slice(); st.RES = d.RES.slice();
+  st.pool = []; st.front = { L: [], C: [], R: [] }; st.post = { L: d.pL, C: d.pC, R: d.pR }; st.sel = null;
+};
+UI.dpReady = st => st.pool.length === 0 && (st.L.length + st.C.length + st.R.length) > 0;
+UI.dpToObj = function (st) {
+  return { L: st.L.slice(), C: st.C.slice(), R: st.R.slice(), RES: st.RES.slice(),
+    pL: st.post.L, pC: st.post.C, pR: st.post.R,
+    front: { L: st.front.L.slice(), C: st.front.C.slice(), R: st.front.R.slice() },
+    works: { L: st.works.L.slice(), C: st.works.C.slice(), R: st.works.R.slice() } };
+};
+UI.dpHTML = function (st) {
+  const typeOf = uid => (st.units.find(u => u.uid === uid) || {}).type;
+  const chip = (uid, placed) => {
+    const t = typeOf(uid), d = DATA.units[t];
+    const on = st.sel && st.sel.kind === "unit" && st.sel.uid === uid ? " sel" : "";
+    const front = placed && ["L", "C", "R"].some(z => st.front[z].includes(uid));
+    return `<span class="dp-unit${on}" data-du="${uid}"><span class="unit-glyph" style="background:${UI.unitColor(t)}">${d.glyph}</span>${d.name}` +
+      `${placed ? `<b class="dp-star${front ? " on" : ""}" data-dfront="${uid}" title="Front rank — fights first, shields the rest">★</b>` : ""}</span>`;
+  };
+  const worksIn = z => st.works[z].map((wk, i) => { const w = DATA.fieldWorks[wk];
+    return `<span class="dp-work" title="${esc(w.desc)}">${w.glyph} ${esc(w.name)}<b data-drmwork="${z}:${i}">✕</b></span>`; }).join("");
+  const zone = (z, label) => `<div class="dp-zone" data-dzone="${z}">
+    <div class="dp-zh">${label}${z !== "RES" ? ` <b class="dp-post" data-dpost="${z}" title="Posture: Deep resists a charge · Wide overlaps · Line balanced">${st.post[z]}</b>` : ""}</div>
+    <div class="dp-units">${st[z].map(u => chip(u, true)).join("") || '<span class="dp-empty">—</span>'}</div>
+    ${z !== "RES" ? `<div class="dp-works">${worksIn(z)}</div>` : ""}</div>`;
+  const left = UI.dpWorksLeft(st);
+  const wbtns = Object.keys(DATA.fieldWorks).map(k => { const w = DATA.fieldWorks[k];
+    const on = st.sel && st.sel.kind === "work" && st.sel.key === k ? " sel" : "";
+    return `<span class="dp-wbtn${on}${left <= 0 ? " dis" : ""}" data-dwork="${k}" title="${esc(w.desc)}">${w.glyph} ${esc(w.name)}</span>`; }).join("");
+  return `<div class="dp-wrap">
+    <div class="dp-hint">${st.sel ? (st.sel.kind === "unit" ? "Now tap a flank to place this unit." : "Now tap a flank to raise this work.") : "Tap a unit, then tap a flank to place it. Tap ★ for front rank."}</div>
+    <div class="dp-pool" data-dzone="POOL"><div class="dp-zh">Not placed (${st.pool.length}) — tap here to pull a unit back</div>
+      <div class="dp-units">${st.pool.map(u => chip(u, false)).join("") || '<span class="dp-empty">all placed ✓</span>'}</div></div>
+    <div class="dp-board">${zone("L", "◀ Left")}${zone("C", "▲ Centre")}${zone("R", "Right ▶")}</div>
+    ${zone("RES", "Reserve — commit mid-battle to a losing flank")}
+    ${st.worksBudget ? `<div class="dp-worksbar"><span class="dp-wl">Field works — ${left} left:</span>${wbtns}</div>` : ""}
+  </div>`;
+};
+UI.wireDeploy = function (host, st, rerender) {
+  host.querySelectorAll("[data-du]").forEach(el => el.onclick = (e) => {
+    if (e.target.closest("[data-dfront]")) return;
+    if (st.sel) return;              // an item is in hand → let the click bubble to the flank (drop)
+    e.stopPropagation();             // nothing in hand → pick this unit up (don't reach the flank)
+    st.sel = { kind: "unit", uid: +el.dataset.du }; rerender();
+  });
+  host.querySelectorAll("[data-dfront]").forEach(el => el.onclick = (e) => {
+    e.stopPropagation(); const uid = +el.dataset.dfront, z = UI.dpZoneOf(st, uid);
+    if (z && z !== "RES") { const f = st.front[z], i = f.indexOf(uid); if (i >= 0) f.splice(i, 1); else f.push(uid); }
+    rerender();
+  });
+  host.querySelectorAll("[data-dzone]").forEach(el => el.onclick = () => {
+    const z = el.dataset.dzone;
+    if (st.sel && st.sel.kind === "unit") {
+      const uid = st.sel.uid;
+      ["L", "C", "R", "RES"].forEach(zz => { let i = st[zz].indexOf(uid); if (i >= 0) st[zz].splice(i, 1);
+        const fi = st.front[zz] ? st.front[zz].indexOf(uid) : -1; if (fi >= 0) st.front[zz].splice(fi, 1); });
+      const pi = st.pool.indexOf(uid); if (pi >= 0) st.pool.splice(pi, 1);
+      if (z === "POOL") st.pool.push(uid); else st[z].push(uid);
+      st.sel = null; rerender();
+    } else if (st.sel && st.sel.kind === "work") {
+      if (["L", "C", "R"].includes(z) && UI.dpWorksLeft(st) > 0) { st.works[z].push(st.sel.key); st.sel = null; rerender(); }
+    }
+  });
+  host.querySelectorAll("[data-dwork]").forEach(el => el.onclick = () => {
+    if (UI.dpWorksLeft(st) <= 0) return; st.sel = { kind: "work", key: el.dataset.dwork }; rerender();
+  });
+  host.querySelectorAll("[data-drmwork]").forEach(el => el.onclick = (e) => {
+    e.stopPropagation(); const [z, i] = el.dataset.drmwork.split(":"); st.works[z].splice(+i, 1); rerender();
+  });
+  host.querySelectorAll("[data-dpost]").forEach(el => el.onclick = (e) => {
+    e.stopPropagation(); const z = el.dataset.dpost, cyc = { Line: "Deep", Deep: "Wide", Wide: "Line" }; st.post[z] = cyc[st.post[z]]; rerender();
+  });
+};
+
 UI.marchState = null;
 UI.openMarch = function (fromId, toId) {
   const S = SR.state, cid = S.humanClan;
   const hostile = SR.isHostile(S, toId, cid);
   const movable = SR.movableUnits(S, fromId);
   UI.marchState = { fromId, toId, sel: movable.map(u => u.uid), surprise: false, bringDaimyo: false,
-    plan: { formation: "Line", main: "C", reserve: true } };
+    dep: hostile ? UI.newDeploy(movable, 1) : null };
+  if (hostile && UI.marchState.dep) UI.dpAuto(UI.marchState.dep, SR.stat(toId).terrain);   // start pre-arranged
   UI.renderMarch();
 };
 UI.renderMarch = function () {
@@ -518,49 +616,43 @@ UI.renderMarch = function () {
   const daimyoHere = S.clans[cid].daimyoAlive && S.clans[cid].daimyoLoc === fromId;
   const defenders = UI.unitVisible(S, toId) ? `${ps.units.length} units, power ${Math.round(SR.armyPower(ps.units))}${ps.castle ? ", castle lvl " + ps.castle : ""}` : "unknown strength" + (ps.castle ? ", castle lvl " + ps.castle : "");
 
-  const picks = movable.map(u => {
-    const d = DATA.units[u.type]; const on = m.sel.includes(u.uid);
-    return `<span class="upick ${on ? "sel" : ""}" data-uid="${u.uid}"><span class="unit-glyph" style="background:${UI.unitColor(u.type)}">${d.glyph}</span>${d.name}</span>`;
-  }).join("");
+  if (!hostile) {
+    const picks = movable.map(u => { const d = DATA.units[u.type]; const on = m.sel.includes(u.uid);
+      return `<span class="upick ${on ? "sel" : ""}" data-uid="${u.uid}"><span class="unit-glyph" style="background:${UI.unitColor(u.type)}">${d.glyph}</span>${d.name}</span>`; }).join("");
+    UI.modal({ title: "March",
+      body: `<div class="small" style="margin-bottom:10px">Marching into <b>${esc(SR.stat(toId).name)}</b> (${SR.stat(toId).terrain}) from ${esc(SR.stat(fromId).name)}.</div>
+        <div class="field"><label>Commit which units (${m.sel.length}/${movable.length})</label><div class="unit-pick">${picks || "<span class='small'>none available</span>"}</div></div>`,
+      foot: `<button class="ghost" onclick="UI.closeModal()">Cancel</button><button class="primary" id="march-go" ${m.sel.length ? "" : "disabled"}>March</button>` });
+    $("#modal-body").querySelectorAll("[data-uid]").forEach(el => el.onclick = () => { const uid = +el.dataset.uid;
+      if (m.sel.includes(uid)) m.sel = m.sel.filter(x => x !== uid); else m.sel.push(uid); UI.renderMarch(); });
+    $("#march-go").onclick = () => GAME.humanMarch(m);
+    return;
+  }
 
-  const body = `
-    <div class="small" style="margin-bottom:10px">${hostile ? "Attacking" : "Marching into"} <b>${esc(SR.stat(toId).name)}</b> (${SR.stat(toId).terrain}) from ${esc(SR.stat(fromId).name)}.
-    ${hostile ? "Defenders: " + defenders + "." : ""}</div>
-    <div class="field"><label>Commit which units (${m.sel.length}/${movable.length})</label><div class="unit-pick">${picks || "<span class='small'>none available</span>"}</div></div>
-    ${hostile ? `
-    <div class="field"><label>Battle plan — where to concentrate</label><div class="chips">
-      ${[["L", "◀ Left"], ["C", "▲ Centre"], ["R", "Right ▶"]].map(([k, t]) => `<span class="chip ${m.plan.main === k ? "sel" : ""}" data-main="${k}">${t}</span>`).join("")}
-      </div><div class="small">Your best troops & cavalry mass on the chosen flank — break it, then roll up their line.</div></div>
-    <div class="field"><label>Formation</label><div class="chips">
-      ${[["Line", "Line (balanced)"], ["Wide", "Wide (aggressive)"], ["Deep", "Deep (defensive)"]].map(([k, t]) => `<span class="chip ${m.plan.formation === k ? "sel" : ""}" data-form="${k}">${t}</span>`).join("")}
-      </div><div class="small">Deep resists a charge (narrow) · Line balanced · Wide overlaps but is brittle.</div></div>
-    <div class="field"><label>Reserve</label><div class="chips">
-      <span class="chip ${m.plan.reserve ? "sel" : ""}" data-res="1">Hold a reserve (reinforces a losing sector)</span>
-      <span class="chip ${!m.plan.reserve ? "sel" : ""}" data-res="0">Commit everything</span></div></div>
-    <div class="field"><label>Manner of attack</label><div class="chips">
-      <span class="chip ${!m.surprise ? "sel" : ""}" data-sur="0">Declared (Honour safe)</span>
-      <span class="chip ${m.surprise ? "sel" : ""}" data-sur="1">Surprise (−2 Honour, ambush)</span></div></div>
-    ${daimyoHere ? `<div class="field"><label>Leadership</label><div class="chips">
-      <span class="chip ${m.bringDaimyo ? "sel" : ""}" data-daimyo="1">Lead with ${esc(S.clans[cid].daimyo)} (+command, at risk)</span></div></div>` : ""}
-    ` : ""}`;
+  const ready = UI.dpReady(m.dep);
   UI.modal({
-    title: hostile ? "March to Battle" : "March",
-    body,
+    title: "March to Battle — " + esc(SR.stat(toId).terrain),
+    body: `<div class="small" style="margin-bottom:8px">Attacking <b>${esc(SR.stat(toId).name)}</b> from ${esc(SR.stat(fromId).name)}. Defenders: ${defenders}.</div>
+      ${UI.dpHTML(m.dep)}
+      <div class="dp-opts">
+        <span class="chip ${!m.surprise ? "sel" : ""}" data-sur="0">Declared</span>
+        <span class="chip ${m.surprise ? "sel" : ""}" data-sur="1">Surprise (−2 Honour, ambush)</span>
+        ${daimyoHere ? `<span class="chip ${m.bringDaimyo ? "sel" : ""}" data-daimyo="1">Lead with ${esc(S.clans[cid].daimyo)} (+cmd, at risk)</span>` : ""}
+      </div>`,
     foot: `<button class="ghost" onclick="UI.closeModal()">Cancel</button>
-      <button class="primary" id="march-go" ${m.sel.length ? "" : "disabled"}>${hostile ? "Engage!" : "March"}</button>`,
+      <button class="ghost" id="dp-auto">Auto-arrange</button>
+      <button class="primary" id="march-go" ${ready ? "" : "disabled"} title="${ready ? "" : "Place all your units first"}">Engage!</button>`,
   });
   const mb = $("#modal-body");
-  mb.querySelectorAll("[data-uid]").forEach(el => el.onclick = () => {
-    const uid = +el.dataset.uid;
-    if (m.sel.includes(uid)) m.sel = m.sel.filter(x => x !== uid); else m.sel.push(uid);
-    UI.renderMarch();
-  });
-  mb.querySelectorAll("[data-main]").forEach(el => el.onclick = () => { m.plan.main = el.dataset.main; UI.renderMarch(); });
-  mb.querySelectorAll("[data-form]").forEach(el => el.onclick = () => { m.plan.formation = el.dataset.form; UI.renderMarch(); });
-  mb.querySelectorAll("[data-res]").forEach(el => el.onclick = () => { m.plan.reserve = el.dataset.res === "1"; UI.renderMarch(); });
+  UI.wireDeploy(mb, m.dep, UI.renderMarch);
   mb.querySelectorAll("[data-sur]").forEach(el => el.onclick = () => { m.surprise = el.dataset.sur === "1"; UI.renderMarch(); });
   mb.querySelectorAll("[data-daimyo]").forEach(el => el.onclick = () => { m.bringDaimyo = !m.bringDaimyo; UI.renderMarch(); });
-  $("#march-go").onclick = () => GAME.humanMarch(m);
+  $("#dp-auto").onclick = () => { UI.dpAuto(m.dep, SR.stat(toId).terrain); UI.renderMarch(); };
+  $("#march-go").onclick = () => {
+    m.sel = [...m.dep.L, ...m.dep.C, ...m.dep.R, ...m.dep.RES];
+    m.deploy = UI.dpToObj(m.dep);
+    GAME.humanMarch(m);
+  };
 };
 
 /* ---------------------------------------------------------------------
@@ -824,13 +916,19 @@ UI.runBattle = function (report, onDone) {
       narr.push({ cls: "hd", text: `Round ${rr.round}${rr.ambush ? (humanSide === "att" ? " — you strike from ambush!" : " — ambushed!") : ""} — you rolled ${youDie >= 1 ? youDie : "—"}.` });
       rr.results.forEach(x => {
         const youWon = x.winner === humanSide;
+        const yourSS = humanSide === "att" ? x.attSS : x.defSS, foeSS = humanSide === "att" ? x.defSS : x.attSS;
+        const yourDie = humanSide === "att" ? x.dieA : x.dieD, foeDie = humanSide === "att" ? x.dieD : x.dieA;
         const yourTot = humanSide === "att" ? x.totA : x.totD, foeTot = humanSide === "att" ? x.totD : x.totA;
-        let t = `${x.name}: your ${yourTot} vs their ${foeTot} — `;
-        if (x.margin === 0) t += "a bloody stand-off";
+        // strength + 🎲 = total, spelled out so the dice's role is visible
+        let t = `${x.name}: you ${yourSS}+🎲${yourDie}=${yourTot} vs ${foeSS}+🎲${foeDie}=${foeTot} — `;
+        if (x.margin === 0) t += "a dead-even clash";
         else t += youWon ? `you win by ${x.margin}` : `they win by ${x.margin}`;
         if (x.loseCas) { const loserIsYou = (x.winner === "att" ? "def" : "att") === humanSide; t += `, ${loserIsYou ? "you lose" : "they lose"} ${x.loseCas}`; }
         if (x.broke) t += youWon ? " — you shatter their line!" : " — your line breaks!";
         narr.push({ cls: youWon ? "good" : "bad", text: t + (t.endsWith("!") ? "" : ".") });
+        // call out when the die — not the strength — decided the flank
+        if (x.decidedByDice) narr.push({ cls: youWon ? "dice good" : "dice bad",
+          text: youWon ? "  🎲 the dice won you this flank — the stronger line would have lost!" : "  🎲 the dice cost you this flank." });
       });
       rolling = false; order = null; phase = "shown";
       render();
@@ -860,26 +958,28 @@ UI.openDefense = function (ev, onDone) {
   const toId = ev.toId, ps = S.provinces[toId];
   const canFortify = ps.castle >= 1;
   const escapes = SR.stat(toId).adj.filter(a => S.provinces[a].owner === S.humanClan || (!S.provinces[a].owner && !S.provinces[a].units.length));
-  const st = UI.defState = { response: "stand", postureD: "Line" };
+  const worksBudget = 2 + (ps.buildings && ps.buildings.fort ? DATA.buildings.fort.extraWorks : 0);
+  const st = UI.defState = { response: "stand", dep: UI.newDeploy(ps.units, worksBudget) };
+  UI.dpAuto(st.dep, SR.stat(toId).terrain);
   const render = () => {
+    const standReady = st.response !== "stand" || UI.dpReady(st.dep);
     UI.modal({
       title: "Under Attack!",
-      body: `<p>${esc(attName)} march on <b>${esc(SR.stat(toId).name)}</b>${ev.opts && ev.opts.surprise ? ' <span class="warn">(a surprise attack!)</span>' : ""}. Your garrison: ${ps.units.length} units (power ${Math.round(SR.armyPower(ps.units))}), castle lvl ${ps.castle}.</p>
-        <div class="field"><label>Your response</label><div class="chips">
-          <span class="chip ${st.response === "stand" ? "sel" : ""}" data-r="stand">Stand & fight</span>
-          ${canFortify ? `<span class="chip ${st.response === "fortify" ? "sel" : ""}" data-r="fortify">Fortify (withdraw into castle → siege)</span>` : ""}
+      body: `<p class="small">${esc(attName)} march on <b>${esc(SR.stat(toId).name)}</b> (${SR.stat(toId).terrain})${ev.opts && ev.opts.surprise ? ' <span class="warn">— a surprise attack!</span>' : ""}. Garrison: ${ps.units.length} units, castle lvl ${ps.castle}${ps.buildings && ps.buildings.fort ? ", Fort (+3 def, +1 work)" : ""}.</p>
+        <div class="chips" style="margin-bottom:8px">
+          <span class="chip ${st.response === "stand" ? "sel" : ""}" data-r="stand">Stand &amp; fight</span>
+          ${canFortify ? `<span class="chip ${st.response === "fortify" ? "sel" : ""}" data-r="fortify">Fortify (→ siege)</span>` : ""}
           ${escapes.length ? `<span class="chip ${st.response.startsWith("retreat") ? "sel" : ""}" data-r="retreat:${escapes[0]}">Retreat to ${esc(SR.stat(escapes[0]).name)}</span>` : ""}
-        </div></div>
-        ${st.response === "stand" ? `<div class="field"><label>Formation</label><div class="chips">
-          ${["Deep", "Line", "Wide"].map(p => `<span class="chip ${st.postureD === p ? "sel" : ""}" data-post="${p}">${p}</span>`).join("")}
-        </div></div>` : ""}`,
-      foot: `<button class="primary" id="def-go">Confirm</button>`,
+        </div>
+        ${st.response === "stand" ? UI.dpHTML(st.dep) : "<p class='small'>You withdraw — no field deployment needed.</p>"}`,
+      foot: `${st.response === "stand" ? `<button class="ghost" id="dp-auto">Auto-arrange</button>` : ""}<button class="primary" id="def-go" ${standReady ? "" : "disabled"}>Confirm</button>`,
     });
     const mb = $("#modal-body");
     mb.querySelectorAll("[data-r]").forEach(el => el.onclick = () => { st.response = el.dataset.r; render(); });
-    mb.querySelectorAll("[data-post]").forEach(el => el.onclick = () => { st.postureD = el.dataset.post; render(); });
+    if (st.response === "stand") { UI.wireDeploy(mb, st.dep, render);
+      const au = $("#dp-auto"); if (au) au.onclick = () => { UI.dpAuto(st.dep, SR.stat(toId).terrain); render(); }; }
     $("#def-go").onclick = () => {
-      const opts = Object.assign({}, ev.opts, { response: st.response, defPlan: { formation: st.postureD, main: "C", reserve: true }, interactive: true });
+      const opts = Object.assign({}, ev.opts, { response: st.response, defDeploy: st.response === "stand" ? UI.dpToObj(st.dep) : undefined, interactive: true });
       const report = SR.executeAttack(S, ev.fromId, toId, ev.uids, ev.attCid, opts);
       UI.render();
       UI.showBattleReport(report, onDone);
@@ -928,6 +1028,59 @@ UI.doAssault = function (id) {
     const report = SR.siegeAssault(S, id, true);
     UI.render();
     UI.showBattleReport(report, () => UI.render());
+  });
+};
+
+/* Interactive siege command — the besieger chooses how to break the castle. */
+UI.openSiege = function (id) {
+  const S = SR.state, ps = S.provinces[id];
+  if (!ps.siege || ps.siege.by !== S.humanClan) return;
+  const done = () => { UI.render(); if (SR.state.gameOver) GAME.showGameOver(); };
+  const render = () => {
+    const st = SR.siegeStatus(S, id);
+    if (!st) { UI.closeModal(); UI.render(); return; }
+    const acted = st.actedThisSeason;
+    const body = `
+      <div class="sg-status">
+        <div class="sg-row"><span>Castle walls</span><b>${st.castle > 0 ? "level " + st.castle : "breached!"}</b></div>
+        <div class="sg-row"><span>Garrison inside</span><b>${st.garrison} unit${st.garrison === 1 ? "" : "s"}</b></div>
+        <div class="sg-row"><span>Your siege army</span><b>${st.besiegers} units${st.trains ? ` · ${st.trains} siege train${st.trains > 1 ? "s" : ""}` : " · no siege trains"}</b></div>
+        <div class="sg-row"><span>Their supply</span><b class="${st.starving ? "warn" : ""}">${st.starving ? "cut off — starving" : "still supplied"}</b></div>
+        ${st.blockaded ? `<div class="small okc">Your blockade is strangling the town.</div>` : ""}
+      </div>
+      <p class="small">${acted ? "Your siege lines have given their orders this season — you may still storm or lift." : "Choose one order this season, or storm / lift at any time."}</p>
+      <div class="sg-acts">
+        <button class="act sg-btn" id="sg-starve" ${acted ? "disabled" : ""}><span class="ai">🚫</span>Blockade &amp; starve<small>Cut their supply — hunger wears the garrison down. Safe but slow.</small></button>
+        <button class="act sg-btn" id="sg-bombard" ${acted ? "disabled" : ""}><span class="ai">💥</span>Bombard the walls<small>${st.trains ? "Batter the castle down with your siege trains." : "Weak without siege trains — bring siege weapons."}</small></button>
+        <button class="act sg-btn" id="sg-terms"><span class="ai">🏳</span>Offer terms<small>Demand surrender — likelier if they starve or the walls have fallen.</small></button>
+        <button class="act sg-btn" id="sg-storm"><span class="ai">🏯</span>Storm the walls<small>Assault now — bloody; the garrison fights with full walls.</small></button>
+        <button class="act sg-btn" id="sg-lift"><span class="ai">↩</span>Lift the siege<small>Withdraw your army back home.</small></button>
+      </div>`;
+    UI.modal({ title: "Siege of " + esc(SR.stat(id).name), body, foot: `<button class="primary" onclick="UI.closeModal()">Close</button>` });
+    const act = (a) => {
+      const r = SR.siegeAction(S, id, a);
+      if (!r.ok) { UI.toast(r.reason); return; }
+      if (r.lifted) { UI.closeModal(); UI.render(); UI.toast("Siege lifted."); return; }
+      if (r.report) { UI.closeModal(); UI.render(); UI.showBattleReport(r.report, done); return; }
+      if (r.surrender) { UI.closeModal(); UI.render();
+        UI.modal({ title: "The Gates Open", body: r.lines.map(l => `<p>${esc(l)}</p>`).join(""), foot: `<button class="primary" onclick="UI.closeModal()">Continue</button>` }); return; }
+      UI.render(); if (r.lines && r.lines.length) UI.toast(r.lines[0]); render();
+    };
+    $("#sg-starve").onclick = () => act("starve");
+    $("#sg-bombard").onclick = () => act("bombard");
+    $("#sg-terms").onclick = () => act("terms");
+    $("#sg-storm").onclick = () => act("storm");
+    $("#sg-lift").onclick = () => act("lift");
+  };
+  render();
+};
+UI.doSortie = function (id) {
+  const S = SR.state;
+  UI.confirm(`Sortie from ${SR.stat(id).name}? Your garrison sallies out to break the besieging army — it catches them off guard, but if it fails you're thrown back with losses.`, () => {
+    const r = SR.siegeSortie(S, id);
+    if (!r.ok) { UI.toast(r.reason); return; }
+    UI.render();
+    UI.showBattleReport(r.report, () => { UI.render(); if (SR.state.gameOver) GAME.showGameOver(); });
   });
 };
 

@@ -47,8 +47,9 @@ SR.roleVal = (type, role) => { const u = DATA.units[type]; return role === "def"
 
 /* A sensible default deployment: cavalry take a flank, guns + a strong line
  * hold the centre, a reserve is kept back if the army is large enough. */
+SR.emptyWorks = () => ({ L: [], C: [], R: [] });
 SR.autoDeploy = function (units, role, terrain) {
-  const d = { L: [], C: [], R: [], RES: [], pL: "Line", pC: "Line", pR: "Line" };
+  const d = { L: [], C: [], R: [], RES: [], pL: "Line", pC: "Line", pR: "Line", front: { L: [], C: [], R: [] }, works: SR.emptyWorks() };
   const cav = units.filter(u => DATA.units[u.type].tags.includes("shock"));
   const foot = units.filter(u => !DATA.units[u.type].tags.includes("shock"));
   cav.forEach(u => d.R.push(u.uid));                       // horse on the right flank
@@ -72,7 +73,7 @@ SR.planDeploy = function (units, role, terrain, plan) {
   plan = plan || {};
   const main = ["L", "C", "R"].includes(plan.main) ? plan.main : "C";
   const form = ["Line", "Wide", "Deep"].includes(plan.formation) ? plan.formation : "Line";
-  const d = { L: [], C: [], R: [], RES: [], pL: form, pC: form, pR: form };
+  const d = { L: [], C: [], R: [], RES: [], pL: form, pC: form, pR: form, front: { L: [], C: [], R: [] }, works: SR.emptyWorks() };
   const others = ["L", "C", "R"].filter(s => s !== main);
   const cav = units.filter(u => DATA.units[u.type].tags.includes("shock"));
   const rest = units.filter(u => !DATA.units[u.type].tags.includes("shock"));
@@ -92,15 +93,40 @@ SR.secUnits = function (B, sk, sec) {
   return live.filter(u => ids.includes(u.uid));
 };
 
+/* Field works a side raised in a sector, summed to their effects. */
+SR.sectorWorks = function (B, sk, sec) {
+  const list = (B.deploy[sk].works && B.deploy[sk].works[sec]) || [];
+  const acc = { def: 0, fire: 0, antiShock: 0, steady: 0, keys: list.slice() };
+  for (const wk of list) { const w = DATA.fieldWorks[wk]; if (!w) continue;
+    acc.def += w.def || 0; acc.fire += w.fire || 0; acc.antiShock += w.antiShock || 0; acc.steady += w.steady || 0; }
+  return acc;
+};
+
 /* Deterministic Sector Strength for one side in one sector this round. */
 SR.sectorSS = function (B, sk, sec) {
   const S = B.side[sk], role = S.role, posture = B.deploy[sk]["p" + sec];
   const units = SR.secUnits(B, sk, sec);
-  if (!units.length) return { ss: 0, front: 0, parts: {} };
+  const works = SR.sectorWorks(B, sk, sec);
+  if (!units.length) {
+    // an empty flank still holds its works (a manned wall with no troops is just a wall)
+    if (works.def || works.fire) { const parts = {}; let ss = 0;
+      if (works.def) { ss += works.def; parts.works = works.def; }
+      return { ss, front: 0, parts, count: 0, steady: works.steady }; }
+    return { ss: 0, front: 0, parts: {}, count: 0, steady: works.steady };
+  }
   const T = DATA.terrain[B.terrain];
   let front = T.frontage; if (posture === "Deep") front = Math.max(1, front - 1); if (posture === "Wide") front += 1;
-  const sorted = [...units].sort((a, b) => SR.roleVal(b.type, role) - SR.roleVal(a.type, role));
-  const eng = sorted.slice(0, front), sup = sorted.slice(front);
+  // Player-chosen front rank comes first; the rest fill by fighting value.
+  const chosen = (B.deploy[sk].front && B.deploy[sk].front[sec]) || [];
+  let ordered;
+  if (chosen.length) {
+    const inFront = units.filter(u => chosen.includes(u.uid));
+    const rest = units.filter(u => !chosen.includes(u.uid)).sort((a, b) => SR.roleVal(b.type, role) - SR.roleVal(a.type, role));
+    ordered = inFront.concat(rest);
+  } else {
+    ordered = [...units].sort((a, b) => SR.roleVal(b.type, role) - SR.roleVal(a.type, role));
+  }
+  const eng = ordered.slice(0, front), sup = ordered.slice(front);
   const parts = {};
   let ss = SR.sum(eng, u => SR.roleVal(u.type, role)); parts.line = ss;
   // Attacker's initiative: they chose the ground and the moment to strike.
@@ -108,14 +134,16 @@ SR.sectorSS = function (B, sk, sec) {
   // terrain
   if (role === "def") { const t = T.defBonus; ss += t; if (t) parts.terrain = t; }
   else if (B.terrain === "Mountain" || B.terrain === "River") { ss -= 2; parts.terrain = -2; }
-  // shock: charging cavalry, round 1, max 2, ½ in mtn/forest — but enemy guns/
-  // archers in this sector shoot the horses (each Teppō cancels 3, each Archer 1).
+  // shock: charging cavalry, round 1, max 2, ½ in mtn/forest — but enemy guns,
+  // archers, and anti-cavalry stakes in this flank blunt the charge.
   if (B.round <= 1) {
     const cav = Math.min(2, units.filter(u => DATA.units[u.type].tags.includes("shock")).length);
     if (cav) {
       let sh = Math.round(cav * 3 * (["Mountain", "Forest"].includes(B.terrain) ? 0.5 : 1));
-      const foe = SR.secUnits(B, sk === "att" ? "def" : "att", sec);
-      const antiShock = foe.filter(u => u.type === "teppo").length * 3 + foe.filter(u => u.type === "archers").length;
+      const foeSk = sk === "att" ? "def" : "att";
+      const foe = SR.secUnits(B, foeSk, sec);
+      const foeWorks = SR.sectorWorks(B, foeSk, sec);
+      const antiShock = foe.filter(u => u.type === "teppo").length * 3 + foe.filter(u => u.type === "archers").length + foeWorks.antiShock;
       sh = Math.max(0, sh - antiShock);
       if (sh) { ss += sh; parts.shock = sh; } else if (antiShock) parts.shock = 0;
     }
@@ -125,12 +153,17 @@ SR.sectorSS = function (B, sk, sec) {
   for (const u of units) { const d = DATA.units[u.type];
     if (d.tags.includes("volley")) { if (!B.wet && B.round % 2 === 1) fire += 3 + (B.deploy[sk === "att" ? "def" : "att"]["p" + sec] === "Deep" ? 1 : 0); }
     else if (d.tags.includes("ranged")) fire += 2; }
+  fire += works.fire;                                  // gun emplacements add to the volley
   if (fire) { ss += fire; parts.fire = fire; if (S.trait === "Teppō") { ss += 1; parts.fire += 1; } }
+  // field works: palisades / redoubts add defence to whoever raised them
+  if (works.def) { ss += works.def; parts.works = works.def; }
   // depth (Deep), infantry/defence traits
   if (posture === "Deep" && sup.length) { const dep = Math.min(3, sup.length); ss += dep; parts.depth = dep; }
   if (S.trait === "Infantry") { const inf = Math.round(0.5 * units.filter(u => ["ashigaru", "samurai"].includes(u.type)).length); if (inf) { ss += inf; parts.infantry = inf; } }
   if (S.trait === "Siege & Defence" && role === "def") { ss += 2; parts.defence = 2; }
   if (role === "def" && B.castleBonus && B.assault) { const cb = B.castleBonus * 2; ss += cb; parts.walls = cb; }
+  // a Fort in the province strengthens the defender's strongpoint
+  if (role === "def" && B.fortDef && sec === S.mainSec) { ss += B.fortDef; parts.fort = B.fortDef; }
   // leadership in the main-effort sector
   if (sec === S.mainSec && S.cmd) { ss += S.cmd; parts.command = S.cmd; }
   // wheel bonus (won a flank last round → roll into the centre)
@@ -139,7 +172,7 @@ SR.sectorSS = function (B, sk, sec) {
   if (S.prowessSec === sec && B.round === 1 && S.ms) { ss += S.ms; parts.prowess = S.ms; }
   // fatigue
   const fat = Math.min(3, B.fatigue[sk][sec] || 0); if (fat) { ss -= fat; parts.fatigue = -fat; }
-  return { ss: Math.max(0, ss), front, parts, count: units.length };
+  return { ss: Math.max(0, ss), front, parts, count: units.length, steady: works.steady };
 };
 
 SR.beginBattle = function (ctx) {
@@ -158,6 +191,7 @@ SR.beginBattle = function (ctx) {
       att: ctx.attDeploy || SR.autoDeploy(A, "att", ctx.terrain),
       def: ctx.defDeploy || SR.autoDeploy(D, "def", ctx.terrain),
     },
+    fortDef: ctx.fortDef || 0,
     morale: {
       att: 10 + Math.min(3, SR.countType(A, "samurai")) + (ctx.attCmd || 0) + (ctx.attMS || 0),
       def: 10 + Math.min(3, SR.countType(D, "samurai")) + (ctx.defCmd || 0) + (ctx.defMS || 0) + (ctx.castleBonus || 0),
@@ -167,7 +201,10 @@ SR.beginBattle = function (ctx) {
     losses: { att: [], def: [] }, morale0: {},
   };
   ["att", "def"].forEach(sk => {
-    B.side[sk].mainSec = mainOf(B.deploy[sk]);
+    const dep = B.deploy[sk];                 // normalise deploys from the UI / plan
+    if (!dep.front) dep.front = { L: [], C: [], R: [] };
+    if (!dep.works) dep.works = SR.emptyWorks();
+    B.side[sk].mainSec = mainOf(dep);
     B.side[sk].prowessSec = B.side[sk].mainSec; // spend Prowess on the main effort
   });
   B.morale0 = { att: B.morale.att, def: B.morale.def };
@@ -222,6 +259,11 @@ SR.resolveRound = function (B, dice) {
     const totA = a.ss + dieA, totD = d.ss + dieD;
     const margin = Math.abs(totA - totD);
     const winSide = totA >= totD ? "att" : "def", loseSide = winSide === "att" ? "def" : "att";
+    // Did the dice decide it? (winner by pure strength vs winner after the roll)
+    const ssWin = a.ss >= d.ss ? "att" : "def";
+    const flip = ssWin !== winSide;               // the roll overturned the stronger line
+    const decidedByDice = flip || a.ss === d.ss;  // roll broke a tie or flipped the result
+    const loserSteady = (loseSide === "att" ? a.steady : d.steady) || 0;   // redoubt
     const loseUnits = SR.secUnits(B, loseSide, sec), winUnits = SR.secUnits(B, winSide, sec);
     let loseCas = Math.min(Math.floor(margin / 4), loseUnits.length);
     if (B.deploy[loseSide]["p" + sec] === "Deep") loseCas = Math.max(0, loseCas - 1);
@@ -230,13 +272,14 @@ SR.resolveRound = function (B, dice) {
     SR.removeSecCas(B, winSide, sec, winCas);
     let mLoss = Math.min(margin, 6);
     if (B.deploy[loseSide]["p" + sec] === "Deep") mLoss = Math.max(0, mLoss - 2);
+    mLoss = Math.max(0, mLoss - loserSteady);     // a redoubt steadies the shaken flank
     if (margin > 0) B.morale[loseSide] -= mLoss;
     B.fatigue.att[sec]++; B.fatigue.def[sec]++;
     const lostFront = SR.secUnits(B, loseSide, sec).length === 0;
-    const broke = margin >= 8 || lostFront;
+    const broke = (margin >= 8 + loserSteady * 2) || lostFront;   // works make a flank harder to break
     if (broke) { if (B.deploy[loseSide]["p" + sec] === "Wide") B.morale[loseSide] -= 2; B.broke[winSide] = sec; }
     results.push({ sector: sec, name: SR.sectorName[sec], attSS: a.ss, defSS: d.ss, attParts: a.parts, defParts: d.parts,
-      dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke,
+      dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke, flip, decidedByDice,
       text: `${SR.sectorName[sec]}: ${totA} vs ${totD} — ${winSide === "att" ? "you" : "they"}` +
             `${margin === 0 ? " hold, a bloody stand-off" : " win by " + margin + (loseCas ? `, ${loseSide === "att" ? "you lose" : "they lose"} ${loseCas}` : "")}` +
             `${broke ? " — the line breaks!" : ""}.` });
@@ -416,6 +459,7 @@ SR.executeAttack = function (S, fromId, toId, uids, attCid, opts) {
   // stand → field battle
   return SR.resolveField(S, fromId, toId, attArmy, attCid, defCid, {
     surprise: !!opts.surprise, attPlan: opts.plan, defPlan: opts.defPlan,
+    attDeploy: opts.deploy, defDeploy: opts.defDeploy,   // full hand-made deployments
     attCmd, attTrait, report, occupyOnWin: true, bringDaimyo,
     interactive: !!opts.interactive,
   });
@@ -431,6 +475,9 @@ SR.buildFieldCtx = function (S, fromId, toId, attArmy, attCid, defCid, o) {
   const defTrait = defCid ? S.clans[defCid].trait : "";
   const terr = SR.stat(toId).terrain;
   const humanSide = attCid === S.humanClan ? "att" : (defCid === S.humanClan ? "def" : null);
+  // a Fort in the defended province strengthens the defender and grants a work
+  const hasFort = !!(to.buildings && to.buildings.fort);
+  const fortDef = hasFort ? DATA.buildings.fort.fieldDef : 0;
   return {
     attUnits: attArmy, defUnits: defArmy,
     attCmd: o.attCmd, defCmd,
@@ -438,10 +485,13 @@ SR.buildFieldCtx = function (S, fromId, toId, attArmy, attCid, defCid, o) {
     attMS: S.clans[attCid].ms, defMS: defCid ? S.clans[defCid].ms : 0,
     terrain: terr, weather: S.weather,
     surprise: o.surprise,
-    // a player's battle plan concentrates their force; the AI auto-deploys
-    attDeploy: o.attPlan ? SR.planDeploy(attArmy, "att", terr, o.attPlan) : undefined,
-    defDeploy: o.defPlan ? SR.planDeploy(defArmy, "def", terr, o.defPlan) : undefined,
+    // a full hand-made deployment wins; else a simple plan; else the AI auto-deploys
+    attDeploy: o.attDeploy || (o.attPlan ? SR.planDeploy(attArmy, "att", terr, o.attPlan) : undefined),
+    defDeploy: o.defDeploy || (o.defPlan ? SR.planDeploy(defArmy, "def", terr, o.defPlan) : undefined),
     castleBonus: o.assault ? to.castle : 0, assault: !!o.assault,
+    fortDef,
+    // field-work budget: attacker 1, defender 2 (+1 with a Fort)
+    attWorks: 1, defWorks: 2 + (hasFort ? DATA.buildings.fort.extraWorks : 0),
     humanSide, defDaimyoHere,
   };
 };
@@ -681,6 +731,97 @@ SR.liftSiege = function (S, id) {
   if (home && home.owner === sg.by) home.units.push(...sg.army);
   ps.siege = null;
   SR.log(S, `${S.clans[sg.by].name} lifts the siege of ${SR.stat(id).name}.`, "info");
+};
+
+/* ---------------------------------------------------------------------
+ * INTERACTIVE SIEGE — the besieger chooses how to break a castle each
+ * season: blockade & starve, bombard the walls, offer terms, or storm.
+ * One order per season (storm/lift are always available). Reused by the
+ * siege panel; the AI drives its own sieges via siegeTick.
+ * ------------------------------------------------------------------- */
+SR.siegeSeasonKey = S => S.year * 10 + S.seasonIdx;
+SR.siegeStatus = function (S, id) {
+  const ps = S.provinces[id], sg = ps.siege; if (!sg) return null;
+  return {
+    castle: ps.castle, garrison: ps.units.length, besiegers: (sg.army || []).length,
+    trains: SR.countType(sg.army || [], "siege"), turns: sg.turns || 0,
+    starving: !SR.inSupply(S, id, ps.owner), blockaded: !!sg.starve,
+    actedThisSeason: sg.season === SR.siegeSeasonKey(S),
+  };
+};
+SR.siegeAction = function (S, id, action) {
+  const ps = S.provinces[id], sg = ps.siege;
+  if (!sg) return { ok: false, reason: "No siege here." };
+  const attCid = sg.by, defCid = ps.owner;
+  if (action === "lift") { SR.liftSiege(S, id); return { ok: true, lifted: true }; }
+  if (action === "storm") { const report = SR.siegeAssault(S, id, true); return { ok: true, report }; }
+  const key = SR.siegeSeasonKey(S);
+  if (sg.season === key) return { ok: false, reason: "Your siege lines have already acted this season." };
+  sg.season = key; sg.turns = (sg.turns || 0) + 1;
+  const lines = [];
+  if (action === "starve") {
+    sg.starve = true;
+    if (!SR.inSupply(S, id, defCid)) {
+      if (ps.units.length) { const u = ps.units.pop(); lines.push(`Cut off and starving, ${DATA.units[u.type].name} of the garrison wastes away.`); }
+      else { ps.castle = Math.max(0, ps.castle - 1); lines.push(`Starved of food and men, the defences fail — castle now level ${ps.castle}.`); }
+    } else {
+      lines.push(`You tighten the blockade of ${SR.stat(id).name}, strangling its supply. Hold, and hunger will do your work.`);
+    }
+  } else if (action === "bombard") {
+    const trains = SR.countType(sg.army, "siege");
+    const great = SR.stat(id).feature === "great_castle" || defCid === "hojo";
+    let reduce = trains > 0 ? 1 + (trains > 1 ? 1 : 0) : (SR.chance(0.4) ? 1 : 0);
+    if (great) reduce = Math.max(0, reduce - 1);
+    if (reduce > 0) { ps.castle = Math.max(0, ps.castle - reduce); lines.push(`Your guns pound the walls of ${SR.stat(id).name} — castle now level ${ps.castle}.`); }
+    else lines.push(trains > 0 ? `The great walls of ${SR.stat(id).name} shrug off today's fire.` : `Without siege trains your bombardment achieves little — bring siege weapons to breach the walls.`);
+  } else if (action === "terms") {
+    const gPow = SR.armyPower(ps.units), bPow = SR.armyPower(sg.army);
+    let chance = 0.12 + (sg.starve ? 0.25 : 0) + Math.max(0, (bPow - gPow) / Math.max(1, bPow)) * 0.35 + (ps.castle === 0 ? 0.25 : 0);
+    if (SR.honourBand && SR.honourBand(S.clans[attCid].honour).min >= 10) chance += 0.08;
+    if (SR.chance(Math.min(0.92, chance))) {
+      ps.siege = null; ps.units = [];
+      SR.occupy(S, id, sg.army, attCid, sg.fromId, sg.bringDaimyo);
+      S.clans[attCid].prestige += 1; S.clans[attCid].honour = SR.clamp(S.clans[attCid].honour + 1, 0, 20);
+      lines.push(`The garrison of ${SR.stat(id).name} accepts honourable terms and opens the gates! (+Prestige, +Honour)`);
+      SR.log(S, `${S.clans[attCid].name} negotiates the surrender of ${SR.stat(id).name}.`, attCid === S.humanClan ? "good" : "info");
+      return { ok: true, surrender: true, lines };
+    }
+    lines.push(`The defenders of ${SR.stat(id).name} refuse your terms and hold fast.`);
+  }
+  if (ps.castle <= 0) lines.push(`The walls are breached — you may now storm the town to take it.`);
+  SR.log(S, lines[0] || "The siege grinds on.", "info");
+  return { ok: true, lines };
+};
+
+/* A sortie: the besieged garrison sallies out to break the siege. Auto-resolved
+ * (a surprise on the besiegers); win → siege broken, lose → thrown back inside. */
+SR.siegeSortie = function (S, id) {
+  const ps = S.provinces[id], sg = ps.siege; if (!sg) return { ok: false, reason: "No siege here." };
+  const defCid = ps.owner, attCid = sg.by;
+  const garrison = ps.units.slice(), besiegers = (sg.army || []).slice();
+  if (!garrison.length) return { ok: false, reason: "No garrison to sortie with." };
+  const daimyoHere = S.clans[defCid].daimyoAlive && S.clans[defCid].daimyoLoc === id;
+  const res = SR.simulateBattle({
+    attUnits: garrison, defUnits: besiegers,
+    attCmd: daimyoHere ? S.clans[defCid].command : 1, defCmd: sg.bringDaimyo ? S.clans[attCid].command : 1,
+    attTrait: S.clans[defCid].trait, defTrait: S.clans[attCid] ? S.clans[attCid].trait : "",
+    attMS: S.clans[defCid].ms, defMS: S.clans[attCid] ? S.clans[attCid].ms : 0,
+    terrain: SR.stat(id).terrain, weather: S.weather, surprise: true,
+  });
+  const report = { outcome: "", sim: res, terrain: SR.stat(id).terrain, toId: id, attCid: defCid, defCid: attCid,
+    attStart: garrison.length, defStart: besiegers.length, sortie: true };
+  if (res.winner === "att") {
+    ps.units = res.attSurv; S.clans[defCid].prestige += 2;
+    const home = S.provinces[sg.fromId]; if (home && home.owner === attCid) home.units.push(...res.defSurv);
+    ps.siege = null;
+    report.outcome = "attWin"; report.postText = `The sortie shatters the besiegers — the siege of ${SR.stat(id).name} is broken!`;
+    SR.log(S, `${S.clans[defCid].name}'s sortie breaks the siege of ${SR.stat(id).name}!`, defCid === S.humanClan ? "good" : "info");
+  } else {
+    ps.units = res.attSurv; sg.army = res.defSurv;
+    report.outcome = "defWin"; report.postText = `The sortie from ${SR.stat(id).name} is thrown back; the siege tightens.`;
+    SR.log(S, `${S.clans[defCid].name}'s sortie from ${SR.stat(id).name} is repulsed.`, defCid === S.humanClan ? "bad" : "info");
+  }
+  return { ok: true, report };
 };
 
 /* ---------------------------------------------------------------------

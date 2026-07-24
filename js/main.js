@@ -55,7 +55,7 @@ GAME.humanMarch = function (m) {
   const { fromId, toId, sel } = m;
   if (!sel.length) return;
   if (typeof NET !== "undefined" && NET.online) {          // online: server resolves & pushes the report
-    NET.doAction("move", { fromId, toId, uids: sel, opts: { surprise: m.surprise, plan: m.plan, bringDaimyo: m.bringDaimyo } });
+    NET.doAction("move", { fromId, toId, uids: sel, opts: { surprise: m.surprise, deploy: m.deploy, bringDaimyo: m.bringDaimyo } });
     return;
   }
   const hostile = SR.isHostile(S, toId, cid);
@@ -66,7 +66,7 @@ GAME.humanMarch = function (m) {
     return;
   }
   const report = SR.executeAttack(S, fromId, toId, sel, cid, {
-    surprise: m.surprise, plan: m.plan, bringDaimyo: m.bringDaimyo, interactive: true,
+    surprise: m.surprise, deploy: m.deploy, bringDaimyo: m.bringDaimyo, interactive: true,
   });
   UI.render();
   UI.showBattleReport(report, () => { UI.render(); if (SR.state.gameOver) GAME.showGameOver(); });

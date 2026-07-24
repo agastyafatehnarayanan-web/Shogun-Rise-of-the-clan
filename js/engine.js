@@ -221,6 +221,9 @@ SR.processSieges = function (S) {
   for (const id in S.provinces) {
     const ps = S.provinces[id];
     if (!ps.siege) continue;
+    // The human directs their own sieges by hand via the siege panel; only the
+    // AI's sieges tick automatically. (Online play has no local human sentinel.)
+    if (ps.siege.by === S.humanClan && S.humanClan !== "__SERVER__") continue;
     SR.siegeTick(S, id);
   }
 };
