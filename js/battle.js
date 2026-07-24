@@ -879,6 +879,42 @@ SR.siegeSortie = function (S, id) {
   return { ok: true, report };
 };
 
+/* The defender's siege orders: hold the walls, ration the stores, rally the
+ * garrison, sally out, or surrender the town. One order per season (sortie /
+ * surrender are always available). */
+SR.defenseSiegeAction = function (S, id, action) {
+  const ps = S.provinces[id], sg = ps.siege;
+  if (!sg) return { ok: false, reason: "Not under siege." };
+  SR.siegeInit(sg);
+  const defCid = ps.owner, c = S.clans[defCid];
+  if (action === "sortie") return SR.siegeSortie(S, id);
+  if (action === "surrender") {
+    const attCid = sg.by;
+    SR.siegeCapitulate(S, id, sg, attCid, 0);
+    c.honour = SR.clamp(c.honour - 1, 0, 20);
+    SR.log(S, `${c.name} surrenders ${SR.stat(id).name} to ${S.clans[attCid] ? S.clans[attCid].name : "the besiegers"}.`, "bad");
+    return { ok: true, surrendered: true, lines: [`You yield ${SR.stat(id).name} to end the siege. (−1 Honour)`] };
+  }
+  const key = SR.siegeSeasonKey(S);
+  if (sg.defSeason === key) return { ok: false, reason: "Your garrison has already acted this season." };
+  if (action === "rally" && c.koban < 2) return { ok: false, reason: "Need 2 koban to rally the garrison." };
+  sg.defSeason = key;
+  const lines = [];
+  if (action === "hold") {
+    const disc = SR.countType(ps.units, "samurai") > 0 || (c.daimyoAlive && c.daimyoLoc === id) ? 1 : 0;
+    sg.spirit = Math.min(6, sg.spirit + disc);
+    lines.push(disc ? `Your samurai steady the garrison — spirits hold (Will ${sg.spirit}/6).` : `The garrison holds the walls and waits.`);
+  } else if (action === "ration") {
+    sg.supply = Math.min(6, sg.supply + 1); sg.spirit = Math.max(0, sg.spirit - 1);
+    lines.push(`You put the town on short rations — food lasts longer, but hunger frays nerves (Food ${sg.supply}/6, Will ${sg.spirit}/6).`);
+  } else if (action === "rally") {
+    c.koban -= 2; sg.spirit = Math.min(6, sg.spirit + 2);
+    lines.push(`Coin and fiery words rally the defenders (Will ${sg.spirit}/6).`);
+  }
+  SR.log(S, lines[0] || "The garrison endures.", "info");
+  return { ok: true, lines };
+};
+
 /* ---------------------------------------------------------------------
  * PACIFY / RAZE
  * ------------------------------------------------------------------- */

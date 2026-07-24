@@ -263,7 +263,7 @@ UI.provinceActions = function (S, id, ps) {
       <button class="act" data-a="siege" data-id="${id}"><span class="ai">⚔</span>Siege command</button></div>`;
   } else if (ps.siege && ps.owner === S.humanClan) {
     mySiege = `<div class="act-grid" style="margin-bottom:8px">
-      <button class="act" data-a="sortie" data-id="${id}"><span class="ai">🐎</span>Sortie — break the siege</button></div>`;
+      <button class="act" data-a="defsiege" data-id="${id}"><span class="ai">🛡</span>Withstand the siege</button></div>`;
   }
   let g = `<div class="act-grid">`;
   g += `<button class="act" data-a="march" data-id="${id}" ${SR.movableUnits(S, id).length ? "" : "disabled"}><span class="ai">⚔</span>March / Attack</button>`;
@@ -432,6 +432,7 @@ UI.action = function (a, d) {
     case "lift": SR.liftSiege(S, d.id); UI.render(); break;
     case "siege": UI.openSiege(d.id); break;
     case "sortie": UI.doSortie(d.id); break;
+    case "defsiege": UI.openDefenseSiege(d.id); break;
     case "court": after(SR.doCourt(S, cid)); break;
     case "agent": after(SR.recruitAgent(S, cid)); break;
     case "spymaster": after(SR.hireSpymaster(S, cid)); break;
@@ -1087,6 +1088,46 @@ UI.doSortie = function (id) {
     UI.render();
     UI.showBattleReport(r.report, () => { UI.render(); if (SR.state.gameOver) GAME.showGameOver(); });
   });
+};
+/* The defender's siege panel — hold, ration, rally, sortie, or surrender. */
+UI.openDefenseSiege = function (id) {
+  const S = SR.state, ps = S.provinces[id];
+  if (!ps.siege || ps.owner !== S.humanClan) return;
+  const done = () => { UI.render(); if (SR.state.gameOver) GAME.showGameOver(); };
+  const render = () => {
+    const st = SR.siegeStatus(S, id); const sg = ps.siege;
+    if (!st || !sg) { UI.closeModal(); UI.render(); return; }
+    const acted = sg.defSeason === SR.siegeSeasonKey(S);
+    const koban = S.clans[S.humanClan].koban;
+    const bar = (label, val, cls) => `<div class="sg-gauge"><span>${label}</span><div class="sg-meter"><span class="${cls}" style="width:${Math.round(val / 6 * 100)}%"></span></div><b>${val}/6</b></div>`;
+    const body = `
+      <div class="sg-status">
+        <div class="sg-row"><span>Your walls</span><b>${st.castle > 0 ? "level " + st.castle : "breached!"}</b></div>
+        <div class="sg-row"><span>Your garrison</span><b>${st.garrison} unit${st.garrison === 1 ? "" : "s"}</b></div>
+        <div class="sg-row"><span>Besieging army</span><b>${st.besiegers} units</b></div>
+        ${bar("Food", st.supply, "food")}
+        ${bar("Will", st.spirit, "will")}
+        <div class="small" style="margin-top:3px;color:var(--ink2)">Outlast them — but if your <b>Food</b> or <b>Will</b> runs out, the town falls.</div>
+      </div>
+      <p class="small">${acted ? "Your garrison has given its order this season — you may still sortie or surrender." : "Give one order this season; sortie or surrender at any time."}</p>
+      <div class="sg-acts">
+        <button class="act sg-btn" id="ds-hold" ${acted ? "disabled" : ""}><span class="ai">🛡</span>Hold the walls<small>Endure — samurai and your lord steady the men (Will holds).</small></button>
+        <button class="act sg-btn" id="ds-ration" ${acted ? "disabled" : ""}><span class="ai">🍚</span>Ration the stores<small>Stretch the food (+Food), but short rations sap morale (−Will).</small></button>
+        <button class="act sg-btn" id="ds-rally" ${acted || koban < 2 ? "disabled" : ""}><span class="ai">🎌</span>Rally the garrison<small>2 koban${koban < 2 ? " — not enough" : ""} — pay and inspire the men (+2 Will).</small></button>
+        <button class="act sg-btn" id="ds-sortie"><span class="ai">🐎</span>Sortie — break out<small>Sally out to shatter the besiegers by surprise. Risky.</small></button>
+        <button class="act sg-btn" id="ds-surrender"><span class="ai">🏳</span>Surrender the town<small>Yield the province to end the siege (−1 Honour).</small></button>
+      </div>`;
+    UI.modal({ title: "Under Siege — " + esc(SR.stat(id).name), body, foot: `<button class="primary" onclick="UI.closeModal()">Close</button>` });
+    const act = (a) => {
+      const r = SR.defenseSiegeAction(S, id, a);
+      if (!r.ok) { UI.toast(r.reason); return; }
+      if (r.report) { UI.closeModal(); UI.render(); UI.showBattleReport(r.report, done); return; }
+      if (r.surrendered) { UI.closeModal(); UI.render(); UI.modal({ title: "The Town Yields", body: r.lines.map(l => `<p>${esc(l)}</p>`).join(""), foot: `<button class="primary" onclick="UI.closeModal()">Continue</button>` }); return; }
+      UI.render(); if (r.lines && r.lines.length) UI.toast(r.lines[0]); render();
+    };
+    ["hold", "ration", "rally", "sortie", "surrender"].forEach(a => { const el = document.getElementById("ds-" + a); if (el) el.onclick = () => act(a); });
+  };
+  render();
 };
 
 /* ---------------------------------------------------------------------
