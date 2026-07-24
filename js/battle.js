@@ -170,6 +170,12 @@ SR.sectorSS = function (B, sk, sec) {
   if (B.wheel[sk] === sec) { ss += 4; parts.wheel = 4; }
   // one-time Martial Prowess surge (round 1, on the main effort)
   if (S.prowessSec === sec && B.round === 1 && S.ms) { ss += S.ms; parts.prowess = S.ms; }
+  // 1066 stance for this flank this round
+  const stance = (B.stance && B.stance[sk] && B.stance[sk][sec]) || "line";
+  if (stance === "shieldwall") { ss += 2; parts.shieldwall = 2; }
+  else if (stance === "charge") { ss += 3; parts.charge = 3; }
+  else if (stance === "feign") { ss -= 4; parts.feign = -4; }
+  if (B.feign && B.feign[sk] && B.feign[sk][sec] > 0) { ss += 5; parts.counter = 5; }  // the feint springs
   // fatigue
   const fat = Math.min(3, B.fatigue[sk][sec] || 0); if (fat) { ss -= fat; parts.fatigue = -fat; }
   return { ss: Math.max(0, ss), front, parts, count: units.length, steady: works.steady };
@@ -199,6 +205,12 @@ SR.beginBattle = function (ctx) {
     fatigue: { att: { L: 0, C: 0, R: 0 }, def: { L: 0, C: 0, R: 0 } },
     wheel: { att: null, def: null }, broke: { att: null, def: null },
     losses: { att: [], def: [] }, morale0: {},
+    // 1066 layer: each flank has its own Nerve; break it and the flank routs.
+    stance: { att: { L: "line", C: "line", R: "line" }, def: { L: "line", C: "line", R: "line" } },
+    nerve: { att: { L: 6, C: 6, R: 6 }, def: { L: 6, C: 6, R: 6 } },
+    nerve0: { att: { L: 6, C: 6, R: 6 }, def: { L: 6, C: 6, R: 6 } },
+    feign: { att: { L: 0, C: 0, R: 0 }, def: { L: 0, C: 0, R: 0 } },
+    flankRouted: { att: {}, def: {} },
   };
   ["att", "def"].forEach(sk => {
     const dep = B.deploy[sk];                 // normalise deploys from the UI / plan
@@ -206,6 +218,11 @@ SR.beginBattle = function (ctx) {
     if (!dep.works) dep.works = SR.emptyWorks();
     B.side[sk].mainSec = mainOf(dep);
     B.side[sk].prowessSec = B.side[sk].mainSec; // spend Prowess on the main effort
+    SR.SECTORS.forEach(sec => {
+      const u = SR.secUnits(B, sk, sec);
+      const n = u.length ? 5 + Math.min(2, SR.countType(u, "samurai")) + (sec === B.side[sk].mainSec ? (B.side[sk].cmd || 0) : 0) : 6;
+      B.nerve[sk][sec] = n; B.nerve0[sk][sec] = n;
+    });
   });
   B.morale0 = { att: B.morale.att, def: B.morale.def };
   if (B.surprise) B.morale.def -= 2;           // caught outside the walls
@@ -222,7 +239,19 @@ SR.applyOrders = function (B, orders) {
     if (B.deploy[sk].RES.length) return { type: "reserve", sector: B.side[sk].mainSec };
     return { type: "hold" };
   };
+  const aiStance = (sk) => {
+    // AI: charge where it's strong, shield-wall where it's weak
+    const st = {};
+    SR.SECTORS.forEach(sec => {
+      const me = SR.sectorSS(B, sk, sec).ss, foe = SR.sectorSS(B, sk === "att" ? "def" : "att", sec).ss;
+      st[sec] = me >= foe + 4 ? "charge" : (foe >= me + 4 ? "shieldwall" : "line");
+    });
+    return st;
+  };
   ["att", "def"].forEach(sk => {
+    // 1066 stances (shield wall / charge / feign / line) for each flank this round
+    const stance = (orders[sk] && orders[sk].stance) || aiStance(sk);
+    SR.SECTORS.forEach(sec => { B.stance[sk][sec] = ["line", "shieldwall", "charge", "feign"].includes(stance[sec]) ? stance[sec] : "line"; });
     const o = orders[sk] || aiOrder(sk);
     if (o.type === "reserve" && B.deploy[sk].RES.length) {
       const sec = SR.SECTORS.includes(o.sector) ? o.sector : B.side[sk].mainSec;
@@ -253,6 +282,7 @@ SR.resolveRound = function (B, dice) {
   const ambush = B.surprise && B.round === 1;
   const dieD = ambush ? 0 : (dice && dice.def != null ? dice.def : SR.rint(1, 6));
   const results = [];
+  const pendingFeigns = [];
   for (const sec of SR.SECTORS) {
     const a = SR.sectorSS(B, "att", sec), d = SR.sectorSS(B, "def", sec);
     if (!a.count && !d.count) continue;
@@ -275,15 +305,38 @@ SR.resolveRound = function (B, dice) {
     mLoss = Math.max(0, mLoss - loserSteady);     // a redoubt steadies the shaken flank
     if (margin > 0) B.morale[loseSide] -= mLoss;
     B.fatigue.att[sec]++; B.fatigue.def[sec]++;
+
+    // ---- 1066 Nerve: the losing flank's nerve is shaken; break it and it routs ----
+    const loseStance = B.stance[loseSide][sec], winStance = B.stance[winSide][sec];
+    let nLoss = Math.min(margin, 6);
+    if (loseStance === "shieldwall") nLoss = Math.max(0, nLoss - 2);   // the wall holds firm
+    nLoss = Math.max(0, nLoss - loserSteady);
+    let feinted = false;
+    if (loseStance === "feign") { nLoss = Math.min(nLoss, 1); pendingFeigns.push({ side: loseSide, sec }); feinted = true; }  // give ground by design, spring next round
+    if (margin > 0) B.nerve[loseSide][sec] = Math.max(0, B.nerve[loseSide][sec] - nLoss);
+    if (winStance === "charge") B.nerve[winSide][sec] = Math.max(0, B.nerve[winSide][sec] - 1);  // charging is exhausting
+    if (loseStance === "charge") B.nerve[loseSide][sec] = Math.max(0, B.nerve[loseSide][sec] - 1);
+
+    let flankRout = false;
+    if (B.nerve[loseSide][sec] <= 0 && SR.secUnits(B, loseSide, sec).length) {
+      flankRout = true; B.flankRouted[loseSide][sec] = true;
+      SR.removeSecCas(B, loseSide, sec, SR.secUnits(B, loseSide, sec).length);  // the flank flees the field
+      B.morale[loseSide] -= 4;
+    }
     const lostFront = SR.secUnits(B, loseSide, sec).length === 0;
-    const broke = (margin >= 8 + loserSteady * 2) || lostFront;   // works make a flank harder to break
+    const broke = flankRout || margin >= 8 + loserSteady * 2 || lostFront;
     if (broke) { if (B.deploy[loseSide]["p" + sec] === "Wide") B.morale[loseSide] -= 2; B.broke[winSide] = sec; }
     results.push({ sector: sec, name: SR.sectorName[sec], attSS: a.ss, defSS: d.ss, attParts: a.parts, defParts: d.parts,
-      dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke, flip, decidedByDice,
+      dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke, flip, decidedByDice, feinted, flankRout,
+      attStance: B.stance.att[sec], defStance: B.stance.def[sec],
+      attNerve: B.nerve.att[sec], defNerve: B.nerve.def[sec], attNerve0: B.nerve0.att[sec], defNerve0: B.nerve0.def[sec],
       text: `${SR.sectorName[sec]}: ${totA} vs ${totD} — ${winSide === "att" ? "you" : "they"}` +
-            `${margin === 0 ? " hold, a bloody stand-off" : " win by " + margin + (loseCas ? `, ${loseSide === "att" ? "you lose" : "they lose"} ${loseCas}` : "")}` +
-            `${broke ? " — the line breaks!" : ""}.` });
+            `${margin === 0 ? " hold, a bloody stand-off" : (feinted ? " give ground — a feigned retreat" : " win by " + margin) + (loseCas ? `, ${loseSide === "att" ? "you lose" : "they lose"} ${loseCas}` : "")}` +
+            `${flankRout ? " — the flank's nerve breaks and it routs!" : (broke ? " — the line breaks!" : "")}.` });
   }
+  // feints consumed this round; new ones set for next round's counter
+  B.feign = { att: { L: 0, C: 0, R: 0 }, def: { L: 0, C: 0, R: 0 } };
+  pendingFeigns.forEach(f => { B.feign[f.side][f.sec] = 1; });
   B.wheel = { att: null, def: null };
   B.surprise = false;
   const aGone = B.side.att.units.length === 0, dGone = B.side.def.units.length === 0;

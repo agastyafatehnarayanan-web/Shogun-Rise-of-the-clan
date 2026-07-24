@@ -275,10 +275,31 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .bt-ug{font-family:var(--font-h);min-width:20px;height:20px;border-radius:4px;color:#fff;display:inline-flex;
   align-items:center;justify-content:center;font-size:12px;padding:0 3px}
 .bt-ug b{font-size:9px;margin-left:1px}
+/* individual soldiers — a block that thins as men fall */
+.bt-sol{font-family:var(--font-h);width:17px;height:17px;border-radius:3px;color:#fff;display:inline-flex;
+  align-items:center;justify-content:center;font-size:10.5px;box-shadow:0 1px 1px rgba(0,0,0,.25);
+  animation:bt-sol-in .25s ease}
+@keyframes bt-sol-in{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.bt-board.clashing .bt-units{animation:bt-clash .32s ease}
+@keyframes bt-clash{0%{transform:translateX(0)}20%{transform:translateX(-3px)}40%{transform:translateX(3px)}
+  60%{transform:translateX(-2px)}80%{transform:translateX(2px)}100%{transform:translateX(0)}}
+.bt-board.clashing .bt-clash{animation:bt-spark .5s ease}
+@keyframes bt-spark{0%{transform:scale(1);color:var(--ink2)}30%{transform:scale(1.5);color:var(--vermilion)}100%{transform:scale(1);color:var(--ink2)}}
 .bt-empty{color:var(--ink2);opacity:.5}
 .bt-ss{font-family:var(--font-h);font-size:20px;font-weight:700;min-width:26px}
 .bt-parts{font-size:9.5px;color:var(--ink2);line-height:1.3;margin:1px 0 3px;min-height:12px}
 .bt-clash{color:var(--ink2);font-size:12px;margin:1px 0}
+.bt-nerve{height:6px;background:#e0d2ac;border:1px solid var(--paper-line);border-radius:4px;overflow:hidden;margin:3px 4px}
+.bt-nerve span{display:block;height:100%;transition:width .3s ease}
+.bt-nerve.you span{background:linear-gradient(90deg,#7aa06a,#4f7a45)}
+.bt-nerve.foe span{background:linear-gradient(90deg,#c07a5a,#a5432a)}
+.bt-nerve.low span{background:var(--vermilion)}
+.bt-stance-wrap{text-align:center;margin:3px 0}
+.bt-stance{display:inline-block;font-size:10.5px;padding:2px 9px;border-radius:12px;cursor:pointer;border:1px solid var(--paper-line);background:#f6eed9;user-select:none}
+.bt-stance:hover{border-color:var(--gold)}
+.bt-stance.s-shieldwall{background:#dfe6ef;border-color:#7d8fb3;color:#33456b}
+.bt-stance.s-charge{background:#f1ddd0;border-color:var(--vermilion);color:#7a2c1c}
+.bt-stance.s-feign{background:#ece0c2;border-color:var(--gold2);color:#5c4a1c}
 .bt-dice{display:flex;align-items:center;justify-content:center;gap:20px;margin:4px 0}
 .bt-die-wrap{text-align:center}
 .bt-die-lbl{font-size:11px;color:var(--ink2);margin-top:5px}
@@ -1934,6 +1955,12 @@ SR.sectorSS = function (B, sk, sec) {
   if (B.wheel[sk] === sec) { ss += 4; parts.wheel = 4; }
   // one-time Martial Prowess surge (round 1, on the main effort)
   if (S.prowessSec === sec && B.round === 1 && S.ms) { ss += S.ms; parts.prowess = S.ms; }
+  // 1066 stance for this flank this round
+  const stance = (B.stance && B.stance[sk] && B.stance[sk][sec]) || "line";
+  if (stance === "shieldwall") { ss += 2; parts.shieldwall = 2; }
+  else if (stance === "charge") { ss += 3; parts.charge = 3; }
+  else if (stance === "feign") { ss -= 4; parts.feign = -4; }
+  if (B.feign && B.feign[sk] && B.feign[sk][sec] > 0) { ss += 5; parts.counter = 5; }  // the feint springs
   // fatigue
   const fat = Math.min(3, B.fatigue[sk][sec] || 0); if (fat) { ss -= fat; parts.fatigue = -fat; }
   return { ss: Math.max(0, ss), front, parts, count: units.length, steady: works.steady };
@@ -1963,6 +1990,12 @@ SR.beginBattle = function (ctx) {
     fatigue: { att: { L: 0, C: 0, R: 0 }, def: { L: 0, C: 0, R: 0 } },
     wheel: { att: null, def: null }, broke: { att: null, def: null },
     losses: { att: [], def: [] }, morale0: {},
+    // 1066 layer: each flank has its own Nerve; break it and the flank routs.
+    stance: { att: { L: "line", C: "line", R: "line" }, def: { L: "line", C: "line", R: "line" } },
+    nerve: { att: { L: 6, C: 6, R: 6 }, def: { L: 6, C: 6, R: 6 } },
+    nerve0: { att: { L: 6, C: 6, R: 6 }, def: { L: 6, C: 6, R: 6 } },
+    feign: { att: { L: 0, C: 0, R: 0 }, def: { L: 0, C: 0, R: 0 } },
+    flankRouted: { att: {}, def: {} },
   };
   ["att", "def"].forEach(sk => {
     const dep = B.deploy[sk];                 // normalise deploys from the UI / plan
@@ -1970,6 +2003,11 @@ SR.beginBattle = function (ctx) {
     if (!dep.works) dep.works = SR.emptyWorks();
     B.side[sk].mainSec = mainOf(dep);
     B.side[sk].prowessSec = B.side[sk].mainSec; // spend Prowess on the main effort
+    SR.SECTORS.forEach(sec => {
+      const u = SR.secUnits(B, sk, sec);
+      const n = u.length ? 5 + Math.min(2, SR.countType(u, "samurai")) + (sec === B.side[sk].mainSec ? (B.side[sk].cmd || 0) : 0) : 6;
+      B.nerve[sk][sec] = n; B.nerve0[sk][sec] = n;
+    });
   });
   B.morale0 = { att: B.morale.att, def: B.morale.def };
   if (B.surprise) B.morale.def -= 2;           // caught outside the walls
@@ -1986,7 +2024,19 @@ SR.applyOrders = function (B, orders) {
     if (B.deploy[sk].RES.length) return { type: "reserve", sector: B.side[sk].mainSec };
     return { type: "hold" };
   };
+  const aiStance = (sk) => {
+    // AI: charge where it's strong, shield-wall where it's weak
+    const st = {};
+    SR.SECTORS.forEach(sec => {
+      const me = SR.sectorSS(B, sk, sec).ss, foe = SR.sectorSS(B, sk === "att" ? "def" : "att", sec).ss;
+      st[sec] = me >= foe + 4 ? "charge" : (foe >= me + 4 ? "shieldwall" : "line");
+    });
+    return st;
+  };
   ["att", "def"].forEach(sk => {
+    // 1066 stances (shield wall / charge / feign / line) for each flank this round
+    const stance = (orders[sk] && orders[sk].stance) || aiStance(sk);
+    SR.SECTORS.forEach(sec => { B.stance[sk][sec] = ["line", "shieldwall", "charge", "feign"].includes(stance[sec]) ? stance[sec] : "line"; });
     const o = orders[sk] || aiOrder(sk);
     if (o.type === "reserve" && B.deploy[sk].RES.length) {
       const sec = SR.SECTORS.includes(o.sector) ? o.sector : B.side[sk].mainSec;
@@ -2017,6 +2067,7 @@ SR.resolveRound = function (B, dice) {
   const ambush = B.surprise && B.round === 1;
   const dieD = ambush ? 0 : (dice && dice.def != null ? dice.def : SR.rint(1, 6));
   const results = [];
+  const pendingFeigns = [];
   for (const sec of SR.SECTORS) {
     const a = SR.sectorSS(B, "att", sec), d = SR.sectorSS(B, "def", sec);
     if (!a.count && !d.count) continue;
@@ -2039,15 +2090,38 @@ SR.resolveRound = function (B, dice) {
     mLoss = Math.max(0, mLoss - loserSteady);     // a redoubt steadies the shaken flank
     if (margin > 0) B.morale[loseSide] -= mLoss;
     B.fatigue.att[sec]++; B.fatigue.def[sec]++;
+
+    // ---- 1066 Nerve: the losing flank's nerve is shaken; break it and it routs ----
+    const loseStance = B.stance[loseSide][sec], winStance = B.stance[winSide][sec];
+    let nLoss = Math.min(margin, 6);
+    if (loseStance === "shieldwall") nLoss = Math.max(0, nLoss - 2);   // the wall holds firm
+    nLoss = Math.max(0, nLoss - loserSteady);
+    let feinted = false;
+    if (loseStance === "feign") { nLoss = Math.min(nLoss, 1); pendingFeigns.push({ side: loseSide, sec }); feinted = true; }  // give ground by design, spring next round
+    if (margin > 0) B.nerve[loseSide][sec] = Math.max(0, B.nerve[loseSide][sec] - nLoss);
+    if (winStance === "charge") B.nerve[winSide][sec] = Math.max(0, B.nerve[winSide][sec] - 1);  // charging is exhausting
+    if (loseStance === "charge") B.nerve[loseSide][sec] = Math.max(0, B.nerve[loseSide][sec] - 1);
+
+    let flankRout = false;
+    if (B.nerve[loseSide][sec] <= 0 && SR.secUnits(B, loseSide, sec).length) {
+      flankRout = true; B.flankRouted[loseSide][sec] = true;
+      SR.removeSecCas(B, loseSide, sec, SR.secUnits(B, loseSide, sec).length);  // the flank flees the field
+      B.morale[loseSide] -= 4;
+    }
     const lostFront = SR.secUnits(B, loseSide, sec).length === 0;
-    const broke = (margin >= 8 + loserSteady * 2) || lostFront;   // works make a flank harder to break
+    const broke = flankRout || margin >= 8 + loserSteady * 2 || lostFront;
     if (broke) { if (B.deploy[loseSide]["p" + sec] === "Wide") B.morale[loseSide] -= 2; B.broke[winSide] = sec; }
     results.push({ sector: sec, name: SR.sectorName[sec], attSS: a.ss, defSS: d.ss, attParts: a.parts, defParts: d.parts,
-      dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke, flip, decidedByDice,
+      dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke, flip, decidedByDice, feinted, flankRout,
+      attStance: B.stance.att[sec], defStance: B.stance.def[sec],
+      attNerve: B.nerve.att[sec], defNerve: B.nerve.def[sec], attNerve0: B.nerve0.att[sec], defNerve0: B.nerve0.def[sec],
       text: `${SR.sectorName[sec]}: ${totA} vs ${totD} — ${winSide === "att" ? "you" : "they"}` +
-            `${margin === 0 ? " hold, a bloody stand-off" : " win by " + margin + (loseCas ? `, ${loseSide === "att" ? "you lose" : "they lose"} ${loseCas}` : "")}` +
-            `${broke ? " — the line breaks!" : ""}.` });
+            `${margin === 0 ? " hold, a bloody stand-off" : (feinted ? " give ground — a feigned retreat" : " win by " + margin) + (loseCas ? `, ${loseSide === "att" ? "you lose" : "they lose"} ${loseCas}` : "")}` +
+            `${flankRout ? " — the flank's nerve breaks and it routs!" : (broke ? " — the line breaks!" : "")}.` });
   }
+  // feints consumed this round; new ones set for next round's counter
+  B.feign = { att: { L: 0, C: 0, R: 0 }, def: { L: 0, C: 0, R: 0 } };
+  pendingFeigns.forEach(f => { B.feign[f.side][f.sec] = 1; });
   B.wheel = { att: null, def: null };
   B.surprise = false;
   const aGone = B.side.att.units.length === 0, dGone = B.side.def.units.length === 0;
@@ -4301,9 +4375,13 @@ UI.runBattle = function (report, onDone) {
 
   let phase = "choose";      // choose → shown → over
   let order = null;          // pending order for this round
+  let stance = { L: "line", C: "line", R: "line" };   // 1066 per-flank stance this round
   let rolling = false, finalized = false, closedHandled = false;
   let lastRR = null;         // last round result
   const narr = [];           // running narration (player perspective)
+  const STANCE_LBL = { line: "Line", shieldwall: "Shield wall", charge: "Charge", feign: "Feign" };
+  const STANCE_ICON = { line: "▦", shieldwall: "🛡", charge: "⚔", feign: "↩" };
+  const STANCE_CYCLE = { line: "shieldwall", shieldwall: "charge", charge: "feign", feign: "line" };
 
   /* Sector strengths for the upcoming round (preview) or current state. */
   function board(preview) {
@@ -4318,8 +4396,8 @@ UI.runBattle = function (report, onDone) {
   }
   function unitGlyphs(units) {
     if (!units.length) return `<span class="bt-empty">—</span>`;
-    const by = {}; units.forEach(u => by[u.type] = (by[u.type] || 0) + 1);
-    return Object.keys(by).map(t => `<span class="bt-ug" style="background:${UI.unitColor(t)}" title="${esc(DATA.units[t].name)}">${DATA.units[t].glyph}${by[t] > 1 ? "<b>" + by[t] + "</b>" : ""}</span>`).join("");
+    // a block of individual soldiers — the block visibly thins as they fall
+    return units.map(u => `<span class="bt-sol" style="background:${UI.unitColor(u.type)}" title="${esc(DATA.units[u.type].name)}">${DATA.units[u.type].glyph}</span>`).join("");
   }
   function partsText(parts) {
     const ks = Object.keys(parts); if (!ks.length) return "";
@@ -4332,34 +4410,48 @@ UI.runBattle = function (report, onDone) {
       <div class="bt-mor-l">${sk === humanSide ? "Your morale" : esc(foeName) + " morale"} <b>${m}</b></div>
       <div class="bt-mor-bar"><span style="width:${pct}%"></span></div></div>`;
   }
+  function nerveBar(sk, sec, cls) {
+    const n = Math.max(0, B.nerve[sk][sec]), n0 = B.nerve0[sk][sec] || 6;
+    const pct = Math.max(0, Math.min(100, Math.round(100 * n / n0)));
+    const low = n <= 2 ? " low" : "";
+    return `<div class="bt-nerve ${cls}${low}" title="Nerve ${n}/${n0} — break it and this flank routs"><span style="width:${pct}%"></span></div>`;
+  }
   function sectorHTML(preview) {
     const rows = board(preview);
     const mainYou = B.side[humanSide].mainSec, mainFoe = B.side[foeSide].mainSec;
-    return `<div class="bt-board">` + rows.map(r => {
+    return `<div class="bt-board${preview ? "" : " clashing"}">` + rows.map(r => {
       const attYou = humanSide === "att";
       const topSS = attYou ? r.a : r.d, botSS = attYou ? r.d : r.a;
       const topU = attYou ? r.aU : r.dU, botU = attYou ? r.dU : r.aU;
       const isMainYou = r.sec === mainYou, isMainFoe = r.sec === mainFoe;
+      const youHas = (humanSide === "att" ? r.aU : r.dU).length;
+      const stanceChip = preview && youHas
+        ? `<div class="bt-stance-wrap"><span class="bt-stance s-${stance[r.sec]}" data-stance="${r.sec}" title="Tap to change: Line → Shield wall → Charge → Feign retreat">${STANCE_ICON[stance[r.sec]]} ${STANCE_LBL[stance[r.sec]]}</span></div>`
+        : "";
       return `<div class="bt-sec">
         <div class="bt-sec-h">${esc(r.name)}${isMainYou ? ' <span class="bt-tag you">your main</span>' : ""}${isMainFoe ? ' <span class="bt-tag foe">enemy main</span>' : ""}</div>
         <div class="bt-side-row you">
           <div class="bt-units">${unitGlyphs(topU)}</div>
           <div class="bt-ss" title="${esc(partsText(topSS.parts))}">${topSS.ss}</div>
         </div>
+        ${nerveBar(humanSide, r.sec, "you")}
+        ${stanceChip}
         ${preview ? `<div class="bt-parts">${esc(partsText(topSS.parts))}</div>` : ""}
         <div class="bt-clash">⚔</div>
         <div class="bt-side-row foe">
           <div class="bt-units">${unitGlyphs(botU)}</div>
           <div class="bt-ss" title="${esc(partsText(botSS.parts))}">${botSS.ss}</div>
         </div>
+        ${nerveBar(foeSide, r.sec, "foe")}
       </div>`;
     }).join("") + `</div>`;
   }
   function ordersHTML() {
     const canRes = B.deploy[humanSide].RES.length > 0;
     const canWheel = !!B.broke[humanSide];
-    if (!canRes && !canWheel) return `<div class="bt-orders"><span class="bto-label">The lines are locked — roll to resolve.</span></div>`;
-    let h = `<div class="bt-orders"><span class="bto-label">Orders:</span>
+    const tip = `<div class="bt-orders"><span class="bto-label">Tap a flank's stance — 🛡 Shield wall (hold) · ⚔ Charge (smash, tires you) · ↩ Feign retreat (lure, then counter next round) — then roll.</span></div>`;
+    if (!canRes && !canWheel) return tip;
+    let h = tip + `<div class="bt-orders"><span class="bto-label">Orders:</span>
       <span class="bto ${!order ? "sel" : ""}" data-ord="hold">Hold</span>`;
     if (canRes) h += ["L", "C", "R"].map(s => `<span class="bto ${order && order.type === "reserve" && order.sector === s ? "sel" : ""}" data-ord="res:${s}">Reserve → ${esc(SR.sectorName[s])} (${B.deploy[humanSide].RES.length})</span>`).join("");
     if (canWheel) h += `<span class="bto ${order && order.type === "wheel" ? "sel" : ""}" data-ord="wheel">Wheel broken flank → Centre</span>`;
@@ -4452,6 +4544,9 @@ UI.runBattle = function (report, onDone) {
         else if (v === "wheel") order = { type: "wheel", sector: B.broke[humanSide] };
         render();
       });
+      mb.querySelectorAll("[data-stance]").forEach(el => el.onclick = () => {
+        const sec = el.dataset.stance; stance[sec] = STANCE_CYCLE[stance[sec]] || "line"; render();
+      });
       const die = $("#bt-roll");
       const roll = () => doRoll();
       die.onclick = roll;
@@ -4477,7 +4572,8 @@ UI.runBattle = function (report, onDone) {
     const iv = setInterval(() => { if (die) die.innerHTML = UI.dieCells(SR.rint(1, 6)); if (++ticks >= 8) clearInterval(iv); }, 70);
     setTimeout(() => {
       const v = SR.rint(1, 6);
-      SR.applyOrders(B, order ? { [humanSide]: order } : {});
+      const myOrder = Object.assign({ type: "hold" }, order || {}, { stance });
+      SR.applyOrders(B, { [humanSide]: myOrder });
       const rr = SR.resolveRound(B, { [humanSide]: v });
       lastRR = rr;
       const youDie = humanSide === "att" ? rr.dieA : rr.dieD;
@@ -4492,13 +4588,16 @@ UI.runBattle = function (report, onDone) {
         if (x.margin === 0) t += "a dead-even clash";
         else t += youWon ? `you win by ${x.margin}` : `they win by ${x.margin}`;
         if (x.loseCas) { const loserIsYou = (x.winner === "att" ? "def" : "att") === humanSide; t += `, ${loserIsYou ? "you lose" : "they lose"} ${x.loseCas}`; }
-        if (x.broke) t += youWon ? " — you shatter their line!" : " — your line breaks!";
+        if (x.flankRout) t += youWon ? " — their nerve breaks, the flank routs!" : " — your nerve breaks, the flank routs!";
+        else if (x.broke) t += youWon ? " — you shatter their line!" : " — your line breaks!";
         narr.push({ cls: youWon ? "good" : "bad", text: t + (t.endsWith("!") ? "" : ".") });
-        // call out when the die — not the strength — decided the flank
-        if (x.decidedByDice) narr.push({ cls: youWon ? "dice good" : "dice bad",
+        // feign retreat springs / dice callout
+        if (x.feinted) { const meFeinted = (x.winner === "att" ? "def" : "att") === humanSide;
+          narr.push({ cls: "dice", text: meFeinted ? "  ↩ you feign retreat — fall back and set the trap for next round." : "  ↩ they feign retreat, giving ground on purpose." }); }
+        if (x.decidedByDice && !x.feinted) narr.push({ cls: youWon ? "dice good" : "dice bad",
           text: youWon ? "  🎲 the dice won you this flank — the stronger line would have lost!" : "  🎲 the dice cost you this flank." });
       });
-      rolling = false; order = null; phase = "shown";
+      rolling = false; order = null; stance = { L: "line", C: "line", R: "line" }; phase = "shown";
       render();
     }, 640);
   }

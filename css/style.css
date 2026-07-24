@@ -268,10 +268,31 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .bt-ug{font-family:var(--font-h);min-width:20px;height:20px;border-radius:4px;color:#fff;display:inline-flex;
   align-items:center;justify-content:center;font-size:12px;padding:0 3px}
 .bt-ug b{font-size:9px;margin-left:1px}
+/* individual soldiers — a block that thins as men fall */
+.bt-sol{font-family:var(--font-h);width:17px;height:17px;border-radius:3px;color:#fff;display:inline-flex;
+  align-items:center;justify-content:center;font-size:10.5px;box-shadow:0 1px 1px rgba(0,0,0,.25);
+  animation:bt-sol-in .25s ease}
+@keyframes bt-sol-in{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.bt-board.clashing .bt-units{animation:bt-clash .32s ease}
+@keyframes bt-clash{0%{transform:translateX(0)}20%{transform:translateX(-3px)}40%{transform:translateX(3px)}
+  60%{transform:translateX(-2px)}80%{transform:translateX(2px)}100%{transform:translateX(0)}}
+.bt-board.clashing .bt-clash{animation:bt-spark .5s ease}
+@keyframes bt-spark{0%{transform:scale(1);color:var(--ink2)}30%{transform:scale(1.5);color:var(--vermilion)}100%{transform:scale(1);color:var(--ink2)}}
 .bt-empty{color:var(--ink2);opacity:.5}
 .bt-ss{font-family:var(--font-h);font-size:20px;font-weight:700;min-width:26px}
 .bt-parts{font-size:9.5px;color:var(--ink2);line-height:1.3;margin:1px 0 3px;min-height:12px}
 .bt-clash{color:var(--ink2);font-size:12px;margin:1px 0}
+.bt-nerve{height:6px;background:#e0d2ac;border:1px solid var(--paper-line);border-radius:4px;overflow:hidden;margin:3px 4px}
+.bt-nerve span{display:block;height:100%;transition:width .3s ease}
+.bt-nerve.you span{background:linear-gradient(90deg,#7aa06a,#4f7a45)}
+.bt-nerve.foe span{background:linear-gradient(90deg,#c07a5a,#a5432a)}
+.bt-nerve.low span{background:var(--vermilion)}
+.bt-stance-wrap{text-align:center;margin:3px 0}
+.bt-stance{display:inline-block;font-size:10.5px;padding:2px 9px;border-radius:12px;cursor:pointer;border:1px solid var(--paper-line);background:#f6eed9;user-select:none}
+.bt-stance:hover{border-color:var(--gold)}
+.bt-stance.s-shieldwall{background:#dfe6ef;border-color:#7d8fb3;color:#33456b}
+.bt-stance.s-charge{background:#f1ddd0;border-color:var(--vermilion);color:#7a2c1c}
+.bt-stance.s-feign{background:#ece0c2;border-color:var(--gold2);color:#5c4a1c}
 .bt-dice{display:flex;align-items:center;justify-content:center;gap:20px;margin:4px 0}
 .bt-die-wrap{text-align:center}
 .bt-die-lbl{font-size:11px;color:var(--ink2);margin-top:5px}

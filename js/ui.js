@@ -734,9 +734,13 @@ UI.runBattle = function (report, onDone) {
 
   let phase = "choose";      // choose → shown → over
   let order = null;          // pending order for this round
+  let stance = { L: "line", C: "line", R: "line" };   // 1066 per-flank stance this round
   let rolling = false, finalized = false, closedHandled = false;
   let lastRR = null;         // last round result
   const narr = [];           // running narration (player perspective)
+  const STANCE_LBL = { line: "Line", shieldwall: "Shield wall", charge: "Charge", feign: "Feign" };
+  const STANCE_ICON = { line: "▦", shieldwall: "🛡", charge: "⚔", feign: "↩" };
+  const STANCE_CYCLE = { line: "shieldwall", shieldwall: "charge", charge: "feign", feign: "line" };
 
   /* Sector strengths for the upcoming round (preview) or current state. */
   function board(preview) {
@@ -751,8 +755,8 @@ UI.runBattle = function (report, onDone) {
   }
   function unitGlyphs(units) {
     if (!units.length) return `<span class="bt-empty">—</span>`;
-    const by = {}; units.forEach(u => by[u.type] = (by[u.type] || 0) + 1);
-    return Object.keys(by).map(t => `<span class="bt-ug" style="background:${UI.unitColor(t)}" title="${esc(DATA.units[t].name)}">${DATA.units[t].glyph}${by[t] > 1 ? "<b>" + by[t] + "</b>" : ""}</span>`).join("");
+    // a block of individual soldiers — the block visibly thins as they fall
+    return units.map(u => `<span class="bt-sol" style="background:${UI.unitColor(u.type)}" title="${esc(DATA.units[u.type].name)}">${DATA.units[u.type].glyph}</span>`).join("");
   }
   function partsText(parts) {
     const ks = Object.keys(parts); if (!ks.length) return "";
@@ -765,34 +769,48 @@ UI.runBattle = function (report, onDone) {
       <div class="bt-mor-l">${sk === humanSide ? "Your morale" : esc(foeName) + " morale"} <b>${m}</b></div>
       <div class="bt-mor-bar"><span style="width:${pct}%"></span></div></div>`;
   }
+  function nerveBar(sk, sec, cls) {
+    const n = Math.max(0, B.nerve[sk][sec]), n0 = B.nerve0[sk][sec] || 6;
+    const pct = Math.max(0, Math.min(100, Math.round(100 * n / n0)));
+    const low = n <= 2 ? " low" : "";
+    return `<div class="bt-nerve ${cls}${low}" title="Nerve ${n}/${n0} — break it and this flank routs"><span style="width:${pct}%"></span></div>`;
+  }
   function sectorHTML(preview) {
     const rows = board(preview);
     const mainYou = B.side[humanSide].mainSec, mainFoe = B.side[foeSide].mainSec;
-    return `<div class="bt-board">` + rows.map(r => {
+    return `<div class="bt-board${preview ? "" : " clashing"}">` + rows.map(r => {
       const attYou = humanSide === "att";
       const topSS = attYou ? r.a : r.d, botSS = attYou ? r.d : r.a;
       const topU = attYou ? r.aU : r.dU, botU = attYou ? r.dU : r.aU;
       const isMainYou = r.sec === mainYou, isMainFoe = r.sec === mainFoe;
+      const youHas = (humanSide === "att" ? r.aU : r.dU).length;
+      const stanceChip = preview && youHas
+        ? `<div class="bt-stance-wrap"><span class="bt-stance s-${stance[r.sec]}" data-stance="${r.sec}" title="Tap to change: Line → Shield wall → Charge → Feign retreat">${STANCE_ICON[stance[r.sec]]} ${STANCE_LBL[stance[r.sec]]}</span></div>`
+        : "";
       return `<div class="bt-sec">
         <div class="bt-sec-h">${esc(r.name)}${isMainYou ? ' <span class="bt-tag you">your main</span>' : ""}${isMainFoe ? ' <span class="bt-tag foe">enemy main</span>' : ""}</div>
         <div class="bt-side-row you">
           <div class="bt-units">${unitGlyphs(topU)}</div>
           <div class="bt-ss" title="${esc(partsText(topSS.parts))}">${topSS.ss}</div>
         </div>
+        ${nerveBar(humanSide, r.sec, "you")}
+        ${stanceChip}
         ${preview ? `<div class="bt-parts">${esc(partsText(topSS.parts))}</div>` : ""}
         <div class="bt-clash">⚔</div>
         <div class="bt-side-row foe">
           <div class="bt-units">${unitGlyphs(botU)}</div>
           <div class="bt-ss" title="${esc(partsText(botSS.parts))}">${botSS.ss}</div>
         </div>
+        ${nerveBar(foeSide, r.sec, "foe")}
       </div>`;
     }).join("") + `</div>`;
   }
   function ordersHTML() {
     const canRes = B.deploy[humanSide].RES.length > 0;
     const canWheel = !!B.broke[humanSide];
-    if (!canRes && !canWheel) return `<div class="bt-orders"><span class="bto-label">The lines are locked — roll to resolve.</span></div>`;
-    let h = `<div class="bt-orders"><span class="bto-label">Orders:</span>
+    const tip = `<div class="bt-orders"><span class="bto-label">Tap a flank's stance — 🛡 Shield wall (hold) · ⚔ Charge (smash, tires you) · ↩ Feign retreat (lure, then counter next round) — then roll.</span></div>`;
+    if (!canRes && !canWheel) return tip;
+    let h = tip + `<div class="bt-orders"><span class="bto-label">Orders:</span>
       <span class="bto ${!order ? "sel" : ""}" data-ord="hold">Hold</span>`;
     if (canRes) h += ["L", "C", "R"].map(s => `<span class="bto ${order && order.type === "reserve" && order.sector === s ? "sel" : ""}" data-ord="res:${s}">Reserve → ${esc(SR.sectorName[s])} (${B.deploy[humanSide].RES.length})</span>`).join("");
     if (canWheel) h += `<span class="bto ${order && order.type === "wheel" ? "sel" : ""}" data-ord="wheel">Wheel broken flank → Centre</span>`;
@@ -885,6 +903,9 @@ UI.runBattle = function (report, onDone) {
         else if (v === "wheel") order = { type: "wheel", sector: B.broke[humanSide] };
         render();
       });
+      mb.querySelectorAll("[data-stance]").forEach(el => el.onclick = () => {
+        const sec = el.dataset.stance; stance[sec] = STANCE_CYCLE[stance[sec]] || "line"; render();
+      });
       const die = $("#bt-roll");
       const roll = () => doRoll();
       die.onclick = roll;
@@ -910,7 +931,8 @@ UI.runBattle = function (report, onDone) {
     const iv = setInterval(() => { if (die) die.innerHTML = UI.dieCells(SR.rint(1, 6)); if (++ticks >= 8) clearInterval(iv); }, 70);
     setTimeout(() => {
       const v = SR.rint(1, 6);
-      SR.applyOrders(B, order ? { [humanSide]: order } : {});
+      const myOrder = Object.assign({ type: "hold" }, order || {}, { stance });
+      SR.applyOrders(B, { [humanSide]: myOrder });
       const rr = SR.resolveRound(B, { [humanSide]: v });
       lastRR = rr;
       const youDie = humanSide === "att" ? rr.dieA : rr.dieD;
@@ -925,13 +947,16 @@ UI.runBattle = function (report, onDone) {
         if (x.margin === 0) t += "a dead-even clash";
         else t += youWon ? `you win by ${x.margin}` : `they win by ${x.margin}`;
         if (x.loseCas) { const loserIsYou = (x.winner === "att" ? "def" : "att") === humanSide; t += `, ${loserIsYou ? "you lose" : "they lose"} ${x.loseCas}`; }
-        if (x.broke) t += youWon ? " — you shatter their line!" : " — your line breaks!";
+        if (x.flankRout) t += youWon ? " — their nerve breaks, the flank routs!" : " — your nerve breaks, the flank routs!";
+        else if (x.broke) t += youWon ? " — you shatter their line!" : " — your line breaks!";
         narr.push({ cls: youWon ? "good" : "bad", text: t + (t.endsWith("!") ? "" : ".") });
-        // call out when the die — not the strength — decided the flank
-        if (x.decidedByDice) narr.push({ cls: youWon ? "dice good" : "dice bad",
+        // feign retreat springs / dice callout
+        if (x.feinted) { const meFeinted = (x.winner === "att" ? "def" : "att") === humanSide;
+          narr.push({ cls: "dice", text: meFeinted ? "  ↩ you feign retreat — fall back and set the trap for next round." : "  ↩ they feign retreat, giving ground on purpose." }); }
+        if (x.decidedByDice && !x.feinted) narr.push({ cls: youWon ? "dice good" : "dice bad",
           text: youWon ? "  🎲 the dice won you this flank — the stronger line would have lost!" : "  🎲 the dice cost you this flank." });
       });
-      rolling = false; order = null; phase = "shown";
+      rolling = false; order = null; stance = { L: "line", C: "line", R: "line" }; phase = "shown";
       render();
     }, 640);
   }
