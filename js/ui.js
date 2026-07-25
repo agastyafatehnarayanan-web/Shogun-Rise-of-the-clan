@@ -967,6 +967,20 @@ UI.runBattle = function (report, onDone) {
         else if (ya) narr.push({ cls: "good", text: `  🏹 your archers rain arrows across the ${x.name}.` });
         if (fg) narr.push({ cls: "bad", text: `  🔫 their Teppō volley tears into your ${x.name} — men fall, nerves shake.` });
         else if (fa) narr.push({ cls: "bad", text: `  🏹 their archers loose a hail of arrows on your ${x.name}.` });
+        // cavalry charge — the shock of horse (round 1)
+        const ap = x.attParts || {}, dp = x.defParts || {};
+        const ych = humanSide === "att" ? (ap.shock || 0) : (dp.shock || 0);
+        const fch = humanSide === "att" ? (dp.shock || 0) : (ap.shock || 0);
+        if (ych) narr.push({ cls: "good", text: `  🐎 your cavalry charge home at the ${x.name} — a thunder of hooves (+${ych}), and their line buckles.` });
+        if (fch) narr.push({ cls: "bad", text: `  🐎 their cavalry charge into your ${x.name} — the shock (+${fch}) rocks your ranks.` });
+        // samurai steady the shaken line
+        if (x.samSteadySide) { const mine = x.samSteadySide === humanSide;
+          narr.push({ cls: mine ? "good" : "bad", text: `  🗡️ ${mine ? "your" : "their"} samurai hold firm at the ${x.name}, steadying the line.` }); }
+        // ashigaru — weight of numbers
+        const ynum = humanSide === "att" ? (ap.numbers || 0) : (dp.numbers || 0);
+        const fnum = humanSide === "att" ? (dp.numbers || 0) : (ap.numbers || 0);
+        if (ynum) narr.push({ cls: "good", text: `  ⚔️ your ashigaru press forward by weight of numbers at the ${x.name}.` });
+        if (fnum) narr.push({ cls: "bad", text: `  ⚔️ their ashigaru swarm your ${x.name} in numbers.` });
       });
       rolling = false; order = null; stance = { L: "line", C: "line", R: "line" }; phase = "shown";
       render();

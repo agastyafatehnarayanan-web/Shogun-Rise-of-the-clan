@@ -160,6 +160,9 @@ SR.sectorSS = function (B, sk, sec) {
   // depth (Deep), infantry/defence traits
   if (posture === "Deep" && sup.length) { const dep = Math.min(3, sup.length); ss += dep; parts.depth = dep; }
   if (S.trait === "Infantry") { const inf = Math.round(0.5 * units.filter(u => ["ashigaru", "samurai"].includes(u.type)).length); if (inf) { ss += inf; parts.infantry = inf; } }
+  // weight of numbers — a much larger flank presses a smaller one (ashigaru en masse)
+  const foeCount = SR.secUnits(B, sk === "att" ? "def" : "att", sec).length;
+  if (units.length >= foeCount + 3 && SR.countType(units, "ashigaru") >= 2) { ss += 1; parts.numbers = 1; }
   if (S.trait === "Siege & Defence" && role === "def") { ss += 2; parts.defence = 2; }
   if (role === "def" && B.castleBonus && B.assault) { const cb = B.castleBonus * 2; ss += cb; parts.walls = cb; }
   // a Fort in the province strengthens the defender's strongpoint
@@ -334,6 +337,11 @@ SR.resolveRound = function (B, dice) {
       if (vol[fk].teppo >= 2 && SR.secUnits(B, foe, sec).length && SR.chance(0.5)) SR.removeSecCas(B, foe, sec, 1);  // a heavy volley fells a man
     });
 
+    // ---- cavalry charge shock: the charge itself rattles the enemy's nerve ----
+    const charge = { att: (B.round <= 1 ? (a.parts.shock || 0) : 0), def: (B.round <= 1 ? (d.parts.shock || 0) : 0) };
+    if (charge.att && SR.secUnits(B, "def", sec).length) B.nerve.def[sec] = Math.max(0, B.nerve.def[sec] - Math.min(2, Math.ceil(charge.att / 2)));
+    if (charge.def && SR.secUnits(B, "att", sec).length) B.nerve.att[sec] = Math.max(0, B.nerve.att[sec] - Math.min(2, Math.ceil(charge.def / 2)));
+
     // ---- flank rout: a flank whose Nerve breaks flees; cavalry pursue the runners ----
     let flankRout = false, routedSide = null;
     ["att", "def"].forEach(fk => {
@@ -352,6 +360,7 @@ SR.resolveRound = function (B, dice) {
     results.push({ sector: sec, name: SR.sectorName[sec], attSS: a.ss, defSS: d.ss, attParts: a.parts, defParts: d.parts,
       dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke, flip, decidedByDice, feinted, flankRout, routedSide,
       volley: { att: vol.att.n, def: vol.def.n }, guns: { att: vol.att.teppo, def: vol.def.teppo }, arch: { att: vol.att.arch, def: vol.def.arch },
+      charged: charge, samSteadySide: loseSam ? loseSide : null,
       attStance: B.stance.att[sec], defStance: B.stance.def[sec],
       attNerve: B.nerve.att[sec], defNerve: B.nerve.def[sec], attNerve0: B.nerve0.att[sec], defNerve0: B.nerve0.def[sec],
       text: `${SR.sectorName[sec]}: ${totA} vs ${totD} — ${winSide === "att" ? "you" : "they"}` +
