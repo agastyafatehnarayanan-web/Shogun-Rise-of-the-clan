@@ -744,3 +744,47 @@ body.phone .wr-cardgrid{grid-template-columns:1fr 1fr}
   .w3-rosette{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:4px}
   .w3-cluster{max-width:140px;gap:4px}
 }
+
+/* ===== Way of the Warrior — continuous-world HUD (bubbles, meters, etc.) ===== */
+.w3-obj{position:absolute;top:10px;left:12px;z-index:3;font-family:var(--font-h);font-size:13px;color:#f4ecd6;
+  background:rgba(10,7,4,.5);border:1px solid rgba(201,162,39,.5);border-radius:16px;padding:6px 12px;text-shadow:0 1px 3px #000;pointer-events:none;max-width:60%}
+.w3-exit{position:absolute;top:10px;right:12px;z-index:4;font-size:16px;line-height:1;color:#f0e6cf;background:rgba(10,7,4,.55);
+  border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:8px 11px;pointer-events:auto}
+.w3-exit:active{transform:translateY(1px)}
+.w3-banner{position:absolute;top:32%;left:50%;transform:translate(-50%,-50%);z-index:3;pointer-events:none;
+  font-family:var(--font-h);font-size:22px;color:#f6eec9;text-align:center;text-shadow:0 2px 10px #000;opacity:0;transition:opacity .4s;max-width:80%}
+.w3-banner.on{opacity:1}
+/* top dialogue bubble */
+.w3-bubble{position:absolute;top:52px;left:50%;transform:translateX(-50%);z-index:5;width:min(680px,92%);
+  background:linear-gradient(rgba(24,18,10,.92),rgba(16,12,7,.94));border:1px solid var(--gold2);border-radius:14px;
+  padding:14px 16px;color:#ece1c6;box-shadow:0 10px 34px rgba(0,0,0,.55);pointer-events:auto;opacity:0;visibility:hidden;transform:translateX(-50%) translateY(-8px);transition:.18s}
+.w3-bubble.on{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+.w3-bubble.big{top:38%}
+.w3-bubble .who{display:block;font-family:var(--font-h);color:var(--gold);font-size:13px;letter-spacing:1px;margin-bottom:4px}
+.w3-bubble .txt{font-size:15px;line-height:1.55;font-family:var(--font-h)}
+.w3-bubble .txt b{color:var(--gold)}
+.w3-bubble .cho{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.w3-choice{background:linear-gradient(#3a2417,#241812);border:1px solid var(--gold2);color:var(--washi);border-radius:10px;
+  padding:11px 14px;font-size:14px;font-family:var(--font-h);text-align:left}
+.w3-choice:hover{border-color:var(--gold);filter:brightness(1.1)} .w3-choice:active{transform:translateY(1px)}
+.w3-bubble .cont{margin-top:10px;text-align:right;font-size:12px;color:#c1a76f;opacity:.85}
+/* survival meters, bottom-left */
+.w3-meters{position:absolute;left:12px;bottom:120px;z-index:3;display:flex;flex-direction:column;gap:5px;width:190px;pointer-events:none}
+.w3-m{display:flex;align-items:center;gap:7px}
+.w3-m label{font-family:var(--font-h);font-size:10px;letter-spacing:.5px;color:#f0e6cf;text-shadow:0 1px 2px #000;width:52px;text-align:right}
+.w3-m .w3-track{flex:1}
+.w3-m.hp .w3-track>i{background:linear-gradient(90deg,#5fa06a,#8fd07f)}
+.w3-m.st .w3-track>i{background:linear-gradient(90deg,#3d7fb0,#63b7e0)}
+.w3-m.sm .w3-track{height:7px}
+.w3-m.sm .w3-track>i{background:linear-gradient(90deg,#b8912e,#e0c46a)}
+/* enemy hp, top-centre during a fight */
+.w3-foe{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:3;width:min(320px,60%);text-align:center;display:none;pointer-events:none}
+.w3-foe.on{display:block}
+.w3-foe label{display:block;font-family:var(--font-h);font-size:12px;color:#ffd9c0;letter-spacing:1px;text-shadow:0 1px 3px #000;margin-bottom:3px}
+.w3-track.foe{height:9px}.w3-track.foe>i{background:linear-gradient(90deg,#c0533a,#e07a4a)}
+/* incoming-attack direction indicator, centre */
+.w3-incoming{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);z-index:4;text-align:center;pointer-events:none;
+  opacity:0;transition:opacity .08s}
+.w3-incoming.on{opacity:1}
+.w3-incoming .dir{display:block;font-family:var(--font-h);font-size:30px;font-weight:700;color:#ffdf8a;text-shadow:0 2px 8px #000,0 0 18px rgba(224,120,74,.7)}
+.w3-incoming .key{display:block;margin-top:2px;font-size:14px;color:#ffe;background:rgba(160,30,20,.6);border:1px solid #e0805a;border-radius:20px;padding:2px 12px}
