@@ -145,7 +145,7 @@ WARRIOR3D.startFight = function (opts) {
     onWin: opts.onWin, onLose: opts.onLose,
     yaw: 0, pitch: 0, yawTarget: 0, pitchTarget: 0,
     px: 0, pz: 0, km: {}, joy: { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 },
-    vmClip: "idle", vmT: 0, blocking: false, aiming: false, dodgeT: 0, dodgeDir: 1, shake: 0, hitFlash: 0,
+    vmClip: "idle", vmT: 0, blocking: false, aiming: false, dodgeT: 0, dodgeDir: 1, shake: 0, hitFlash: 0, parryCd: 0,
     fov: 72, fovTarget: 72, combo: 0, ended: false, particles: [], arrows: [],
   };
 
@@ -445,7 +445,7 @@ WARRIOR3D._nextEnemy = function (E) {
   mesh.position.set(Math.sin(ang) * 8, 0, -10); mesh.rotation.y = Math.PI;
   E.scene.add(mesh);
   E.foe = { def, mesh, hp: def.hp, hpMax: def.hp, dmg: def.dmg, skill: def.skill || 0.7, aggr: def.aggr || 0.6,
-    state: "approach", stateT: 0, dir: null, winMs: Math.max(560, 1300 - (def.skill || 0.7) * 720), walkPhase: 0, dead: false, hitReact: 0, openSide: null };
+    state: "approach", stateT: 0, dir: null, winMs: Math.max(410, 1040 - (def.skill || 0.7) * 640), walkPhase: 0, dead: false, hitReact: 0, openSide: null };
   const nm = document.getElementById("w3-foename"); if (nm) nm.textContent = def.name;
   const wv = document.getElementById("w3-wave"); if (wv) wv.textContent = E.total > 1 ? `${E.foeIdx} / ${E.total}` : "";
   WARRIOR3D._prompt(E, `<b>${def.name}</b> closes in… <span class="w3-dim">shoot while you can</span>`, "");
@@ -507,13 +507,14 @@ WARRIOR3D._input = function (action) {
   }
 
   if (action === "parry") {
-    WARRIOR3D._vm(E, "parry");
+    if (E.parryCd > 0) { WARRIOR3D._prompt(E, "Blade out of line — you can't parry yet.", "warn"); return; }  // no spam
+    WARRIOR3D._vm(E, "parry"); E.parryCd = 0.5;
     if (f.state === "telegraph") {
       const p = f.stateT / (f.winMs / 1000);
-      if (p >= 0.58) { f.state = "stagger"; f.stateT = 0; f.openSide = f.dir; E.combo++; E.shake = Math.max(E.shake, 0.35);
+      if (p >= 0.72) { f.state = "stagger"; f.stateT = 0; f.openSide = f.dir; E.combo++; E.shake = Math.max(E.shake, 0.35); E.parryCd = 0.12;
         WARRIOR3D._spawnSpark(E, f); const d = E.atk + 4; WARRIOR3D._damageFoe(E, d, true);
         if (!f.dead) WARRIOR3D._prompt(E, `⚔️ <b>Perfect parry!</b> Riposte bites — −${d}. Now strike the opening!`, "good"); }
-      else { WARRIOR3D._foeHits(E, 0.35); f.state = "recover"; f.stateT = 0; E.combo = 0; WARRIOR3D._prompt(E, "Too early — you catch most of it.", "warn"); }
+      else { WARRIOR3D._foeHits(E, 0.4); f.state = "recover"; f.stateT = 0; E.combo = 0; WARRIOR3D._prompt(E, "Mistimed — the blow gets through.", "warn"); }
     }
     return;
   }
@@ -564,6 +565,7 @@ WARRIOR3D._loop = function () {
   let dt = (now - E.clock) / 1000; E.clock = now; if (dt > 0.05) dt = 0.05;
 
   if (E.ki < E.kiMax) { E.ki = Math.min(E.kiMax, E.ki + dt * 1.4); WARRIOR3D._updateHud(E, true); }
+  if (E.parryCd > 0) E.parryCd = Math.max(0, E.parryCd - dt);
 
   WARRIOR3D._updateFoe(E, dt);
   WARRIOR3D._updateViewmodel(E, dt);
@@ -608,8 +610,8 @@ WARRIOR3D._updateFoe = function (E, dt) {
     } else { if (u.lLeg) { u.lLeg.rotation.x *= 0.8; u.rLeg.rotation.x *= 0.8; } m.position.y = 0; f.state = "ready"; f.stateT = 0; }
   } else if (f.state === "ready") {
     if (u.rArm) u.rArm.rotation.x = -0.3 + Math.sin(E.clock / 300) * 0.08;
-    const wait = 0.5 + (1 - f.aggr) * 0.9;
-    if (f.stateT > wait) { if (Math.random() < 0.72) WARRIOR3D._foeTelegraph(E); else { f.state = "open"; f.stateT = 0; f.openSide = ["high", "mid", "low", "side"][Math.floor(Math.random() * 4)];
+    const wait = 0.26 + (1 - f.aggr) * 0.5;
+    if (f.stateT > wait) { if (Math.random() < 0.9) WARRIOR3D._foeTelegraph(E); else { f.state = "open"; f.stateT = 0; f.openSide = ["high", "mid", "low", "side"][Math.floor(Math.random() * 4)];
       WARRIOR3D._prompt(E, `${f.def.name} overreaches — an opening! <b>Cut or Stab!</b>`, "good"); } }
   } else if (f.state === "telegraph") {
     if (u.rArm) { const p = Math.min(1, f.stateT / (f.winMs / 1000)); const target = f.dir === "high" ? -2.4 : f.dir === "low" ? 0.7 : f.dir === "side" ? -1.0 : -1.3;
@@ -627,10 +629,11 @@ WARRIOR3D._updateFoe = function (E, dt) {
     if (f.stateT > 0.7) { if (u.torso) u.torso.rotation.x = 0; f.state = "recover"; f.stateT = 0; f.openSide = null; }
   } else if (f.state === "open") {
     if (u.torso) u.torso.rotation.x = 0.15;
-    if (f.stateT > 1.1) { if (u.torso) u.torso.rotation.x = 0; f.state = "ready"; f.stateT = 0; f.openSide = null; }
+    if (f.stateT > 0.8) { if (u.torso) u.torso.rotation.x = 0; f.state = "ready"; f.stateT = 0; f.openSide = null; }
   } else if (f.state === "recover") {
     if (u.rArm) u.rArm.rotation.x = THREE.MathUtils.lerp(u.rArm.rotation.x, -0.3, dt * 6);
-    if (f.stateT > 0.45) { f.state = "ready"; f.stateT = 0; }
+    // aggressive foes chain a fast follow-up instead of resetting — punishes button-mashing
+    if (f.stateT > 0.28) { if (dist < 3.0 && Math.random() < f.aggr * 0.5) WARRIOR3D._foeTelegraph(E); else { f.state = "ready"; f.stateT = 0; } }
   }
   if (u.torso && f.state !== "open" && f.state !== "stagger") u.torso.position.z = -recoil;
 };

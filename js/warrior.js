@@ -57,15 +57,15 @@ WARRIOR.rankFor = function (renown) {
  *  FOES — enemy templates. skill sets the parry/telegraph window.
  * ------------------------------------------------------------------ */
 WARRIOR.FOES = {
-  bandit:   { name: "Bandit", icon: "🪓", hp: 16, dmg: 4, skill: 0.55, aggr: 0.55 },
-  looter:   { name: "Looter", icon: "🔪", hp: 14, dmg: 4, skill: 0.5, aggr: 0.6 },
-  ashigaru: { name: "Enemy Ashigaru", icon: "⚔️", hp: 20, dmg: 5, skill: 0.6, aggr: 0.55 },
-  ronin:    { name: "Rōnin Blade", icon: "🥷", hp: 24, dmg: 6, skill: 0.72, aggr: 0.75 },
-  guard:    { name: "Gate Guard", icon: "🛡️", hp: 26, dmg: 6, skill: 0.68, aggr: 0.45 },
-  captain:  { name: "Guard Captain", icon: "🗡️", hp: 34, dmg: 8, skill: 0.8, aggr: 0.65 },
-  duelist:  { name: "Sword Saint's Pupil", icon: "🎏", hp: 30, dmg: 7, skill: 0.85, aggr: 0.6 },
-  champion: { name: "Enemy Champion", icon: "👹", hp: 46, dmg: 9, skill: 0.83, aggr: 0.7 },
-  kuro:     { name: "Kuroda the Ash-Maker", icon: "💀", hp: 52, dmg: 10, skill: 0.9, aggr: 0.8 },
+  bandit:   { name: "Bandit", icon: "🪓", hp: 20, dmg: 7, skill: 0.62, aggr: 0.72 },
+  looter:   { name: "Looter", icon: "🔪", hp: 18, dmg: 7, skill: 0.58, aggr: 0.75 },
+  ashigaru: { name: "Enemy Ashigaru", icon: "⚔️", hp: 26, dmg: 8, skill: 0.66, aggr: 0.7 },
+  ronin:    { name: "Rōnin Blade", icon: "🥷", hp: 30, dmg: 10, skill: 0.8, aggr: 0.9 },
+  guard:    { name: "Gate Guard", icon: "🛡️", hp: 34, dmg: 9, skill: 0.74, aggr: 0.62 },
+  captain:  { name: "Guard Captain", icon: "🗡️", hp: 46, dmg: 12, skill: 0.85, aggr: 0.82 },
+  duelist:  { name: "Sword Saint's Pupil", icon: "🎏", hp: 42, dmg: 11, skill: 0.9, aggr: 0.8 },
+  champion: { name: "Enemy Champion", icon: "👹", hp: 62, dmg: 14, skill: 0.88, aggr: 0.85 },
+  kuro:     { name: "Kuroda the Ash-Maker", icon: "💀", hp: 78, dmg: 16, skill: 0.95, aggr: 0.92 },
 };
 
 /* ================================================================== *
