@@ -5259,7 +5259,7 @@ WARRIOR3D.startFight = function (opts) {
             <button class="w3-b down" data-a="cut_down" title="Rising cut">⤓</button>
           </div>
         </div>
-        <div class="w3-hint">Move WASD / left-drag · Cuts ↑↓←→ · Stab E · Parry J · Block L · Dodge Space · Aim Q · Shoot F</div>
+        <div class="w3-hint">Move: left-drag / WASD · Look: right-drag / mouse · Cuts ↑↓←→ · Stab E · Parry J · Block L · Dodge Space · Aim Q · Shoot F</div>
       </div>
     </div>`;
 
@@ -5570,16 +5570,36 @@ WARRIOR3D._viewmodel = function (player) {
   kg.position.set(0.26, -0.34, -0.72); kg.rotation.set(-0.78, 0.34, -0.12); g.add(kg);
   const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.46, 8), cloth); arm.position.set(0.42, -0.66, -0.4); arm.rotation.set(-0.95, -0.25, 0.2); g.add(arm);
 
-  // bow (hidden until aim/shoot) — compact, held lower-centre
+  // bow (hidden until aim/shoot) — a proper vertical bow held out in the
+  // left hand, body bladed to the target; string+arrow drawn back to the eye.
   const bg = new THREE.Group();
-  const bow = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.014, 8, 24, Math.PI * 1.2), new THREE.MeshStandardMaterial({ color: 0x5a3a1e, roughness: 0.8 }));
-  bow.rotation.z = Math.PI * 0.4; bg.add(bow);
-  const strG = new THREE.Group(); bg.add(strG);
-  const str = new THREE.Mesh(new THREE.CylinderGeometry(0.0035, 0.0035, 0.36, 4), new THREE.MeshBasicMaterial({ color: 0xddddcc })); strG.add(str);
-  const nock = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.5, 5), steel); nock.rotation.x = Math.PI / 2; nock.position.z = -0.2; strG.add(nock);
-  bg.position.set(0.06, -0.34, -0.82); bg.visible = false; g.add(bg);
+  const bwood = new THREE.MeshStandardMaterial({ color: 0x6a4423, roughness: 0.7 });
+  const bwood2 = new THREE.MeshStandardMaterial({ color: 0x452c17, roughness: 0.7 });
+  const strMat = new THREE.MeshBasicMaterial({ color: 0xe8e4d0 });
+  const riser = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.32, 0.08), bwood2); bg.add(riser);
+  const bgrip = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.14, 8), bwood2); bg.add(bgrip);
+  // limbs curving forward, top & bottom
+  [[1, 0.3, 0.5, 0.34], [1, 0.56, 0.95, 0.22], [-1, 0.3, -0.5, 0.34], [-1, 0.56, -0.95, 0.22]].forEach(([s, y, rx, len]) => {
+    const lb = new THREE.Mesh(new THREE.BoxGeometry(0.032, len, 0.05), bwood);
+    lb.position.set(0, s * y, -0.06 - (Math.abs(rx) > 0.6 ? 0.14 : 0)); lb.rotation.x = rx; bg.add(lb);
+  });
+  const bhand = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), skin); bhand.scale.set(1, 1.2, 1); bg.add(bhand);
+  // draw group: string + nocked arrow (slides back toward the eye when drawn)
+  const draw = new THREE.Group(); bg.add(draw);
+  const strand = (ax, ay, az) => { const a = new THREE.Vector3(ax, ay, az), b = new THREE.Vector3(0, 0, 0);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, a.distanceTo(b), 4), strMat);
+    m.position.copy(a.clone().add(b).multiplyScalar(0.5)); m.lookAt(b); m.rotateX(Math.PI / 2); return m; };
+  draw.add(strand(0, 0.66, -0.34)); draw.add(strand(0, -0.66, -0.34));
+  const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.0075, 0.0075, 1.4, 5), new THREE.MeshStandardMaterial({ color: 0x7a5a2e, roughness: 0.8 }));
+  arrow.rotation.x = Math.PI / 2; arrow.position.set(0, 0, -0.62); draw.add(arrow);
+  const head = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.07, 6), steel); head.rotation.x = -Math.PI / 2; head.position.set(0, 0, -1.34); draw.add(head);
+  const fletch = new THREE.Mesh(new THREE.BoxGeometry(0.002, 0.055, 0.09), new THREE.MeshBasicMaterial({ color: 0xb43a2a })); fletch.position.set(0, 0, 0.06); draw.add(fletch);
+  // bow-arm reaching up from lower-left to the grip (suggests the bladed body)
+  const barm = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.062, 0.62, 8), cloth); barm.position.set(-0.3, -0.52, 0.3); barm.rotation.set(-1.05, 0.35, -0.25); bg.add(barm);
+  bg.position.set(-0.06, -0.16, -0.92); bg.rotation.set(0.06, 0.16, 0.13); bg.scale.setScalar(0.82);
+  bg.visible = false; g.add(bg);
 
-  g.userData = { katana: kg, bow: bg, bowString: strG, arm, rest: { pos: kg.position.clone(), rot: kg.rotation.clone() } };
+  g.userData = { katana: kg, bow: bg, bowDraw: draw, arm, rest: { pos: kg.position.clone(), rot: kg.rotation.clone() } };
   return g;
 };
 
@@ -5803,8 +5823,9 @@ WARRIOR3D._updateViewmodel = function (E, dt) {
   const set = (px, py, pz, rx, ry, rz) => { kg.position.set(px, py, pz); kg.rotation.set(rx, ry, rz); };
 
   if (showBow) {
-    if (E.vmClip === "aim") { V.bowString.position.z = THREE.MathUtils.lerp(V.bowString.position.z, 0.16, dt * 10); }
-    else { const t = Math.min(1, E.vmT / 0.2); V.bowString.position.z = THREE.MathUtils.lerp(0.16, 0, t); if (t >= 1) WARRIOR3D._vm(E, E.aiming ? "aim" : "idle"); }
+    const d = V.bowDraw;
+    if (E.vmClip === "aim") { d.position.z = THREE.MathUtils.lerp(d.position.z, 0.24, dt * 9); }   // draw the string back
+    else { const t = Math.min(1, E.vmT / 0.16); d.position.z = THREE.MathUtils.lerp(0.24, 0, t); if (t >= 1) WARRIOR3D._vm(E, E.aiming ? "aim" : "idle"); }  // loose
     return;
   }
   const sw = WARRIOR3D.SWING[E.vmClip];
@@ -5892,20 +5913,30 @@ WARRIOR3D._prompt = function (E, html, cls) { const el = document.getElementById
 
 WARRIOR3D._bindControls = function (E) {
   const cv = E.renderer.domElement;
+  // Left half of the screen = MOVE stick; right half = LOOK (change view).
   const joyEl = document.getElementById("w3-joy"), knob = joyEl && joyEl.querySelector(".w3-joy-knob");
-  const R = 56;
-  const jStart = (x, y, id) => { E.joy.active = true; E.joy.id = id; E.joy.ox = x; E.joy.oy = y; E.joy.x = 0; E.joy.y = 0;
+  const R = 56, halfW = () => (E.mount.clientWidth || window.innerWidth) * 0.5;
+  const look = E.look = { active: false, id: null, lx: 0, ly: 0 };
+  const startMove = (x, y, id) => { E.joy.active = true; E.joy.id = id; E.joy.ox = x; E.joy.oy = y; E.joy.x = 0; E.joy.y = 0;
     if (joyEl) { joyEl.style.left = x + "px"; joyEl.style.top = y + "px"; joyEl.classList.add("on"); if (knob) knob.style.transform = "translate(-50%,-50%)"; } };
-  const jMove = (x, y) => { if (!E.joy.active) return; let dx = x - E.joy.ox, dy = y - E.joy.oy;
-    const d = Math.hypot(dx, dy); if (d > R) { dx *= R / d; dy *= R / d; }
+  const doMove = (x, y) => { let dx = x - E.joy.ox, dy = y - E.joy.oy; const d = Math.hypot(dx, dy); if (d > R) { dx *= R / d; dy *= R / d; }
     E.joy.x = dx / R; E.joy.y = -dy / R; if (knob) knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
-  const jEnd = () => { E.joy.active = false; E.joy.x = 0; E.joy.y = 0; if (joyEl) joyEl.classList.remove("on"); };
-  cv.addEventListener("mousedown", e => jStart(e.clientX, e.clientY, "m"));
-  window.addEventListener("mousemove", e => jMove(e.clientX, e.clientY));
-  window.addEventListener("mouseup", jEnd);
-  cv.addEventListener("touchstart", e => { const t = e.changedTouches[0]; jStart(t.clientX, t.clientY, t.identifier); }, { passive: true });
-  cv.addEventListener("touchmove", e => { for (const t of e.changedTouches) if (t.identifier === E.joy.id) jMove(t.clientX, t.clientY); }, { passive: true });
-  cv.addEventListener("touchend", e => { for (const t of e.changedTouches) if (t.identifier === E.joy.id) jEnd(); }, { passive: true });
+  const endMove = () => { E.joy.active = false; E.joy.x = 0; E.joy.y = 0; if (joyEl) joyEl.classList.remove("on"); };
+  const start = (x, y, id) => { if (x < halfW()) startMove(x, y, id); else { look.active = true; look.id = id; look.lx = x; look.ly = y; } };
+  const moveTo = (x, y, id) => {
+    if (E.joy.active && E.joy.id === id) doMove(x, y);
+    else if (look.active && look.id === id) {
+      E.yawTarget = THREE.MathUtils.clamp(E.yawTarget + (x - look.lx) * -0.006, -1.4, 1.4);
+      E.pitchTarget = THREE.MathUtils.clamp(E.pitchTarget + (y - look.ly) * -0.005, -0.5, 0.5);
+      look.lx = x; look.ly = y;
+    } };
+  const end = (id) => { if (E.joy.id === id) endMove(); if (look.id === id) look.active = false; };
+  cv.addEventListener("mousedown", e => start(e.clientX, e.clientY, "m"));
+  window.addEventListener("mousemove", e => moveTo(e.clientX, e.clientY, "m"));
+  window.addEventListener("mouseup", () => end("m"));
+  cv.addEventListener("touchstart", e => { for (const t of e.changedTouches) start(t.clientX, t.clientY, t.identifier); }, { passive: true });
+  cv.addEventListener("touchmove", e => { for (const t of e.changedTouches) moveTo(t.clientX, t.clientY, t.identifier); }, { passive: true });
+  cv.addEventListener("touchend", e => { for (const t of e.changedTouches) end(t.identifier); }, { passive: true });
 
   document.querySelectorAll("#warrior-screen .w3-b").forEach(b => {
     const action = b.dataset.a, hold = b.dataset.hold;

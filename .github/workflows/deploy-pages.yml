@@ -20,10 +20,14 @@ permissions:
   pages: write
   id-token: write
 
-# Only one Pages deploy at a time; a newer push supersedes an in-flight one.
+# Serialize Pages deploys: a new run WAITS for the in-flight one to finish
+# rather than cancelling it. GitHub Pages only allows one in-progress
+# deployment at a time, so cancelling mid-flight left the server-side
+# deployment "in progress" and made the next run fail with a 400 conflict.
+# Queueing avoids that race entirely.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
