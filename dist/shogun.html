@@ -618,18 +618,35 @@ button{touch-action:manipulation}
 .w3-prompt.good{color:#bff0b0;border-color:rgba(120,200,120,.6)}
 .w3-prompt.warn{color:#ffcf9f;border-color:rgba(224,120,74,.7)}
 .w3-flash{position:absolute;inset:0;background:radial-gradient(circle,transparent 40%,rgba(180,20,20,.8));opacity:0;pointer-events:none}
-.w3-controls{display:flex;gap:10px;justify-content:center;align-items:flex-end;padding:0 14px 20px;pointer-events:none}
-.w3-btn{pointer-events:auto;flex:1;max-width:130px;min-height:66px;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:2px;font-size:26px;border-radius:14px;border:1px solid rgba(255,255,255,.25);
-  color:#fff;background:rgba(24,16,10,.72);box-shadow:0 4px 14px rgba(0,0,0,.5);backdrop-filter:blur(2px)}
-.w3-btn span{font-size:11px;letter-spacing:1px;font-family:var(--font-h)}
-.w3-btn:active{transform:translateY(2px);filter:brightness(1.2)}
-.w3-btn.strike{background:linear-gradient(rgba(150,40,30,.9),rgba(110,22,16,.92));border-color:#e0805a}
-.w3-btn.parry{background:linear-gradient(rgba(60,90,140,.9),rgba(30,50,90,.92));border-color:#7aa0d0}
-.w3-btn.block{background:linear-gradient(rgba(60,70,60,.9),rgba(30,40,30,.92))}
-.w3-btn.dodge{background:linear-gradient(rgba(80,80,90,.85),rgba(40,40,50,.9))}
-.w3-btn.cont{max-width:280px;min-height:56px;font-size:17px;background:linear-gradient(var(--vermilion),var(--vermilion2));
+.w3-vignette{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 180px 40px rgba(0,0,0,.55)}
+.w3-reticle{position:absolute;left:50%;top:46%;width:26px;height:26px;transform:translate(-50%,-50%);pointer-events:none;
+  border:2px solid rgba(255,240,200,.85);border-radius:50%;opacity:0;transition:opacity .15s}
+.w3-reticle::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:2px;background:#ffefc8;transform:translate(-50%,-50%);border-radius:50%}
+.w3-reticle.on{opacity:1}
+.w3-dim{opacity:.7;font-size:.85em}
+
+/* control bar: defensive/ranged cluster (left) + attack rosette (right) */
+.w3-controls{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;padding:0 12px 14px;pointer-events:none}
+.w3-cluster{display:flex;flex-wrap:wrap;gap:6px;max-width:180px;pointer-events:none}
+.w3-b{pointer-events:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  font-size:20px;line-height:1;min-width:54px;min-height:52px;border-radius:12px;border:1px solid rgba(255,255,255,.22);
+  color:#fff;background:rgba(24,16,10,.7);box-shadow:0 3px 12px rgba(0,0,0,.45);backdrop-filter:blur(2px)}
+.w3-b i{font-style:normal;font-size:9.5px;letter-spacing:.5px;font-family:var(--font-h);opacity:.92}
+.w3-b:active{transform:translateY(2px);filter:brightness(1.25)}
+.w3-b.parry{background:linear-gradient(rgba(60,90,140,.9),rgba(30,50,90,.92));border-color:#7aa0d0}
+.w3-b.block{background:linear-gradient(rgba(60,72,60,.9),rgba(30,42,30,.92))}
+.w3-b.dodge{background:linear-gradient(rgba(78,78,90,.85),rgba(40,40,52,.9))}
+.w3-b.aim{background:linear-gradient(rgba(120,96,40,.85),rgba(70,54,18,.9));border-color:#d8b25a}
+.w3-b.shoot{background:linear-gradient(rgba(70,110,70,.88),rgba(34,64,34,.92));border-color:#8fce8f}
+/* rosette: plus-shaped attack pad */
+.w3-rosette{display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,52px);gap:5px;pointer-events:none}
+.w3-rosette .up{grid-area:1/2}.w3-rosette .left{grid-area:2/1}.w3-rosette .stab{grid-area:2/2}
+.w3-rosette .right{grid-area:2/3}.w3-rosette .down{grid-area:3/2}
+.w3-rosette .w3-b{font-size:24px;background:linear-gradient(rgba(150,44,32,.9),rgba(104,22,16,.93));border-color:#e0805a}
+.w3-rosette .stab{background:linear-gradient(rgba(190,150,50,.92),rgba(130,92,20,.94));border-color:#f0d27a}
+.w3-b.cont{min-width:260px;min-height:54px;font-size:17px;margin:0 auto;background:linear-gradient(var(--vermilion),var(--vermilion2));
   border-color:#6e1610;font-family:var(--font-h);letter-spacing:2px}
+.w3-hint{position:absolute;left:0;right:0;bottom:2px;text-align:center;font-size:10px;color:rgba(240,230,200,.5);pointer-events:none;padding:0 8px}
 
 /* ===================== 2D fallback combat (no WebGL) ===================== */
 .wr-combat{max-width:640px;margin:0 auto;padding:16px 16px 40px}
@@ -701,8 +718,11 @@ button{touch-action:manipulation}
   .wr-h1{font-size:26px;letter-spacing:3px}
   .wr-cardgrid{grid-template-columns:1fr 1fr}
   .wr-prose{font-size:14.5px}
-  .w3-btn{min-height:58px;font-size:22px}
   .w3-bar{width:38%}
+  .w3-b{min-width:48px;min-height:46px;font-size:18px}
+  .w3-rosette{grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,46px);gap:4px}
+  .w3-cluster{max-width:158px;gap:5px}
+  .w3-hint{display:none}
 }
 body.phone #board{flex-direction:column}
 body.phone #map-wrap{flex:0 0 52vh;min-height:0}
@@ -718,9 +738,11 @@ body.phone .wr-cardgrid{grid-template-columns:1fr 1fr}
 @media (max-width:520px){
   #map-wrap{flex-basis:46vh}
   .wr-cardgrid{grid-template-columns:1fr 1fr}
-  .w3-controls{gap:7px;padding-bottom:16px}
-  .w3-btn{min-height:54px;font-size:20px;max-width:none}
-  .w3-btn span{font-size:10px}
+  .w3-controls{gap:6px;padding:0 8px 12px}
+  .w3-b{min-width:44px;min-height:44px;font-size:17px}
+  .w3-b i{font-size:8.5px}
+  .w3-rosette{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:4px}
+  .w3-cluster{max-width:140px;gap:4px}
 }
 
 </style>
@@ -5142,35 +5164,37 @@ if (typeof module !== "undefined") module.exports = UI;
 /* =====================================================================
  * warrior3d.js — 3D FIRST-PERSON katana combat for "Way of the Warrior".
  *
- * A clean, stylised 3D duel: the camera is your eyes, your blade sits in
- * view, and low-poly foes close in across a dusk battlefield. You look
- * around by dragging, and Strike / Parry / Block / Dodge with big touch
- * buttons. Built on Three.js (vendored locally, so the game stays
- * self-contained). If WebGL / THREE is unavailable, the caller falls back
- * to the 2D renderer in warrior.js.
+ * Clean stylised 3D: the camera is your eyes, your blade (or bow) sits in
+ * view, and armoured foes close across an atmospheric battlefield with
+ * relief terrain, grass, structures, distant mountains and soft shadows.
  *
- * Public API:
- *   WARRIOR3D.available()                     -> bool
- *   WARRIOR3D.startFight({ player, enemies, theme, intro, onWin, onLose })
- *   WARRIOR3D.stop()
+ * Full control set — every action is BOTH a key and an on-screen button:
+ *   Cut above  ↑ / W        Cut below  ↓ / S
+ *   Cut left   ← / A        Cut right  → / D
+ *   Stab       E            Parry      J
+ *   Block(hold) L / Shift   Dodge      Space
+ *   Aim(hold)  Q            Shoot      F
+ * Drag / arrow-free-look to look around; lock-on keeps the foe framed.
+ *
+ * Built on Three.js (vendored locally). If WebGL/THREE is unavailable the
+ * caller falls back to the 2D renderer in warrior.js.
+ *
+ * Public API: available(), startFight({player,enemies,theme,intro,onWin,onLose}), stop()
  * ===================================================================== */
 
 const WARRIOR3D = {};
 
 WARRIOR3D.available = function () {
   if (typeof THREE === "undefined" || typeof document === "undefined") return false;
-  try {
-    const c = document.createElement("canvas");
-    return !!(c.getContext("webgl") || c.getContext("experimental-webgl"));
-  } catch (e) { return false; }
+  try { const c = document.createElement("canvas"); return !!(c.getContext("webgl") || c.getContext("experimental-webgl")); }
+  catch (e) { return false; }
 };
 
-/* palette per scene theme */
 WARRIOR3D.THEMES = {
-  dusk:    { sky: 0xf2a65a, sky2: 0x6a3d6b, fog: 0xdd9a6a, ground: 0x6b5636, ground2: 0x574327, sun: 0xffd9a0, amb: 0x54506a, props: "camp" },
-  night:   { sky: 0x1b2340, sky2: 0x070912, fog: 0x161d33, ground: 0x2a2f3f, ground2: 0x20242f, sun: 0x9fb4ff, amb: 0x223055, props: "fort" },
-  dawn:    { sky: 0xbcd4e6, sky2: 0xe9b7a0, fog: 0xccd8de, ground: 0x5d6b4a, ground2: 0x4a563a, sun: 0xfff0d8, amb: 0x6d7a8c, props: "shrine" },
-  ember:   { sky: 0x7a2c1c, sky2: 0x2a0f08, fog: 0x8a3520, ground: 0x4a3524, ground2: 0x3a281a, sun: 0xffb06a, amb: 0x5a2418, props: "village" },
+  dusk:  { sky: 0xf2a65a, sky2: 0x5a3560, fog: 0xcf8f63, ground: 0x6f5a38, ground2: 0x53412a, sun: 0xffdca6, amb: 0x4a4668, grass: 0x7a6a2e, props: "camp" },
+  night: { sky: 0x1b2340, sky2: 0x05070f, fog: 0x121834, ground: 0x2c3140, ground2: 0x20242f, sun: 0xaac0ff, amb: 0x1c2749, grass: 0x2c3a2c, props: "fort" },
+  dawn:  { sky: 0xbcd4e6, sky2: 0xf0c0a4, fog: 0xcdd9df, ground: 0x5f6d4c, ground2: 0x49563a, sun: 0xfff1da, amb: 0x6a7789, grass: 0x51713a, props: "shrine" },
+  ember: { sky: 0x8a3016, sky2: 0x220a05, fog: 0x7a2e15, ground: 0x4e3826, ground2: 0x3a281a, sun: 0xffb56a, amb: 0x5a2214, grass: 0x5a3a22, props: "village" },
 };
 
 /* ------------------------------------------------------------------ */
@@ -5179,9 +5203,11 @@ WARRIOR3D.stop = function () {
   E.running = false;
   if (E.raf) cancelAnimationFrame(E.raf);
   window.removeEventListener("resize", E.onResize);
+  if (E._key) window.removeEventListener("keydown", E._key);
+  if (E._keyUp) window.removeEventListener("keyup", E._keyUp);
   try {
-    E.renderer.dispose();
     E.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) { const m = o.material; (Array.isArray(m) ? m : [m]).forEach(x => x && x.dispose && x.dispose()); } });
+    E.renderer.dispose();
     const cv = E.renderer.domElement; if (cv && cv.parentNode) cv.parentNode.removeChild(cv);
   } catch (e) {}
   WARRIOR3D._e = null;
@@ -5196,99 +5222,95 @@ WARRIOR3D.startFight = function (opts) {
   if (!host) return;
   const theme = WARRIOR3D.THEMES[opts.theme] || WARRIOR3D.THEMES.dusk;
 
-  // --- stage DOM: canvas + HUD overlay ---
   host.innerHTML = `
     <div class="w3-stage">
       <div class="w3-canvas" id="w3-canvas"></div>
+      <div class="w3-vignette"></div>
+      <div class="w3-reticle" id="w3-reticle"></div>
       <div class="w3-hud">
         <div class="w3-top">
-          <div class="w3-bar you"><label>YOU</label><div class="w3-track"><i id="w3-hp"></i></div>
-            <div class="w3-ki"><i id="w3-ki"></i></div></div>
+          <div class="w3-bar you"><label>YOU</label><div class="w3-track"><i id="w3-hp"></i></div><div class="w3-ki"><i id="w3-ki"></i></div></div>
           <div class="w3-mid" id="w3-wave"></div>
           <div class="w3-bar foe"><label id="w3-foename">FOE</label><div class="w3-track"><i id="w3-foehp"></i></div></div>
         </div>
         <div class="w3-prompt" id="w3-prompt">${opts.intro || "Face your enemy."}</div>
         <div class="w3-flash" id="w3-flash"></div>
         <div class="w3-controls">
-          <button class="w3-btn dodge" id="w3-dodge">💨<span>Dodge</span></button>
-          <button class="w3-btn block" id="w3-block">🛡️<span>Block</span></button>
-          <button class="w3-btn parry" id="w3-parry">⚔️<span>Parry</span></button>
-          <button class="w3-btn strike" id="w3-strike">🗡️<span>Strike</span></button>
+          <div class="w3-cluster left">
+            <button class="w3-b parry" data-a="parry">⚔️<i>Parry</i></button>
+            <button class="w3-b block" data-a="block" data-hold="1">🛡️<i>Block</i></button>
+            <button class="w3-b dodge" data-a="dodge">💨<i>Dodge</i></button>
+            <button class="w3-b aim" data-a="aim" data-hold="1">🎯<i>Aim</i></button>
+            <button class="w3-b shoot" data-a="shoot">🏹<i>Shoot</i></button>
+          </div>
+          <div class="w3-rosette">
+            <button class="w3-b up" data-a="cut_up" title="Cut from above">⤒</button>
+            <button class="w3-b left" data-a="cut_left" title="Cut from the left">⇤</button>
+            <button class="w3-b stab" data-a="stab" title="Thrust">✦<i>Stab</i></button>
+            <button class="w3-b right" data-a="cut_right" title="Cut from the right">⇥</button>
+            <button class="w3-b down" data-a="cut_down" title="Rising cut">⤓</button>
+          </div>
         </div>
+        <div class="w3-hint">Keys — cuts: ↑↓←→/WASD · Stab E · Parry J · Block L · Dodge Space · Aim Q · Shoot F</div>
       </div>
     </div>`;
 
   const mount = document.getElementById("w3-canvas");
   const W = mount.clientWidth || window.innerWidth, H = mount.clientHeight || window.innerHeight;
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(W, H);
   if (renderer.outputEncoding !== undefined) renderer.outputEncoding = THREE.sRGBEncoding;
   if (THREE.ACESFilmicToneMapping) renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   mount.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(theme.fog, 10, 46);
+  scene.fog = new THREE.Fog(theme.fog, 14, 62);
 
-  const camera = new THREE.PerspectiveCamera(72, W / H, 0.1, 200);
-  camera.position.set(0, 1.65, 0);
+  const camera = new THREE.PerspectiveCamera(72, W / H, 0.1, 260);
+  camera.position.set(0, 1.66, 0);
 
-  // gradient sky dome
-  const sky = WARRIOR3D._sky(theme);
-  scene.add(sky);
+  scene.add(WARRIOR3D._sky(theme));
+  WARRIOR3D._sunDisc(scene, theme);
+  WARRIOR3D._clouds(scene, theme);
 
-  // lights
-  const hemi = new THREE.HemisphereLight(theme.sky, theme.ground, 0.9);
-  scene.add(hemi);
-  const sun = new THREE.DirectionalLight(theme.sun, 1.15);
-  sun.position.set(-8, 12, -6);
-  scene.add(sun);
-  const amb = new THREE.AmbientLight(theme.amb, 0.5);
-  scene.add(amb);
+  const hemi = new THREE.HemisphereLight(theme.sky, theme.ground, 0.7); scene.add(hemi);
+  const sun = new THREE.DirectionalLight(theme.sun, 1.4);
+  sun.position.set(-10, 14, -4); sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.near = 1; sun.shadow.camera.far = 44;
+  sun.shadow.camera.left = -11; sun.shadow.camera.right = 11; sun.shadow.camera.top = 11; sun.shadow.camera.bottom = -11;
+  sun.shadow.bias = -0.0006; scene.add(sun);
+  const rim = new THREE.DirectionalLight(0xffe0b0, 0.55); rim.position.set(7, 5, 9); scene.add(rim);
+  scene.add(new THREE.AmbientLight(theme.amb, 0.4));
 
-  // ground
-  const gGeo = new THREE.PlaneGeometry(120, 120, 1, 1);
-  const gMat = new THREE.MeshStandardMaterial({ color: theme.ground, roughness: 1, metalness: 0 });
-  const ground = new THREE.Mesh(gGeo, gMat);
-  ground.rotation.x = -Math.PI / 2;
-  scene.add(ground);
-  // faint ring pattern so motion reads
-  for (let i = 1; i <= 5; i++) {
-    const r = new THREE.Mesh(new THREE.RingGeometry(i * 3 - 0.06, i * 3, 48),
-      new THREE.MeshBasicMaterial({ color: theme.ground2, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
-    r.rotation.x = -Math.PI / 2; r.position.y = 0.01; scene.add(r);
-  }
-
-  // decorative props for depth/atmosphere
+  WARRIOR3D._terrain(scene, theme);
+  WARRIOR3D._grass(scene, theme);
+  WARRIOR3D._mountains(scene, theme);
+  WARRIOR3D._structures(scene, theme);
   WARRIOR3D._props(scene, theme);
 
-  // first-person katana viewmodel (child of camera)
   const view = WARRIOR3D._viewmodel(opts.player);
-  camera.add(view);
-  scene.add(camera);
+  camera.add(view); scene.add(camera);
 
   const E = WARRIOR3D._e = {
-    renderer, scene, camera, sky, view, theme,
+    renderer, scene, camera, view, theme, mount,
     W, H, running: true, raf: 0, clock: (typeof performance !== "undefined" ? performance.now() : Date.now()),
-    // player
     php: opts.player.hp, phpMax: opts.player.maxHp || opts.player.hp,
     ki: opts.player.ki, kiMax: opts.player.maxKi || opts.player.ki,
     atk: opts.player.atk || 6, guard: opts.player.guard || 4,
-    // fight
     queue: (opts.enemies || []).slice(), foe: null, foeIdx: 0, total: (opts.enemies || []).length,
     onWin: opts.onWin, onLose: opts.onLose,
-    // input / camera look
     yaw: 0, pitch: 0, yawTarget: 0, pitchTarget: 0, dragId: null, lastX: 0, lastY: 0,
-    // viewmodel anim
-    vmClip: "idle", vmT: 0, blocking: false, dodgeT: 0, shake: 0, hitFlash: 0,
-    combo: 0, ended: false,
-    particles: [],
+    vmClip: "idle", vmT: 0, blocking: false, aiming: false, dodgeT: 0, dodgeDir: 1, shake: 0, hitFlash: 0,
+    fov: 72, fovTarget: 72, combo: 0, ended: false, particles: [], arrows: [],
   };
 
-  // controls
   WARRIOR3D._bindControls(E);
-
   E.onResize = () => {
     if (!WARRIOR3D._e) return;
     const w = mount.clientWidth || window.innerWidth, h = mount.clientHeight || window.innerHeight;
@@ -5301,109 +5323,259 @@ WARRIOR3D.startFight = function (opts) {
   WARRIOR3D._loop();
 };
 
-/* gradient sky dome via a cheap shader */
+/* ================================================================== *
+ *  ENVIRONMENT
+ * ================================================================== */
 WARRIOR3D._sky = function (theme) {
-  const geo = new THREE.SphereGeometry(90, 24, 12);
+  const geo = new THREE.SphereGeometry(120, 24, 14);
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false,
     uniforms: { top: { value: new THREE.Color(theme.sky) }, bot: { value: new THREE.Color(theme.sky2) } },
-    vertexShader: "varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }",
-    fragmentShader: "varying vec3 vP; uniform vec3 top; uniform vec3 bot; void main(){ float h = clamp((normalize(vP).y*0.5+0.5),0.0,1.0); gl_FragColor = vec4(mix(bot,top,h),1.0); }",
+    vertexShader: "varying vec3 vP; void main(){ vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}",
+    fragmentShader: "varying vec3 vP; uniform vec3 top; uniform vec3 bot; void main(){ float h=clamp(normalize(vP).y*0.5+0.5,0.0,1.0); gl_FragColor=vec4(mix(bot,top,pow(h,0.8)),1.0);}",
   });
   return new THREE.Mesh(geo, mat);
 };
 
-/* scatter simple props (banners, lanterns, bamboo, rocks) */
+WARRIOR3D._sunDisc = function (scene, theme) {
+  const g = new THREE.Group();
+  const core = new THREE.Mesh(new THREE.CircleGeometry(5, 32), new THREE.MeshBasicMaterial({ color: theme.sun, transparent: true, opacity: 0.95, fog: false }));
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(13, 32), new THREE.MeshBasicMaterial({ color: theme.sun, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, fog: false, depthWrite: false }));
+  glow.position.z = -0.1; g.add(glow); g.add(core);
+  g.position.set(-26, 10, -80);
+  g.lookAt(0, 1.6, 0);
+  scene.add(g);
+};
+
+WARRIOR3D._clouds = function (scene, theme) {
+  const c = document.createElement("canvas"); c.width = 256; c.height = 128;
+  const x = c.getContext("2d");
+  for (let i = 0; i < 40; i++) { const r = 10 + Math.random() * 30; const gx = Math.random() * 256, gy = 30 + Math.random() * 60;
+    const gr = x.createRadialGradient(gx, gy, 0, gx, gy, r); gr.addColorStop(0, "rgba(255,255,255,0.5)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+    x.fillStyle = gr; x.beginPath(); x.arc(gx, gy, r, 0, 7); x.fill(); }
+  const tex = new THREE.CanvasTexture(c);
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.6, depthWrite: false, fog: false });
+  for (let i = 0; i < 4; i++) {
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(70, 30), mat);
+    const a = (i / 4) * Math.PI * 2;
+    pl.position.set(Math.sin(a) * 70, 26 + Math.random() * 12, -Math.abs(Math.cos(a) * 70) - 10);
+    pl.lookAt(0, 20, 0); pl.userData.cloud = 0.4 + Math.random() * 0.5; scene.add(pl);
+  }
+};
+
+WARRIOR3D._groundTex = function (theme) {
+  const c = document.createElement("canvas"); c.width = c.height = 256;
+  const x = c.getContext("2d");
+  x.fillStyle = "#" + theme.ground.toString(16).padStart(6, "0"); x.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 2600; i++) { x.fillStyle = "rgba(0,0,0," + (Math.random() * 0.16) + ")"; const s = Math.random() * 3 + 1; x.fillRect(Math.random() * 256, Math.random() * 256, s, s); }
+  for (let i = 0; i < 600; i++) { x.fillStyle = "rgba(255,240,210," + (Math.random() * 0.06) + ")"; x.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(34, 34); return t;
+};
+
+/* relief terrain: flat arena in the centre, rolling hills beyond */
+WARRIOR3D._terrain = function (scene, theme) {
+  const geo = new THREE.PlaneGeometry(220, 220, 72, 72);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i);
+    const d = Math.hypot(x, y);
+    let h = 0;
+    if (d > 14) { const k = Math.min(1, (d - 14) / 30);
+      h = (Math.sin(x * 0.12) * Math.cos(y * 0.1) * 1.4 + Math.sin(x * 0.05 + 1.3) * 2.1 + Math.cos(y * 0.07) * 1.6) * k; }
+    pos.setZ(i, h);
+  }
+  geo.computeVertexNormals();
+  const mat = new THREE.MeshStandardMaterial({ color: theme.ground, roughness: 1, map: WARRIOR3D._groundTex(theme) });
+  const m = new THREE.Mesh(geo, mat); m.rotation.x = -Math.PI / 2; m.receiveShadow = true; scene.add(m);
+};
+
+WARRIOR3D._grass = function (scene, theme) {
+  const blade = new THREE.ConeGeometry(0.03, 0.42, 3);
+  const mat = new THREE.MeshStandardMaterial({ color: theme.grass, roughness: 1, flatShading: true });
+  const N = 620;
+  const inst = new THREE.InstancedMesh(blade, mat, N);
+  const dummy = new THREE.Object3D();
+  for (let i = 0; i < N; i++) {
+    const a = Math.random() * Math.PI * 2, r = 2.5 + Math.random() * 13;
+    dummy.position.set(Math.sin(a) * r, 0.2, -Math.abs(Math.cos(a) * r) - 1);
+    const s = 0.6 + Math.random() * 0.9; dummy.scale.set(s, s * (0.7 + Math.random() * 0.7), s);
+    dummy.rotation.set((Math.random() - 0.5) * 0.3, Math.random() * 3, (Math.random() - 0.5) * 0.3);
+    dummy.updateMatrix(); inst.setMatrixAt(i, dummy.matrix);
+  }
+  scene.add(inst);
+};
+
+WARRIOR3D._mountains = function (scene, theme) {
+  for (let i = 0; i < 11; i++) {
+    const h = 9 + Math.random() * 16;
+    const mt = new THREE.Mesh(new THREE.ConeGeometry(8 + Math.random() * 9, h, 4),
+      new THREE.MeshStandardMaterial({ color: theme.ground2, roughness: 1, flatShading: true }));
+    const a = (i / 11) * Math.PI * 2;
+    mt.position.set(Math.sin(a) * (44 + Math.random() * 14), h / 2 - 1.5, -Math.abs(Math.cos(a) * (44 + Math.random() * 16)) - 10);
+    mt.rotation.y = Math.random() * 3; scene.add(mt);
+  }
+};
+
+/* themed set-dressing behind the arena */
+WARRIOR3D._structures = function (scene, theme) {
+  const wood = new THREE.MeshStandardMaterial({ color: 0x4a3524, roughness: 1 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x2a1f16, roughness: 1 });
+  const red = new THREE.MeshStandardMaterial({ color: 0x8f2c1e, roughness: 0.9 });
+  const stone = new THREE.MeshStandardMaterial({ color: 0x6a6a62, roughness: 1, flatShading: true });
+  const S = (m) => { m.castShadow = true; m.receiveShadow = true; return m; };
+  const hut = (x, z, burning) => {
+    const g = new THREE.Group();
+    const base = S(new THREE.Mesh(new THREE.BoxGeometry(3, 2, 3), wood)); base.position.y = 1; g.add(base);
+    const roof = S(new THREE.Mesh(new THREE.ConeGeometry(2.6, 1.5, 4), dark)); roof.position.y = 2.75; roof.rotation.y = Math.PI / 4; g.add(roof);
+    if (burning) { const fire = new THREE.PointLight(0xff6a2a, 1.4, 14); fire.position.set(0, 2.4, 0); g.add(fire);
+      const gl = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff7a2a, transparent: true, opacity: 0.8, fog: false })); gl.position.y = 2.6; gl.userData.fire = 1; g.add(gl); }
+    g.position.set(x, 0, z); scene.add(g);
+  };
+  const tent = (x, z) => {
+    const g = new THREE.Group();
+    const body = S(new THREE.Mesh(new THREE.ConeGeometry(1.7, 2.2, 4), new THREE.MeshStandardMaterial({ color: 0x6a5030, roughness: 1 }))); body.position.y = 1.1; body.rotation.y = Math.PI / 4; g.add(body);
+    g.position.set(x, 0, z); scene.add(g);
+  };
+  const torii = (x, z) => {
+    const g = new THREE.Group();
+    [-1.4, 1.4].forEach(px => { const p = S(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 5, 10), red)); p.position.set(px, 2.5, 0); g.add(p); });
+    const top = S(new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.4, 0.5), red)); top.position.y = 5; g.add(top);
+    const top2 = S(new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.28, 0.4), dark)); top2.position.y = 4.4; g.add(top2);
+    g.position.set(x, 0, z); scene.add(g);
+  };
+  const wall = (x, z) => {
+    const g = new THREE.Group();
+    const w = S(new THREE.Mesh(new THREE.BoxGeometry(9, 3, 0.8), wood)); w.position.y = 1.5; g.add(w);
+    for (let i = -4; i <= 4; i += 2) { const spike = S(new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.7, 5), dark)); spike.position.set(i, 3.3, 0); g.add(spike); }
+    const torch = new THREE.PointLight(0xffa24a, 1.1, 12); torch.position.set(x < 0 ? 4 : -4, 3, 0.4); g.add(torch);
+    const tg = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffb055, fog: false })); tg.position.copy(torch.position); tg.userData.fire = 1; g.add(tg);
+    g.position.set(x, 0, z); scene.add(g);
+  };
+  if (theme.props === "village") { hut(-9, -12, true); hut(8, -15, true); hut(-14, -20, false); }
+  else if (theme.props === "camp") { tent(-8, -12); tent(-11, -15); tent(9, -13); }
+  else if (theme.props === "shrine") { torii(0, -16); const steps = new THREE.Mesh(new THREE.BoxGeometry(6, 0.5, 3), stone); steps.position.set(0, 0.25, -22); steps.castShadow = true; scene.add(steps); }
+  else if (theme.props === "fort") { wall(-6, -16); wall(6, -16); }
+};
+
 WARRIOR3D._props = function (scene, theme) {
   const rnd = (a, b) => a + Math.random() * (b - a);
-  const place = (mesh, x, z) => { mesh.position.set(x, mesh.position.y || 0, z); scene.add(mesh); };
-  for (let i = 0; i < 26; i++) {
-    const ang = rnd(0, Math.PI * 2), dist = rnd(9, 40);
-    const x = Math.sin(ang) * dist, z = -Math.abs(Math.cos(ang) * dist) - 4; // bias in front
+  const S = (m) => { m.castShadow = true; return m; };
+  for (let i = 0; i < 22; i++) {
+    const ang = rnd(0, Math.PI * 2), dist = rnd(10, 32);
+    const x = Math.sin(ang) * dist, z = -Math.abs(Math.cos(ang) * dist) - 4;
     const kind = Math.random();
-    if (theme.props === "shrine" || theme.props === "camp" ? kind < 0.5 : kind < 0.35) {
-      // bamboo / pole
-      const h = rnd(3, 6);
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, h, 6),
-        new THREE.MeshStandardMaterial({ color: theme.props === "night" ? 0x2c3a2c : 0x4a6b3a, roughness: 1 }));
-      pole.position.y = h / 2; place(pole, x, z);
-    } else if (kind < 0.7) {
-      // banner
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4, 5), new THREE.MeshStandardMaterial({ color: 0x2a1f14 }));
-      pole.position.y = 2; place(pole, x, z);
-      const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 2.4), new THREE.MeshStandardMaterial({ color: 0x9a2b1e, side: THREE.DoubleSide, roughness: 1 }));
-      flag.position.set(x + 0.5, 2.6, z); flag.userData.flag = true; scene.add(flag);
+    if (kind < 0.44) {
+      const h = rnd(2.6, 4.6);
+      const trunk = S(new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.18, h, 7), new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 1 })));
+      trunk.position.set(x, h / 2, z); scene.add(trunk);
+      const leaf = theme.props === "ember" ? 0x5a3a22 : theme.props === "night" ? 0x27331f : 0x3f5b2e;
+      for (let k = 0; k < 3; k++) { const r = rnd(0.8, 1.3);
+        const can = S(new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), new THREE.MeshStandardMaterial({ color: leaf, roughness: 1, flatShading: true })));
+        can.position.set(x + rnd(-0.5, 0.5), h + rnd(-0.2, 0.6), z + rnd(-0.5, 0.5)); can.scale.y = 0.85; scene.add(can); }
+    } else if (kind < 0.72) {
+      const pole = S(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 4, 6), new THREE.MeshStandardMaterial({ color: 0x2a1f14, roughness: 1 })));
+      pole.position.set(x, 2, z); scene.add(pole);
+      const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 2.2), new THREE.MeshStandardMaterial({ color: 0x9a2b1e, side: THREE.DoubleSide, roughness: 1 }));
+      flag.position.set(x + 0.45, 2.7, z); flag.userData.flag = 1; scene.add(flag);
     } else {
-      // rock
-      const r = rnd(0.4, 1.1);
-      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), new THREE.MeshStandardMaterial({ color: theme.ground2, roughness: 1, flatShading: true }));
-      rock.position.y = r * 0.5; rock.rotation.set(rnd(0, 3), rnd(0, 3), rnd(0, 3)); place(rock, x, z);
+      const r = rnd(0.4, 1.0);
+      const rock = S(new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), new THREE.MeshStandardMaterial({ color: theme.ground2, roughness: 1, flatShading: true })));
+      rock.position.set(x, r * 0.45, z); rock.rotation.set(rnd(0, 3), rnd(0, 3), rnd(0, 3)); scene.add(rock);
     }
   }
 };
 
-/* first-person katana viewmodel — held low-right, blade angled up across
- * the view for a clean ready stance (no clunky arm-block filling the corner) */
-WARRIOR3D._viewmodel = function (player) {
+/* ================================================================== *
+ *  CHARACTERS
+ * ================================================================== */
+WARRIOR3D._limb = function (len, rTop, rBot, mat, cap) {
   const g = new THREE.Group();
-  const skin = new THREE.MeshStandardMaterial({ color: 0xcaa27a, roughness: 0.85 });
-  const cloth = new THREE.MeshStandardMaterial({ color: 0x24304a, roughness: 1 });
-
-  // the sword group (handle + guard + blade), built pointing "forward" (-z)
-  const kg = new THREE.Group();
-  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.26, 8), new THREE.MeshStandardMaterial({ color: 0x14110c, roughness: 0.9 }));
-  handle.rotation.x = Math.PI / 2; handle.position.z = 0.10; kg.add(handle);
-  const wrap = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), skin); // fist over the grip
-  wrap.position.z = 0.05; kg.add(wrap);
-  const guard = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.018, 14), new THREE.MeshStandardMaterial({ color: 0x8a6a1a, metalness: 0.7, roughness: 0.35 }));
-  guard.rotation.x = Math.PI / 2; guard.position.z = -0.03; kg.add(guard);
-  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.05, 1.15), new THREE.MeshStandardMaterial({ color: 0xe7edf4, metalness: 0.9, roughness: 0.14 }));
-  blade.position.z = -0.62; kg.add(blade);
-  const edge = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.052, 1.12), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.6, roughness: 0.2 }));
-  edge.position.set(0.011, 0, -0.62); kg.add(edge);
-  // held low-right, blade sweeping up-and-inward across the lower view
-  kg.position.set(0.26, -0.34, -0.72);
-  kg.rotation.set(-0.78, 0.34, -0.12);
-  g.add(kg);
-
-  // a slim forearm trailing off the bottom edge (kept small so it doesn't dominate)
-  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.42), cloth);
-  arm.position.set(0.32, -0.54, -0.5); arm.rotation.set(-0.85, -0.2, 0.15); g.add(arm);
-
-  g.userData.katana = kg; g.userData.arm = arm;
-  g.userData.rest = { pos: kg.position.clone(), rot: kg.rotation.clone() };
+  const cyl = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, len, 10), mat); cyl.position.y = -len / 2; cyl.castShadow = true; g.add(cyl);
+  if (cap) { const c = new THREE.Mesh(new THREE.SphereGeometry(rTop, 12, 8), mat); c.castShadow = true; g.add(c); }
+  const end = new THREE.Mesh(new THREE.SphereGeometry(rBot * 1.05, 10, 8), mat); end.position.y = -len; end.castShadow = true; g.add(end);
   return g;
 };
 
-/* low-poly humanoid foe */
+WARRIOR3D._foeKatana = function (steel, dark) {
+  const g = new THREE.Group();
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.22, 8), dark); grip.rotation.x = Math.PI / 2; grip.position.z = 0.08; g.add(grip);
+  const tsuba = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.015, 12), steel); tsuba.rotation.x = Math.PI / 2; tsuba.position.z = -0.03; g.add(tsuba);
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.048, 0.92), steel); blade.position.z = -0.52; blade.castShadow = true; g.add(blade);
+  return g;
+};
+
 WARRIOR3D._makeFoe = function (def) {
   const g = new THREE.Group();
-  const body = new THREE.MeshStandardMaterial({ color: def.color || 0x8a2b22, roughness: 1, flatShading: true });
-  const trim = new THREE.MeshStandardMaterial({ color: 0x1c1712, roughness: 1, flatShading: true });
-  const skin = new THREE.MeshStandardMaterial({ color: 0xc79a72, roughness: 0.9, flatShading: true });
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.72, 0.34), body); torso.position.y = 1.15; g.add(torso);
-  const hips = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.32), trim); hips.position.y = 0.72; g.add(hips);
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.32, 0.3), skin); head.position.y = 1.68; g.add(head);
-  const hat = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.24, 12), trim); hat.position.y = 1.9; g.add(hat);
-  const mkLimb = (w, h, mat) => new THREE.Mesh(new THREE.BoxGeometry(w, h, w), mat);
-  const lArm = mkLimb(0.16, 0.6, body); lArm.position.set(-0.42, 1.2, 0); g.add(lArm);
-  const rArm = new THREE.Group(); rArm.position.set(0.42, 1.45, 0);
-  const rArmMesh = mkLimb(0.16, 0.6, body); rArmMesh.position.y = -0.28; rArm.add(rArmMesh);
-  // weapon in right hand
-  const wpn = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.02, 1.0), new THREE.MeshStandardMaterial({ color: 0xcfd6de, metalness: 0.7, roughness: 0.3 }));
-  wpn.position.set(0, -0.55, -0.4); wpn.rotation.x = -0.4; rArm.add(wpn);
-  g.add(rArm);
-  const lLeg = mkLimb(0.2, 0.66, trim); lLeg.position.set(-0.16, 0.35, 0); g.add(lLeg);
-  const rLeg = mkLimb(0.2, 0.66, trim); rLeg.position.set(0.16, 0.35, 0); g.add(rLeg);
-  // blob shadow
-  const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.55, 20), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32 }));
+  const armor = new THREE.MeshStandardMaterial({ color: def.color || 0x8f2c22, roughness: 0.6, metalness: 0.15 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x241c14, roughness: 0.85 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0xc99a6f, roughness: 0.75 });
+  const steel = new THREE.MeshStandardMaterial({ color: 0xcdd6df, roughness: 0.3, metalness: 0.7 });
+  const hipY = 0.92, L = WARRIOR3D._limb;
+
+  const lLeg = L(0.9, 0.13, 0.1, dark, true); lLeg.position.set(-0.17, hipY, 0); g.add(lLeg);
+  const rLeg = L(0.9, 0.13, 0.1, dark, true); rLeg.position.set(0.17, hipY, 0); g.add(rLeg);
+  [-0.17, 0.17].forEach(x => { const f = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.3), dark); f.position.set(x, 0.04, 0.07); f.castShadow = true; g.add(f); });
+  const pelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.18, 0.24, 12), dark); pelvis.position.y = hipY + 0.02; pelvis.castShadow = true; g.add(pelvis);
+
+  const torso = new THREE.Group(); torso.position.y = hipY + 0.1; g.add(torso);
+  const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.22, 0.56, 12), armor); chest.position.y = 0.3; chest.castShadow = true; torso.add(chest);
+  const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.265, 0.265, 0.06, 12), dark); belt.position.y = 0.14; torso.add(belt);
+  const sg = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 8), armor); sg.scale.y = 0.65; sg.position.set(-0.28, 0.5, 0); sg.castShadow = true; torso.add(sg);
+  const sg2 = sg.clone(); sg2.position.x = 0.28; torso.add(sg2);
+
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.1, 8), skin); neck.position.y = 0.62; torso.add(neck);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), skin); head.position.y = 0.76; head.scale.z = 1.05; head.castShadow = true; torso.add(head);
+  const helm = new THREE.Mesh(new THREE.SphereGeometry(0.175, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.58), dark); helm.position.y = 0.79; helm.castShadow = true; torso.add(helm);
+  const crest = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.014, 6, 14, Math.PI), steel); crest.position.set(0, 0.9, 0.03); crest.rotation.x = -0.35; torso.add(crest);
+  const menpo = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.09, 0.03), dark); menpo.position.set(0, 0.69, 0.12); torso.add(menpo);
+
+  const lArm = L(0.6, 0.09, 0.07, armor, true); lArm.position.set(-0.28, 0.52, 0); lArm.rotation.z = 0.16; torso.add(lArm);
+  const rArm = new THREE.Group(); rArm.position.set(0.28, 0.52, 0); torso.add(rArm);
+  rArm.add(L(0.58, 0.09, 0.07, armor, true));
+  const katana = WARRIOR3D._foeKatana(steel, dark); katana.position.set(0, -0.58, 0); katana.rotation.x = -0.25; rArm.add(katana);
+
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.5, 20), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.2 }));
   shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.02; g.add(shadow);
-  g.userData = { torso, head, lArm, rArm, lLeg, rLeg, hat };
+
+  g.userData = { torso, head, lArm, rArm, lLeg, rLeg, hat: helm };
+  return g;
+};
+
+/* first-person viewmodel: katana (default) + bow (shown when aiming/shooting) */
+WARRIOR3D._viewmodel = function (player) {
+  const g = new THREE.Group();
+  const skin = new THREE.MeshStandardMaterial({ color: 0xcaa27a, roughness: 0.85 });
+  const cloth = new THREE.MeshStandardMaterial({ color: 0x243049, roughness: 1 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x14110c, roughness: 0.9 });
+  const gold = new THREE.MeshStandardMaterial({ color: 0x9a7a1c, roughness: 0.4, metalness: 0.7 });
+  const steel = new THREE.MeshStandardMaterial({ color: 0xe9eef4, roughness: 0.13, metalness: 0.92 });
+
+  // katana
+  const kg = new THREE.Group();
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.023, 0.026, 0.24, 10), dark); grip.rotation.x = Math.PI / 2; grip.position.z = 0.11; kg.add(grip);
+  const hand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), skin); hand.scale.set(1, 0.85, 1.25); hand.position.z = 0.06; kg.add(hand);
+  const tsuba = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.014, 16), gold); tsuba.rotation.x = Math.PI / 2; tsuba.position.z = -0.02; kg.add(tsuba);
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.052, 1.22), steel); blade.position.z = -0.65; blade.castShadow = true; kg.add(blade);
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.055, 1.16), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25, metalness: 0.5 })); edge.position.set(0.011, 0, -0.64); kg.add(edge);
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.12, 4), steel); tip.rotation.x = -Math.PI / 2; tip.position.z = -1.27; kg.add(tip);
+  kg.position.set(0.26, -0.34, -0.72); kg.rotation.set(-0.78, 0.34, -0.12); g.add(kg);
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.46, 8), cloth); arm.position.set(0.42, -0.66, -0.4); arm.rotation.set(-0.95, -0.25, 0.2); g.add(arm);
+
+  // bow (hidden until aim/shoot) — compact, held lower-centre
+  const bg = new THREE.Group();
+  const bow = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.014, 8, 24, Math.PI * 1.2), new THREE.MeshStandardMaterial({ color: 0x5a3a1e, roughness: 0.8 }));
+  bow.rotation.z = Math.PI * 0.4; bg.add(bow);
+  const strG = new THREE.Group(); bg.add(strG);
+  const str = new THREE.Mesh(new THREE.CylinderGeometry(0.0035, 0.0035, 0.36, 4), new THREE.MeshBasicMaterial({ color: 0xddddcc })); strG.add(str);
+  const nock = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.5, 5), steel); nock.rotation.x = Math.PI / 2; nock.position.z = -0.2; strG.add(nock);
+  bg.position.set(0.06, -0.34, -0.82); bg.visible = false; g.add(bg);
+
+  g.userData = { katana: kg, bow: bg, bowString: strG, arm, rest: { pos: kg.position.clone(), rot: kg.rotation.clone() } };
   return g;
 };
 
 /* ================================================================== *
- *  ENEMY LIFECYCLE + COMBAT FSM
+ *  ENEMY LIFECYCLE + FSM
  * ================================================================== */
 WARRIOR3D._nextEnemy = function (E) {
   const def = E.queue.shift();
@@ -5411,34 +5583,27 @@ WARRIOR3D._nextEnemy = function (E) {
   E.foeIdx++;
   const mesh = WARRIOR3D._makeFoe(def);
   const ang = (Math.random() - 0.5) * 0.5;
-  mesh.position.set(Math.sin(ang) * 8, 0, -9);
-  mesh.rotation.y = Math.PI;              // facing the player
+  mesh.position.set(Math.sin(ang) * 8, 0, -10); mesh.rotation.y = Math.PI;
   E.scene.add(mesh);
-  E.foe = {
-    def, mesh, hp: def.hp, hpMax: def.hp, dmg: def.dmg, skill: def.skill || 0.7, aggr: def.aggr || 0.6,
-    state: "approach", stateT: 0, dir: null, winMs: Math.max(560, 1300 - (def.skill || 0.7) * 720),
-    walkPhase: 0, dead: false, x: mesh.position.x,
-  };
+  E.foe = { def, mesh, hp: def.hp, hpMax: def.hp, dmg: def.dmg, skill: def.skill || 0.7, aggr: def.aggr || 0.6,
+    state: "approach", stateT: 0, dir: null, winMs: Math.max(560, 1300 - (def.skill || 0.7) * 720), walkPhase: 0, dead: false, hitReact: 0, openSide: null };
   const nm = document.getElementById("w3-foename"); if (nm) nm.textContent = def.name;
   const wv = document.getElementById("w3-wave"); if (wv) wv.textContent = E.total > 1 ? `${E.foeIdx} / ${E.total}` : "";
-  WARRIOR3D._prompt(E, `<b>${def.name}</b> closes in…`, "");
+  WARRIOR3D._prompt(E, `<b>${def.name}</b> closes in… <span class="w3-dim">shoot while you can</span>`, "");
   WARRIOR3D._updateHud(E);
 };
 
 WARRIOR3D._foeTelegraph = function (E) {
   const f = E.foe; if (!f) return;
-  f.state = "telegraph";
-  f.stateT = 0;
-  f.dir = ["high", "mid", "low"][Math.floor(Math.random() * 3)];
-  const word = { high: "OVERHEAD", mid: "THRUST", low: "LOW SWEEP" }[f.dir];
-  WARRIOR3D._prompt(E, `⚠ ${f.def.name} — <b>${word}</b>! Parry the flash, or block / dodge.`, "warn");
+  f.state = "telegraph"; f.stateT = 0;
+  f.dir = ["high", "mid", "low", "side"][Math.floor(Math.random() * 4)];
+  const word = { high: "OVERHEAD", mid: "THRUST", low: "LOW SWEEP", side: "SIDE CUT" }[f.dir];
+  WARRIOR3D._prompt(E, `⚠ ${f.def.name} — <b>${word}</b>! Parry the flash · Block · or Dodge.`, "warn");
 };
 
-/* enemy resolves an unblocked hit on the player */
 WARRIOR3D._foeHits = function (E, mult) {
   const f = E.foe; const dmg = Math.max(1, Math.round(f.dmg * (mult == null ? 1 : mult)));
-  E.php -= dmg;
-  E.hitFlash = 1; E.shake = Math.max(E.shake, 0.5);
+  E.php -= dmg; E.hitFlash = 1; E.shake = Math.max(E.shake, 0.55);
   WARRIOR3D._updateHud(E);
   if (E.php <= 0) return WARRIOR3D._end(E, false);
   return dmg;
@@ -5446,32 +5611,39 @@ WARRIOR3D._foeHits = function (E, mult) {
 
 WARRIOR3D._damageFoe = function (E, dmg, spark) {
   const f = E.foe; if (!f || f.dead) return;
-  f.hp -= dmg;
-  f.hitReact = 1;
-  if (spark) WARRIOR3D._spawnSpark(E, f);
-  else WARRIOR3D._spawnBlood(E, f);
+  f.hp -= dmg; f.hitReact = 1;
+  if (spark) WARRIOR3D._spawnSpark(E, f); else WARRIOR3D._spawnBlood(E, f);
   WARRIOR3D._updateHud(E);
-  if (f.hp <= 0) {
-    f.dead = true; f.state = "dead"; f.stateT = 0;
-    WARRIOR3D._prompt(E, `<b>${f.def.name} falls.</b>`, "good");
-  }
+  if (f.hp <= 0) { f.dead = true; f.state = "dead"; f.stateT = 0; WARRIOR3D._prompt(E, `<b>${f.def.name} falls.</b>`, "good"); }
 };
 
-/* player actions */
+/* ================================================================== *
+ *  INPUT — every action (keys + buttons)
+ * ================================================================== */
+WARRIOR3D.CUTS = { cut_up: { word: "overhead cut", side: "high" }, cut_down: { word: "rising cut", side: "low" }, cut_left: { word: "cut from the left", side: "side" }, cut_right: { word: "cut from the right", side: "side" }, stab: { word: "thrust", side: "mid", stab: true } };
+
 WARRIOR3D._input = function (action) {
   const E = WARRIOR3D._e; if (!E || !E.running || E.ended) return;
   const f = E.foe; if (!f) return;
-  E.view.userData.rest;
 
   if (action === "block") { E.blocking = true; WARRIOR3D._vm(E, "block"); return; }
+  if (action === "aim") { E.aiming = true; E.fovTarget = 54; WARRIOR3D._vm(E, "aim"); const rt = document.getElementById("w3-reticle"); if (rt) rt.classList.add("on"); return; }
+
+  if (action === "shoot") {
+    const cost = E.aiming ? 3 : 2;
+    if (E.ki < cost) { WARRIOR3D._prompt(E, "Out of stamina to shoot.", "warn"); return; }
+    E.ki -= cost; WARRIOR3D._vm(E, "shoot");
+    const dmg = E.aiming ? (E.atk + 3) : (Math.round(E.atk / 2) + 1);
+    WARRIOR3D._fireArrow(E, dmg);
+    WARRIOR3D._updateHud(E, true);
+    return;
+  }
 
   if (action === "dodge") {
-    if (E.ki >= 3) {
-      E.ki -= 3; E.dodgeT = 0.42; E.dodgeDir = Math.random() < 0.5 ? -1 : 1;
-      WARRIOR3D._vm(E, "dodge");
+    if (E.ki >= 3) { E.ki -= 3; E.dodgeT = 0.42; E.dodgeDir = Math.random() < 0.5 ? -1 : 1; WARRIOR3D._vm(E, "dodge");
       if (f.state === "telegraph") { f.state = "recover"; f.stateT = 0; WARRIOR3D._prompt(E, "💨 You slip aside — untouched.", "good"); E.combo = 0; }
-      WARRIOR3D._updateHud(E);
-    } else { WARRIOR3D._prompt(E, "Out of stamina to dodge!", "warn"); }
+      WARRIOR3D._updateHud(E, true);
+    } else WARRIOR3D._prompt(E, "Out of stamina to dodge!", "warn");
     return;
   }
 
@@ -5479,34 +5651,29 @@ WARRIOR3D._input = function (action) {
     WARRIOR3D._vm(E, "parry");
     if (f.state === "telegraph") {
       const p = f.stateT / (f.winMs / 1000);
-      if (p >= 0.6) {           // perfect flash-parry
-        f.state = "stagger"; f.stateT = 0; E.combo++;
-        E.shake = Math.max(E.shake, 0.35);
-        WARRIOR3D._spawnSpark(E, f);
-        const dmg = E.atk + 4;
-        WARRIOR3D._damageFoe(E, dmg, true);
-        if (!f.dead) WARRIOR3D._prompt(E, `⚔️ <b>Perfect parry!</b> Riposte bites — −${dmg}.`, "good");
-      } else {                  // early — partial
-        WARRIOR3D._foeHits(E, 0.35); f.state = "recover"; f.stateT = 0; E.combo = 0;
-        WARRIOR3D._prompt(E, "Too early — you catch most of it, but it stings.", "warn");
-      }
+      if (p >= 0.58) { f.state = "stagger"; f.stateT = 0; f.openSide = f.dir; E.combo++; E.shake = Math.max(E.shake, 0.35);
+        WARRIOR3D._spawnSpark(E, f); const d = E.atk + 4; WARRIOR3D._damageFoe(E, d, true);
+        if (!f.dead) WARRIOR3D._prompt(E, `⚔️ <b>Perfect parry!</b> Riposte bites — −${d}. Now strike the opening!`, "good"); }
+      else { WARRIOR3D._foeHits(E, 0.35); f.state = "recover"; f.stateT = 0; E.combo = 0; WARRIOR3D._prompt(E, "Too early — you catch most of it.", "warn"); }
     }
     return;
   }
 
-  if (action === "strike") {
-    WARRIOR3D._vm(E, "strike");
+  // directional cuts + stab
+  const cut = WARRIOR3D.CUTS[action];
+  if (cut) {
+    WARRIOR3D._vm(E, action);
     if (f.state === "stagger" || f.state === "open") {
-      E.combo++; const dmg = E.atk + 3 + Math.min(5, E.combo);
-      WARRIOR3D._damageFoe(E, dmg, false);
-      if (!f.dead) WARRIOR3D._prompt(E, `🗡️ You cut into the opening — −${dmg}!`, "good");
+      E.combo++;
+      let d = E.atk + 3 + Math.min(5, E.combo) + (cut.stab ? 2 : 0);
+      if (f.openSide && (f.openSide === cut.side)) d += 2;              // hit the exposed line
+      WARRIOR3D._damageFoe(E, d, false);
+      if (!f.dead) WARRIOR3D._prompt(E, `🗡️ ${cut.word} into the gap — <b>−${d}</b>!`, "good");
     } else if (f.state === "telegraph") {
-      // trade
-      WARRIOR3D._damageFoe(E, Math.round(E.atk / 2), false);
-      WARRIOR3D._foeHits(E, 1); f.state = "recover"; f.stateT = 0; E.combo = 0;
+      WARRIOR3D._damageFoe(E, Math.round(E.atk / 2), false); WARRIOR3D._foeHits(E, 1); f.state = "recover"; f.stateT = 0; E.combo = 0;
       WARRIOR3D._prompt(E, "You trade blows — you got the worse of it.", "warn");
     } else {
-      if (E.ki >= 2) { E.ki -= 2; WARRIOR3D._damageFoe(E, Math.max(1, Math.round(E.atk / 2)), false); WARRIOR3D._updateHud(E); }
+      if (E.ki >= 2) { E.ki -= 2; WARRIOR3D._damageFoe(E, Math.max(1, Math.round(E.atk / 2)), false); WARRIOR3D._updateHud(E, true); }
     }
     return;
   }
@@ -5515,6 +5682,17 @@ WARRIOR3D._input = function (action) {
 WARRIOR3D._release = function (action) {
   const E = WARRIOR3D._e; if (!E) return;
   if (action === "block") { E.blocking = false; if (E.vmClip === "block") WARRIOR3D._vm(E, "idle"); }
+  if (action === "aim") { E.aiming = false; E.fovTarget = 72; const rt = document.getElementById("w3-reticle"); if (rt) rt.classList.remove("on"); if (E.vmClip === "aim") WARRIOR3D._vm(E, "idle"); }
+};
+
+WARRIOR3D._fireArrow = function (E, dmg) {
+  const from = new THREE.Vector3(); E.camera.getWorldPosition(from); from.y -= 0.15;
+  const f = E.foe; const to = f ? f.mesh.position.clone().setY(1.3) : from.clone().add(new THREE.Vector3(0, 0, -8));
+  const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.7, 5), new THREE.MeshStandardMaterial({ color: 0x6a4a26 }));
+  arrow.position.copy(from); arrow.lookAt(to); arrow.rotateX(Math.PI / 2);
+  E.scene.add(arrow);
+  const dir = to.clone().sub(from).normalize();
+  E.arrows.push({ m: arrow, v: dir.multiplyScalar(46), dmg, life: 0 });
 };
 
 /* ================================================================== *
@@ -5524,202 +5702,170 @@ WARRIOR3D._loop = function () {
   const E = WARRIOR3D._e; if (!E || !E.running) return;
   E.raf = requestAnimationFrame(WARRIOR3D._loop);
   const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
-  let dt = (now - E.clock) / 1000; E.clock = now;
-  if (dt > 0.05) dt = 0.05;                 // clamp big gaps
+  let dt = (now - E.clock) / 1000; E.clock = now; if (dt > 0.05) dt = 0.05;
 
-  // stamina regen
   if (E.ki < E.kiMax) { E.ki = Math.min(E.kiMax, E.ki + dt * 1.4); WARRIOR3D._updateHud(E, true); }
 
   WARRIOR3D._updateFoe(E, dt);
   WARRIOR3D._updateViewmodel(E, dt);
   WARRIOR3D._updateCamera(E, dt);
   WARRIOR3D._updateParticles(E, dt);
+  WARRIOR3D._updateArrows(E, dt);
 
-  // decay flashes
-  if (E.hitFlash > 0) { E.hitFlash = Math.max(0, E.hitFlash - dt * 3); const fl = document.getElementById("w3-flash"); if (fl) fl.style.opacity = E.hitFlash * 0.55; }
-
-  // animate flags gently
-  E.scene.children.forEach(o => { if (o.userData && o.userData.flag) o.rotation.z = Math.sin(now / 500 + o.position.x) * 0.12; });
+  if (E.hitFlash > 0) { E.hitFlash = Math.max(0, E.hitFlash - dt * 3); const fl = document.getElementById("w3-flash"); if (fl) fl.style.opacity = E.hitFlash * 0.5; }
+  E.scene.children.forEach(o => { if (o.userData && o.userData.flag) o.rotation.z = Math.sin(now / 500 + o.position.x) * 0.12; if (o.userData && o.userData.fire) { o.scale.setScalar(0.9 + Math.sin(now / 90 + o.position.x) * 0.14); } });
 
   E.renderer.render(E.scene, E.camera);
 };
 
 WARRIOR3D._updateFoe = function (E, dt) {
   const f = E.foe; if (!f) return;
-  f.stateT += dt;
-  const m = f.mesh, u = m.userData;
-  // hit react decay
+  f.stateT += dt; const m = f.mesh, u = m.userData;
   if (f.hitReact > 0) f.hitReact = Math.max(0, f.hitReact - dt * 4);
 
   if (f.state === "dead") {
-    // collapse
     const t = Math.min(1, f.stateT / 0.9);
     m.rotation.x = -t * 1.4; m.position.y = -t * 0.4;
-    m.traverse(o => { if (o.material && o.material.transparent !== undefined) { o.material.transparent = true; o.material.opacity = 1 - t; } });
-    if (f.stateT > 1.0) {
-      E.scene.remove(m);
-      E.foe = null;
+    m.traverse(o => { if (o.material && "opacity" in o.material) { o.material.transparent = true; o.material.opacity = 1 - t; } });
+    if (f.stateT > 1.0) { E.scene.remove(m); E.foe = null;
       if (E.queue.length) setTimeout(() => { if (WARRIOR3D._e === E && E.running) WARRIOR3D._nextEnemy(E); }, 350);
-      else WARRIOR3D._end(E, true);
-    }
+      else WARRIOR3D._end(E, true); }
     return;
   }
 
-  // face player, walk-bob
   const dist = Math.hypot(m.position.x - E.camera.position.x, m.position.z - E.camera.position.z);
   const recoil = f.hitReact * 0.25;
 
   if (f.state === "approach") {
     f.walkPhase += dt * 7;
-    if (dist > 2.4) {
-      const dx = E.camera.position.x - m.position.x, dz = E.camera.position.z - m.position.z;
-      const len = Math.hypot(dx, dz) || 1;
-      m.position.x += (dx / len) * dt * 2.0; m.position.z += (dz / len) * dt * 2.0;
+    if (dist > 2.5) { const dx = E.camera.position.x - m.position.x, dz = E.camera.position.z - m.position.z; const len = Math.hypot(dx, dz) || 1;
+      m.position.x += (dx / len) * dt * 1.9; m.position.z += (dz / len) * dt * 1.9;
       if (u.lLeg) { u.lLeg.rotation.x = Math.sin(f.walkPhase) * 0.6; u.rLeg.rotation.x = -Math.sin(f.walkPhase) * 0.6; }
       if (u.rArm) u.rArm.rotation.x = -0.3 + Math.sin(f.walkPhase) * 0.2;
-    } else {
-      if (u.lLeg) { u.lLeg.rotation.x *= 0.8; u.rLeg.rotation.x *= 0.8; }
-      f.state = "ready"; f.stateT = 0;
-    }
+      m.position.y = Math.abs(Math.sin(f.walkPhase)) * 0.04;
+    } else { if (u.lLeg) { u.lLeg.rotation.x *= 0.8; u.rLeg.rotation.x *= 0.8; } m.position.y = 0; f.state = "ready"; f.stateT = 0; }
   } else if (f.state === "ready") {
     if (u.rArm) u.rArm.rotation.x = -0.3 + Math.sin(E.clock / 300) * 0.08;
-    // decide to attack
     const wait = 0.5 + (1 - f.aggr) * 0.9;
-    if (f.stateT > wait) {
-      if (Math.random() < 0.72) WARRIOR3D._foeTelegraph(E);
-      else { f.state = "open"; f.stateT = 0; WARRIOR3D._prompt(E, `${f.def.name} overreaches — an opening! <b>Strike!</b>`, "good"); }
-    }
+    if (f.stateT > wait) { if (Math.random() < 0.72) WARRIOR3D._foeTelegraph(E); else { f.state = "open"; f.stateT = 0; f.openSide = ["high", "mid", "low", "side"][Math.floor(Math.random() * 4)];
+      WARRIOR3D._prompt(E, `${f.def.name} overreaches — an opening! <b>Cut or Stab!</b>`, "good"); } }
   } else if (f.state === "telegraph") {
-    // raise weapon by dir
-    if (u.rArm) {
-      const p = Math.min(1, f.stateT / (f.winMs / 1000));
-      const target = f.dir === "high" ? -2.4 : f.dir === "low" ? 0.7 : -1.2;
-      u.rArm.rotation.x = THREE.MathUtils.lerp(-0.3, target, p);
-    }
+    if (u.rArm) { const p = Math.min(1, f.stateT / (f.winMs / 1000)); const target = f.dir === "high" ? -2.4 : f.dir === "low" ? 0.7 : f.dir === "side" ? -1.0 : -1.3;
+      u.rArm.rotation.x = THREE.MathUtils.lerp(-0.3, target, p); if (f.dir === "side" && u.torso) u.torso.rotation.z = THREE.MathUtils.lerp(0, 0.5, p); }
     if (f.stateT >= f.winMs / 1000) {
-      // player failed to react — swing connects
       if (E.blocking) { WARRIOR3D._foeHits(E, Math.max(0.15, 0.5 - E.guard * 0.04)); WARRIOR3D._prompt(E, "🛡️ Blocked — you weather it.", ""); }
       else WARRIOR3D._foeHits(E, 1);
-      f.state = "swing"; f.stateT = 0; E.combo = 0;
+      if (u.torso) u.torso.rotation.z = 0; f.state = "swing"; f.stateT = 0; E.combo = 0;
     }
   } else if (f.state === "swing") {
     if (u.rArm) u.rArm.rotation.x = THREE.MathUtils.lerp(u.rArm.rotation.x, 0.6, dt * 12);
     if (f.stateT > 0.18) { f.state = "recover"; f.stateT = 0; }
   } else if (f.state === "stagger") {
-    if (u.rArm) u.rArm.rotation.x = THREE.MathUtils.lerp(u.rArm.rotation.x, 0.9, dt * 8);
-    u.torso.rotation.x = -0.25;
-    if (f.stateT > 0.7) { u.torso.rotation.x = 0; f.state = "recover"; f.stateT = 0; }
+    if (u.rArm) u.rArm.rotation.x = THREE.MathUtils.lerp(u.rArm.rotation.x, 0.9, dt * 8); if (u.torso) u.torso.rotation.x = -0.25;
+    if (f.stateT > 0.7) { if (u.torso) u.torso.rotation.x = 0; f.state = "recover"; f.stateT = 0; f.openSide = null; }
   } else if (f.state === "open") {
-    u.torso.rotation.x = 0.15;
-    if (f.stateT > 1.1) { u.torso.rotation.x = 0; f.state = "ready"; f.stateT = 0; }
+    if (u.torso) u.torso.rotation.x = 0.15;
+    if (f.stateT > 1.1) { if (u.torso) u.torso.rotation.x = 0; f.state = "ready"; f.stateT = 0; f.openSide = null; }
   } else if (f.state === "recover") {
     if (u.rArm) u.rArm.rotation.x = THREE.MathUtils.lerp(u.rArm.rotation.x, -0.3, dt * 6);
     if (f.stateT > 0.45) { f.state = "ready"; f.stateT = 0; }
   }
-
-  // apply recoil offset on torso
   if (u.torso && f.state !== "open" && f.state !== "stagger") u.torso.position.z = -recoil;
 };
 
+/* per-attack viewmodel animation */
+WARRIOR3D.SWING = {
+  cut_up:    { dp: [-0.15, 0.34, 0.30], dr: [-2.0, -0.5, 0.0], dur: 0.30 },
+  cut_down:  { dp: [-0.10, -0.30, 0.26], dr: [1.5, 0.3, 0.0], dur: 0.30 },
+  cut_left:  { dp: [-0.58, 0.12, 0.20], dr: [-0.3, 1.5, -1.3], dur: 0.28 },
+  cut_right: { dp: [0.34, 0.12, 0.20], dr: [-0.3, -1.5, 1.3], dur: 0.28 },
+  stab:      { dp: [-0.10, -0.04, 0.62], dr: [-0.2, 0.1, 0.0], dur: 0.26 },
+  parry:     { dp: [-0.18, 0.16, 0.08], dr: [-0.5, 0.9, 0.7], dur: 0.22 },
+};
 WARRIOR3D._vm = function (E, clip) { E.vmClip = clip; E.vmT = 0; };
-
 WARRIOR3D._updateViewmodel = function (E, dt) {
-  const kg = E.view.userData.katana, rest = E.view.userData.rest;
-  E.vmT += dt;
+  const V = E.view.userData, kg = V.katana, R = V.rest, bow = V.bow; E.vmT += dt;
   const bob = Math.sin(E.clock / 600) * 0.012, sway = Math.cos(E.clock / 900) * 0.01;
+  const showBow = (E.vmClip === "aim" || E.vmClip === "shoot");
+  kg.visible = !showBow; bow.visible = showBow;
   const set = (px, py, pz, rx, ry, rz) => { kg.position.set(px, py, pz); kg.rotation.set(rx, ry, rz); };
-  const R = rest;
-  if (E.vmClip === "strike") {
-    const t = Math.min(1, E.vmT / 0.28);
-    const s = Math.sin(t * Math.PI);
-    set(R.pos.x - s * 0.5, R.pos.y + s * 0.34, R.pos.z + s * 0.3, R.rot.x - s * 1.9, R.rot.y - s * 0.6, R.rot.z);
-    if (t >= 1) WARRIOR3D._vm(E, "idle");
-  } else if (E.vmClip === "parry") {
-    const t = Math.min(1, E.vmT / 0.24); const s = Math.sin(t * Math.PI);
-    set(R.pos.x - s * 0.18, R.pos.y + s * 0.16, R.pos.z + s * 0.08, R.rot.x - s * 0.5, R.rot.y + s * 0.9, R.rot.z + s * 0.7);
+
+  if (showBow) {
+    if (E.vmClip === "aim") { V.bowString.position.z = THREE.MathUtils.lerp(V.bowString.position.z, 0.16, dt * 10); }
+    else { const t = Math.min(1, E.vmT / 0.2); V.bowString.position.z = THREE.MathUtils.lerp(0.16, 0, t); if (t >= 1) WARRIOR3D._vm(E, E.aiming ? "aim" : "idle"); }
+    return;
+  }
+  const sw = WARRIOR3D.SWING[E.vmClip];
+  if (sw) {
+    const t = Math.min(1, E.vmT / sw.dur), s = Math.sin(t * Math.PI);
+    set(R.pos.x + sw.dp[0] * s, R.pos.y + sw.dp[1] * s, R.pos.z + sw.dp[2] * s, R.rot.x + sw.dr[0] * s, R.rot.y + sw.dr[1] * s, R.rot.z + sw.dr[2] * s);
     if (t >= 1) WARRIOR3D._vm(E, E.blocking ? "block" : "idle");
   } else if (E.vmClip === "block") {
-    set(R.pos.x - 0.18, R.pos.y + 0.2, R.pos.z + 0.12, R.rot.x - 0.2, R.rot.y + 1.2, -0.5);
+    set(R.pos.x - 0.2, R.pos.y + 0.24, R.pos.z + 0.14, R.rot.x - 0.2, R.rot.y + 1.25, -0.5);
   } else if (E.vmClip === "dodge") {
-    const t = Math.min(1, E.vmT / 0.42); const s = Math.sin(t * Math.PI);
-    set(R.pos.x, R.pos.y - s * 0.12, R.pos.z + s * 0.05, R.rot.x + s * 0.2, R.rot.y, R.rot.z);
+    const t = Math.min(1, E.vmT / 0.42), s = Math.sin(t * Math.PI);
+    set(R.pos.x, R.pos.y - s * 0.14, R.pos.z + s * 0.05, R.rot.x + s * 0.2, R.rot.y, R.rot.z);
     if (t >= 1) WARRIOR3D._vm(E, E.blocking ? "block" : "idle");
-  } else { // idle
+  } else {
     set(R.pos.x + sway, R.pos.y + bob, R.pos.z, R.rot.x, R.rot.y, R.rot.z);
   }
 };
 
 WARRIOR3D._updateCamera = function (E, dt) {
   const cam = E.camera, f = E.foe;
-  // base yaw faces the current foe (lock-on) so combat stays framed
   let baseYaw = 0;
-  if (f && f.mesh) baseYaw = Math.atan2(f.mesh.position.x - cam.position.x, -(f.mesh.position.z - cam.position.z)) * -1;
-  // ease look offsets back toward 0
+  if (f && f.mesh) baseYaw = -Math.atan2(f.mesh.position.x - cam.position.x, -(f.mesh.position.z - cam.position.z));
   E.yaw += (E.yawTarget - E.yaw) * Math.min(1, dt * 10);
   E.pitch += (E.pitchTarget - E.pitch) * Math.min(1, dt * 10);
-  E.yawTarget *= (1 - Math.min(1, dt * 1.5));
-  E.pitchTarget *= (1 - Math.min(1, dt * 1.5));
-  // dodge strafe
+  E.yawTarget *= (1 - Math.min(1, dt * 1.5)); E.pitchTarget *= (1 - Math.min(1, dt * 1.5));
   let strafe = 0, dip = 0;
   if (E.dodgeT > 0) { E.dodgeT = Math.max(0, E.dodgeT - dt); const s = Math.sin((0.42 - E.dodgeT) / 0.42 * Math.PI); strafe = (E.dodgeDir || 1) * s * 0.7; dip = -s * 0.12; }
-  // shake
   let sh = 0; if (E.shake > 0) { E.shake = Math.max(0, E.shake - dt * 2.2); sh = E.shake; }
+  E.fov += (E.fovTarget - E.fov) * Math.min(1, dt * 8); cam.fov = E.fov; cam.updateProjectionMatrix();
   cam.rotation.set(E.pitch + (Math.random() - 0.5) * sh * 0.04, baseYaw + E.yaw + (Math.random() - 0.5) * sh * 0.04, 0, "YXZ");
-  cam.position.x = strafe; cam.position.y = 1.65 + dip;
+  cam.position.x = strafe; cam.position.y = 1.66 + dip;
 };
 
 /* ================================================================== *
- *  PARTICLES
+ *  PARTICLES + ARROWS
  * ================================================================== */
-WARRIOR3D._foePoint = function (E, f, up) {
-  const p = f.mesh.position.clone(); p.y = up == null ? 1.2 : up; return p;
-};
-WARRIOR3D._spawnSpark = function (E, f) {
-  const p = WARRIOR3D._foePoint(E, f, 1.3);
-  for (let i = 0; i < 10; i++) WARRIOR3D._particle(E, p, 0xffe08a, 4 + Math.random() * 4, 0.35);
-};
-WARRIOR3D._spawnBlood = function (E, f) {
-  const p = WARRIOR3D._foePoint(E, f, 1.25);
-  for (let i = 0; i < 8; i++) WARRIOR3D._particle(E, p, 0x9a1f14, 2.5 + Math.random() * 3, 0.5);
-};
+WARRIOR3D._foePoint = function (E, f, up) { const p = f.mesh.position.clone(); p.y = up == null ? 1.2 : up; return p; };
+WARRIOR3D._spawnSpark = function (E, f) { const p = WARRIOR3D._foePoint(E, f, 1.4); for (let i = 0; i < 12; i++) WARRIOR3D._particle(E, p, 0xffe08a, 4 + Math.random() * 4, 0.35); };
+WARRIOR3D._spawnBlood = function (E, f) { const p = WARRIOR3D._foePoint(E, f, 1.3); for (let i = 0; i < 9; i++) WARRIOR3D._particle(E, p, 0x9a1f14, 2.5 + Math.random() * 3, 0.5); };
 WARRIOR3D._particle = function (E, pos, color, speed, life) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({ color }));
-  m.position.copy(pos);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({ color })); m.position.copy(pos);
   const dir = new THREE.Vector3((Math.random() - 0.5), Math.random() * 0.9 + 0.2, (Math.random() - 0.5) - 0.3).normalize();
-  E.scene.add(m);
-  E.particles.push({ m, v: dir.multiplyScalar(speed), life, age: 0 });
+  E.scene.add(m); E.particles.push({ m, v: dir.multiplyScalar(speed), life, age: 0 });
 };
 WARRIOR3D._updateParticles = function (E, dt) {
-  for (let i = E.particles.length - 1; i >= 0; i--) {
-    const p = E.particles[i]; p.age += dt;
-    p.v.y -= dt * 9.8; p.m.position.addScaledVector(p.v, dt);
-    if (p.m.position.y < 0.02 || p.age > p.life) { E.scene.remove(p.m); if (p.m.geometry) p.m.geometry.dispose(); if (p.m.material) p.m.material.dispose(); E.particles.splice(i, 1); }
+  for (let i = E.particles.length - 1; i >= 0; i--) { const p = E.particles[i]; p.age += dt; p.v.y -= dt * 9.8; p.m.position.addScaledVector(p.v, dt);
+    if (p.m.position.y < 0.02 || p.age > p.life) { E.scene.remove(p.m); if (p.m.geometry) p.m.geometry.dispose(); if (p.m.material) p.m.material.dispose(); E.particles.splice(i, 1); } }
+};
+WARRIOR3D._updateArrows = function (E, dt) {
+  for (let i = E.arrows.length - 1; i >= 0; i--) { const a = E.arrows[i]; a.life += dt; a.m.position.addScaledVector(a.v, dt);
+    const f = E.foe; let hit = false;
+    if (f && !f.dead) { const d = Math.hypot(a.m.position.x - f.mesh.position.x, a.m.position.z - f.mesh.position.z); if (d < 0.7 && a.m.position.y > 0.4 && a.m.position.y < 2) hit = true; }
+    if (hit) { WARRIOR3D._damageFoe(E, a.dmg, false); if (!f.dead) WARRIOR3D._prompt(E, `🏹 Your arrow strikes — <b>−${a.dmg}</b>.`, "good"); }
+    if (hit || a.life > 1.4 || a.m.position.y < 0.02) { E.scene.remove(a.m); if (a.m.geometry) a.m.geometry.dispose(); if (a.m.material) a.m.material.dispose(); E.arrows.splice(i, 1); }
   }
 };
 
 /* ================================================================== *
- *  HUD / PROMPTS / CONTROLS
+ *  HUD / CONTROLS
  * ================================================================== */
 WARRIOR3D._updateHud = function (E, kiOnly) {
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.style.width = Math.max(0, v) + "%"; };
-  set("w3-ki", E.ki / E.kiMax * 100);
-  if (kiOnly) return;
-  set("w3-hp", E.php / E.phpMax * 100);
-  if (E.foe) set("w3-foehp", E.foe.hp / E.foe.hpMax * 100);
+  set("w3-ki", E.ki / E.kiMax * 100); if (kiOnly) return;
+  set("w3-hp", E.php / E.phpMax * 100); if (E.foe) set("w3-foehp", E.foe.hp / E.foe.hpMax * 100);
 };
-WARRIOR3D._prompt = function (E, html, cls) {
-  const el = document.getElementById("w3-prompt"); if (el) { el.innerHTML = html; el.className = "w3-prompt " + (cls || ""); }
-};
+WARRIOR3D._prompt = function (E, html, cls) { const el = document.getElementById("w3-prompt"); if (el) { el.innerHTML = html; el.className = "w3-prompt " + (cls || ""); } };
 
 WARRIOR3D._bindControls = function (E) {
   const cv = E.renderer.domElement;
   const down = (x, y, id) => { E.dragId = id; E.lastX = x; E.lastY = y; };
-  const move = (x, y) => {
-    if (E.dragId == null) return;
+  const move = (x, y) => { if (E.dragId == null) return;
     E.yawTarget = THREE.MathUtils.clamp(E.yawTarget + (x - E.lastX) * -0.005, -0.7, 0.7);
-    E.pitchTarget = THREE.MathUtils.clamp(E.pitchTarget + (y - E.lastY) * -0.004, -0.4, 0.4);
-    E.lastX = x; E.lastY = y;
-  };
+    E.pitchTarget = THREE.MathUtils.clamp(E.pitchTarget + (y - E.lastY) * -0.004, -0.4, 0.4); E.lastX = x; E.lastY = y; };
   const up = () => { E.dragId = null; };
   cv.addEventListener("mousedown", e => down(e.clientX, e.clientY, "m"));
   window.addEventListener("mousemove", e => move(e.clientX, e.clientY));
@@ -5728,42 +5874,32 @@ WARRIOR3D._bindControls = function (E) {
   cv.addEventListener("touchmove", e => { const t = e.changedTouches[0]; move(t.clientX, t.clientY); }, { passive: true });
   cv.addEventListener("touchend", up, { passive: true });
 
-  const bind = (id, action, holdable) => {
-    const b = document.getElementById(id); if (!b) return;
+  document.querySelectorAll("#warrior-screen .w3-b").forEach(b => {
+    const action = b.dataset.a, hold = b.dataset.hold;
     const press = (e) => { e.preventDefault(); WARRIOR3D._input(action); };
     b.addEventListener("touchstart", press, { passive: false });
     b.addEventListener("mousedown", press);
-    if (holdable) {
-      const rel = () => WARRIOR3D._release(action);
-      b.addEventListener("touchend", rel); b.addEventListener("mouseup", rel); b.addEventListener("mouseleave", rel);
-    }
-  };
-  bind("w3-strike", "strike"); bind("w3-parry", "parry"); bind("w3-block", "block", true); bind("w3-dodge", "dodge");
+    if (hold) { const rel = () => WARRIOR3D._release(action); b.addEventListener("touchend", rel); b.addEventListener("mouseup", rel); b.addEventListener("mouseleave", rel); }
+  });
 
-  // keyboard (desktop testing)
-  E._key = (e) => {
-    if (e.key === "j" || e.key === "J") WARRIOR3D._input("strike");
-    else if (e.key === "k" || e.key === "K") WARRIOR3D._input("parry");
-    else if (e.key === "l" || e.key === "L") WARRIOR3D._input("block");
-    else if (e.key === " ") { e.preventDefault(); WARRIOR3D._input("dodge"); }
-  };
-  E._keyUp = (e) => { if (e.key === "l" || e.key === "L") WARRIOR3D._release("block"); };
-  window.addEventListener("keydown", E._key);
-  window.addEventListener("keyup", E._keyUp);
+  const KEY = { arrowup: "cut_up", w: "cut_up", arrowdown: "cut_down", s: "cut_down", arrowleft: "cut_left", a: "cut_left", arrowright: "cut_right", d: "cut_right", e: "stab", j: "parry", " ": "dodge", f: "shoot" };
+  const HOLD = { l: "block", shift: "block", q: "aim" };
+  E._key = (e) => { const k = e.key.toLowerCase();
+    if (HOLD[k]) { e.preventDefault(); if (!E["_h" + k]) { E["_h" + k] = 1; WARRIOR3D._input(HOLD[k]); } return; }
+    if (KEY[k]) { e.preventDefault(); WARRIOR3D._input(KEY[k]); } };
+  E._keyUp = (e) => { const k = e.key.toLowerCase(); if (HOLD[k]) { E["_h" + k] = 0; WARRIOR3D._release(HOLD[k]); } };
+  window.addEventListener("keydown", E._key); window.addEventListener("keyup", E._keyUp);
 };
 
 WARRIOR3D._end = function (E, won) {
   if (E.ended) return; E.ended = true;
-  window.removeEventListener("keydown", E._key);
-  window.removeEventListener("keyup", E._keyUp);
-  const cb = won ? E.onWin : E.onLose;
-  const hp = Math.max(1, Math.round(E.php));
+  window.removeEventListener("keydown", E._key); window.removeEventListener("keyup", E._keyUp);
+  const cb = won ? E.onWin : E.onLose; const hp = Math.max(1, Math.round(E.php));
   WARRIOR3D._prompt(E, won ? "🏆 <b>Victory.</b>" : "🩸 <b>You are cut down.</b>", won ? "good" : "warn");
-  const ctr = document.querySelector(".w3-controls");
-  if (ctr) ctr.innerHTML = `<button class="w3-btn cont" id="w3-cont">Continue →</button>`;
-  const b = document.getElementById("w3-cont");
-  if (b) b.onclick = () => { WARRIOR3D.stop(); if (cb) cb({ hp, ki: E.ki }); };
-  // let the death anim finish rendering a moment, then it's on the button
+  const ctr = document.querySelector("#warrior-screen .w3-controls");
+  if (ctr) ctr.innerHTML = `<button class="w3-b cont" id="w3-cont">Continue →</button>`;
+  const rt = document.getElementById("w3-reticle"); if (rt) rt.classList.remove("on");
+  const b = document.getElementById("w3-cont"); if (b) b.onclick = () => { WARRIOR3D.stop(); if (cb) cb({ hp, ki: E.ki }); };
 };
 
 if (typeof module !== "undefined") module.exports = WARRIOR3D;
