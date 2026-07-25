@@ -640,6 +640,13 @@ button{touch-action:manipulation}
 .w3-b.cont{min-width:260px;min-height:54px;font-size:17px;margin:0 auto;background:linear-gradient(var(--vermilion),var(--vermilion2));
   border-color:#6e1610;font-family:var(--font-h);letter-spacing:2px}
 .w3-hint{position:absolute;left:0;right:0;bottom:2px;text-align:center;font-size:10px;color:rgba(240,230,200,.5);pointer-events:none;padding:0 8px}
+/* movement stick (appears where you press to move) */
+.w3-joy{position:absolute;width:0;height:0;pointer-events:none;opacity:0;transition:opacity .12s;z-index:2}
+.w3-joy.on{opacity:1}
+.w3-joy-base{position:absolute;left:50%;top:50%;width:112px;height:112px;transform:translate(-50%,-50%);border-radius:50%;
+  border:2px solid rgba(255,240,210,.35);background:radial-gradient(circle,rgba(0,0,0,.28),rgba(0,0,0,.12))}
+.w3-joy-knob{position:absolute;left:50%;top:50%;width:46px;height:46px;transform:translate(-50%,-50%);border-radius:50%;
+  background:rgba(240,225,190,.55);border:2px solid rgba(255,255,255,.5);box-shadow:0 2px 8px rgba(0,0,0,.4)}
 
 /* ===================== 2D fallback combat (no WebGL) ===================== */
 .wr-combat{max-width:640px;margin:0 auto;padding:16px 16px 40px}

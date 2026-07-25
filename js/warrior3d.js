@@ -72,6 +72,7 @@ WARRIOR3D.startFight = function (opts) {
         </div>
         <div class="w3-prompt" id="w3-prompt">${opts.intro || "Face your enemy."}</div>
         <div class="w3-flash" id="w3-flash"></div>
+        <div class="w3-joy" id="w3-joy"><span class="w3-joy-base"></span><span class="w3-joy-knob"></span></div>
         <div class="w3-controls">
           <div class="w3-cluster left">
             <button class="w3-b parry" data-a="parry">⚔️<i>Parry</i></button>
@@ -88,7 +89,7 @@ WARRIOR3D.startFight = function (opts) {
             <button class="w3-b down" data-a="cut_down" title="Rising cut">⤓</button>
           </div>
         </div>
-        <div class="w3-hint">Keys — cuts: ↑↓←→/WASD · Stab E · Parry J · Block L · Dodge Space · Aim Q · Shoot F</div>
+        <div class="w3-hint">Move WASD / left-drag · Cuts ↑↓←→ · Stab E · Parry J · Block L · Dodge Space · Aim Q · Shoot F</div>
       </div>
     </div>`;
 
@@ -142,7 +143,8 @@ WARRIOR3D.startFight = function (opts) {
     atk: opts.player.atk || 6, guard: opts.player.guard || 4,
     queue: (opts.enemies || []).slice(), foe: null, foeIdx: 0, total: (opts.enemies || []).length,
     onWin: opts.onWin, onLose: opts.onLose,
-    yaw: 0, pitch: 0, yawTarget: 0, pitchTarget: 0, dragId: null, lastX: 0, lastY: 0,
+    yaw: 0, pitch: 0, yawTarget: 0, pitchTarget: 0,
+    px: 0, pz: 0, km: {}, joy: { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 },
     vmClip: "idle", vmT: 0, blocking: false, aiming: false, dodgeT: 0, dodgeDir: 1, shake: 0, hitFlash: 0,
     fov: 72, fovTarget: 72, combo: 0, ended: false, particles: [], arrows: [],
   };
@@ -573,6 +575,9 @@ WARRIOR3D._updateFoe = function (E, dt) {
   const dist = Math.hypot(m.position.x - E.camera.position.x, m.position.z - E.camera.position.z);
   const recoil = f.hitReact * 0.25;
 
+  // give chase if the player has moved out of reach
+  if ((f.state === "ready" || f.state === "recover") && dist > 3.3) { f.state = "approach"; f.stateT = 0; }
+
   if (f.state === "approach") {
     f.walkPhase += dt * 7;
     if (dist > 2.5) { const dx = E.camera.position.x - m.position.x, dz = E.camera.position.z - m.position.z; const len = Math.hypot(dx, dz) || 1;
@@ -651,16 +656,34 @@ WARRIOR3D._updateViewmodel = function (E, dt) {
 WARRIOR3D._updateCamera = function (E, dt) {
   const cam = E.camera, f = E.foe;
   let baseYaw = 0;
-  if (f && f.mesh) baseYaw = -Math.atan2(f.mesh.position.x - cam.position.x, -(f.mesh.position.z - cam.position.z));
+  if (f && f.mesh) baseYaw = -Math.atan2(f.mesh.position.x - E.px, -(f.mesh.position.z - E.pz));
   E.yaw += (E.yawTarget - E.yaw) * Math.min(1, dt * 10);
   E.pitch += (E.pitchTarget - E.pitch) * Math.min(1, dt * 10);
   E.yawTarget *= (1 - Math.min(1, dt * 1.5)); E.pitchTarget *= (1 - Math.min(1, dt * 1.5));
+  const camYaw = baseYaw + E.yaw;
+
+  // movement (WASD or left-stick), relative to facing
+  let mx = (E.km.d ? 1 : 0) - (E.km.a ? 1 : 0), my = (E.km.w ? 1 : 0) - (E.km.s ? 1 : 0);
+  if (E.joy.active) { mx = E.joy.x; my = E.joy.y; }
+  const ml = Math.hypot(mx, my); if (ml > 1) { mx /= ml; my /= ml; }
+  if (mx || my) {
+    const spd = 3.5;
+    const fwdX = -Math.sin(camYaw), fwdZ = -Math.cos(camYaw), rgtX = Math.cos(camYaw), rgtZ = -Math.sin(camYaw);
+    E.px += (rgtX * mx + fwdX * my) * spd * dt; E.pz += (rgtZ * mx + fwdZ * my) * spd * dt;
+    const r = Math.hypot(E.px, E.pz); if (r > 12) { E.px *= 12 / r; E.pz *= 12 / r; }   // stay on the flat arena
+  }
+  // don't walk through the foe
+  if (f && f.mesh && !f.dead) { const dx = E.px - f.mesh.position.x, dz = E.pz - f.mesh.position.z; const d = Math.hypot(dx, dz) || 1;
+    if (d < 1.5) { E.px = f.mesh.position.x + dx / d * 1.5; E.pz = f.mesh.position.z + dz / d * 1.5; } }
+
   let strafe = 0, dip = 0;
   if (E.dodgeT > 0) { E.dodgeT = Math.max(0, E.dodgeT - dt); const s = Math.sin((0.42 - E.dodgeT) / 0.42 * Math.PI); strafe = (E.dodgeDir || 1) * s * 0.7; dip = -s * 0.12; }
   let sh = 0; if (E.shake > 0) { E.shake = Math.max(0, E.shake - dt * 2.2); sh = E.shake; }
   E.fov += (E.fovTarget - E.fov) * Math.min(1, dt * 8); cam.fov = E.fov; cam.updateProjectionMatrix();
-  cam.rotation.set(E.pitch + (Math.random() - 0.5) * sh * 0.04, baseYaw + E.yaw + (Math.random() - 0.5) * sh * 0.04, 0, "YXZ");
-  cam.position.x = strafe; cam.position.y = 1.66 + dip;
+  cam.rotation.set(E.pitch + (Math.random() - 0.5) * sh * 0.04, camYaw + (Math.random() - 0.5) * sh * 0.04, 0, "YXZ");
+  // dodge strafe is relative to facing
+  const rgtX = Math.cos(camYaw), rgtZ = -Math.sin(camYaw);
+  cam.position.set(E.px + rgtX * strafe, 1.66 + dip, E.pz + rgtZ * strafe);
 };
 
 /* ================================================================== *
@@ -699,32 +722,37 @@ WARRIOR3D._prompt = function (E, html, cls) { const el = document.getElementById
 
 WARRIOR3D._bindControls = function (E) {
   const cv = E.renderer.domElement;
-  const down = (x, y, id) => { E.dragId = id; E.lastX = x; E.lastY = y; };
-  const move = (x, y) => { if (E.dragId == null) return;
-    E.yawTarget = THREE.MathUtils.clamp(E.yawTarget + (x - E.lastX) * -0.005, -0.7, 0.7);
-    E.pitchTarget = THREE.MathUtils.clamp(E.pitchTarget + (y - E.lastY) * -0.004, -0.4, 0.4); E.lastX = x; E.lastY = y; };
-  const up = () => { E.dragId = null; };
-  cv.addEventListener("mousedown", e => down(e.clientX, e.clientY, "m"));
-  window.addEventListener("mousemove", e => move(e.clientX, e.clientY));
-  window.addEventListener("mouseup", up);
-  cv.addEventListener("touchstart", e => { const t = e.changedTouches[0]; down(t.clientX, t.clientY, t.identifier); }, { passive: true });
-  cv.addEventListener("touchmove", e => { const t = e.changedTouches[0]; move(t.clientX, t.clientY); }, { passive: true });
-  cv.addEventListener("touchend", up, { passive: true });
+  const joyEl = document.getElementById("w3-joy"), knob = joyEl && joyEl.querySelector(".w3-joy-knob");
+  const R = 56;
+  const jStart = (x, y, id) => { E.joy.active = true; E.joy.id = id; E.joy.ox = x; E.joy.oy = y; E.joy.x = 0; E.joy.y = 0;
+    if (joyEl) { joyEl.style.left = x + "px"; joyEl.style.top = y + "px"; joyEl.classList.add("on"); if (knob) knob.style.transform = "translate(-50%,-50%)"; } };
+  const jMove = (x, y) => { if (!E.joy.active) return; let dx = x - E.joy.ox, dy = y - E.joy.oy;
+    const d = Math.hypot(dx, dy); if (d > R) { dx *= R / d; dy *= R / d; }
+    E.joy.x = dx / R; E.joy.y = -dy / R; if (knob) knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
+  const jEnd = () => { E.joy.active = false; E.joy.x = 0; E.joy.y = 0; if (joyEl) joyEl.classList.remove("on"); };
+  cv.addEventListener("mousedown", e => jStart(e.clientX, e.clientY, "m"));
+  window.addEventListener("mousemove", e => jMove(e.clientX, e.clientY));
+  window.addEventListener("mouseup", jEnd);
+  cv.addEventListener("touchstart", e => { const t = e.changedTouches[0]; jStart(t.clientX, t.clientY, t.identifier); }, { passive: true });
+  cv.addEventListener("touchmove", e => { for (const t of e.changedTouches) if (t.identifier === E.joy.id) jMove(t.clientX, t.clientY); }, { passive: true });
+  cv.addEventListener("touchend", e => { for (const t of e.changedTouches) if (t.identifier === E.joy.id) jEnd(); }, { passive: true });
 
   document.querySelectorAll("#warrior-screen .w3-b").forEach(b => {
     const action = b.dataset.a, hold = b.dataset.hold;
-    const press = (e) => { e.preventDefault(); WARRIOR3D._input(action); };
+    const press = (e) => { e.preventDefault(); e.stopPropagation(); WARRIOR3D._input(action); };
     b.addEventListener("touchstart", press, { passive: false });
     b.addEventListener("mousedown", press);
     if (hold) { const rel = () => WARRIOR3D._release(action); b.addEventListener("touchend", rel); b.addEventListener("mouseup", rel); b.addEventListener("mouseleave", rel); }
   });
 
-  const KEY = { arrowup: "cut_up", w: "cut_up", arrowdown: "cut_down", s: "cut_down", arrowleft: "cut_left", a: "cut_left", arrowright: "cut_right", d: "cut_right", e: "stab", j: "parry", " ": "dodge", f: "shoot" };
+  const KEY = { arrowup: "cut_up", arrowdown: "cut_down", arrowleft: "cut_left", arrowright: "cut_right", e: "stab", j: "parry", " ": "dodge", f: "shoot" };
   const HOLD = { l: "block", shift: "block", q: "aim" };
+  const MOVE = { w: "w", a: "a", s: "s", d: "d" };
   E._key = (e) => { const k = e.key.toLowerCase();
+    if (MOVE[k]) { E.km[k] = 1; e.preventDefault(); return; }
     if (HOLD[k]) { e.preventDefault(); if (!E["_h" + k]) { E["_h" + k] = 1; WARRIOR3D._input(HOLD[k]); } return; }
     if (KEY[k]) { e.preventDefault(); WARRIOR3D._input(KEY[k]); } };
-  E._keyUp = (e) => { const k = e.key.toLowerCase(); if (HOLD[k]) { E["_h" + k] = 0; WARRIOR3D._release(HOLD[k]); } };
+  E._keyUp = (e) => { const k = e.key.toLowerCase(); if (MOVE[k]) E.km[k] = 0; if (HOLD[k]) { E["_h" + k] = 0; WARRIOR3D._release(HOLD[k]); } };
   window.addEventListener("keydown", E._key); window.addEventListener("keyup", E._keyUp);
 };
 
