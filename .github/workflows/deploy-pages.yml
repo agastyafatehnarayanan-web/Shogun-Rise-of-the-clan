@@ -43,10 +43,15 @@ jobs:
       - name: Rebuild the single-file bundle
         run: node build.js
 
-      - name: Cache-bust asset URLs with the commit id
+      - name: Cache-bust asset URLs and stamp the build id
         # Stamp index.html's ?v=… on css/js with this commit's short SHA so
-        # returning visitors always fetch the freshly deployed files.
-        run: sed -i "s/?v=[0-9A-Za-z]*/?v=${GITHUB_SHA:0:8}/g" index.html
+        # returning visitors always fetch the freshly deployed files, and
+        # replace the visible "build __BUILD__" marker so the player can see
+        # at a glance which version they're actually running.
+        run: |
+          BUILD="${GITHUB_SHA:0:7}"
+          sed -i "s/?v=[0-9A-Za-z]*/?v=${BUILD}/g" index.html
+          sed -i "s/__BUILD__/${BUILD}/g" index.html dist/shogun.html dist/artifact.html || true
 
       - name: Configure Pages
         # Pages is enabled on the repo (Settings → Pages → Source: GitHub Actions),
