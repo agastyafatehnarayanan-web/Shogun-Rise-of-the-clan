@@ -61,12 +61,28 @@
         <button id="online-btn" class="ghost">Play Online</button>
         <button id="help-btn" class="ghost">How to Play</button>
       </div>
+
+      <div class="mode-extra">
+        <button id="phone-btn" class="mode-tile phone-tile">
+          <span class="mt-icon">📱</span>
+          <span class="mt-text"><span class="mt-title">Phone Version</span>
+          <span class="mt-sub">The full strategy game, reshaped to play on a phone. Tap to turn the phone layout on.</span></span>
+        </button>
+        <button id="warrior-btn" class="mode-tile warrior">
+          <span class="mt-icon">🗡️</span>
+          <span class="mt-text"><span class="mt-title">Way of the Warrior</span>
+          <span class="mt-sub">NEW · 3D first-person story mode — live one warrior's life in the age of war, and fight every battle yourself.</span></span>
+        </button>
+      </div>
     </div>
     <p class="credit">A playable digital adaptation of the tabletop rulebook “Shōgun: Rise of the Clans — Master Edition v3.2”.</p>
     <p class="credit build-stamp">build __BUILD__</p>
     <p class="copyright">COPYRIGHT: © Agastya Fateh Narayanan 22 July 2026. All content available on this website is meticulously curated and is subject to stringent data protection laws and Copyright regulations. Unauthorized use, reproduction, or distribution of any content from this site without proper permission from Agastya Fateh Narayanan and any owners of any videos or pictures is strictly prohibited.</p>
   </div>
 </div>
+
+<!-- ======================= WAY OF THE WARRIOR (story mode) ======================= -->
+<div id="warrior-screen" class="screen"></div>
 
 <!-- ======================= GAME SCREEN ======================= -->
 <div id="game-screen" class="screen">
@@ -113,6 +129,7 @@
   <footer id="bottombar">
     <div id="hint">Select a province to begin.</div>
     <div class="bb-actions">
+      <button id="phone-toggle" class="ghost" title="Phone layout on/off">📱</button>
       <button id="mute-btn" class="ghost" title="Sound on/off">🔊</button>
       <button id="help2-btn" class="ghost" title="How to play">?</button>
       <button id="copyright-btn" class="ghost" title="Copyright & terms">©</button>
@@ -143,6 +160,10 @@
 <script src="js/ai.js?v=2"></script>
 <script src="js/modeb.js?v=2"></script>
 <script src="js/ui.js?v=2"></script>
+<script src="js/vendor/three.min.js?v=2"></script>
+<script src="js/warrior3d.js?v=2"></script>
+<script src="js/warrior.js?v=2"></script>
+<script src="js/mobile.js?v=2"></script>
 <script src="js/audio.js?v=2"></script>
 <script src="js/tutorial.js?v=2"></script>
 <script src="js/net.js?v=2"></script>
