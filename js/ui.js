@@ -960,6 +960,13 @@ UI.runBattle = function (report, onDone) {
           narr.push({ cls: "dice", text: meFeinted ? "  ↩ you feign retreat — fall back and set the trap for next round." : "  ↩ they feign retreat, giving ground on purpose." }); }
         if (x.decidedByDice && !x.feinted) narr.push({ cls: youWon ? "dice good" : "dice bad",
           text: youWon ? "  🎲 the dice won you this flank — the stronger line would have lost!" : "  🎲 the dice cost you this flank." });
+        // ranged volleys — gunmen & archers do visible work
+        const yg = humanSide === "att" ? x.guns.att : x.guns.def, ya = humanSide === "att" ? x.arch.att : x.arch.def;
+        const fg = humanSide === "att" ? x.guns.def : x.guns.att, fa = humanSide === "att" ? x.arch.def : x.arch.att;
+        if (yg) narr.push({ cls: "good", text: `  🔫 your Teppō volley crashes into the ${x.name} — gunsmoke, and their nerve reels.` });
+        else if (ya) narr.push({ cls: "good", text: `  🏹 your archers rain arrows across the ${x.name}.` });
+        if (fg) narr.push({ cls: "bad", text: `  🔫 their Teppō volley tears into your ${x.name} — men fall, nerves shake.` });
+        else if (fa) narr.push({ cls: "bad", text: `  🏹 their archers loose a hail of arrows on your ${x.name}.` });
       });
       rolling = false; order = null; stance = { L: "line", C: "line", R: "line" }; phase = "shown";
       render();

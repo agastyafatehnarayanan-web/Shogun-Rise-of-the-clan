@@ -295,6 +295,7 @@ SR.resolveRound = function (B, dice) {
     const decidedByDice = flip || a.ss === d.ss;  // roll broke a tie or flipped the result
     const loserSteady = (loseSide === "att" ? a.steady : d.steady) || 0;   // redoubt
     const loseUnits = SR.secUnits(B, loseSide, sec), winUnits = SR.secUnits(B, winSide, sec);
+    const loseSam = SR.countType(loseUnits, "samurai") > 0 ? 1 : 0;        // samurai steady the ranks
     let loseCas = Math.min(Math.floor(margin / 4), loseUnits.length);
     if (B.deploy[loseSide]["p" + sec] === "Deep") loseCas = Math.max(0, loseCas - 1);
     const winCas = Math.min(Math.floor(margin / 8), 1, Math.max(0, winUnits.length - 1));
@@ -306,33 +307,56 @@ SR.resolveRound = function (B, dice) {
     if (margin > 0) B.morale[loseSide] -= mLoss;
     B.fatigue.att[sec]++; B.fatigue.def[sec]++;
 
-    // ---- 1066 Nerve: the losing flank's nerve is shaken; break it and it routs ----
+    // ---- 1066 Nerve: the losing flank's nerve is shaken ----
     const loseStance = B.stance[loseSide][sec], winStance = B.stance[winSide][sec];
     let nLoss = Math.min(margin, 6);
     if (loseStance === "shieldwall") nLoss = Math.max(0, nLoss - 2);   // the wall holds firm
-    nLoss = Math.max(0, nLoss - loserSteady);
+    nLoss = Math.max(0, nLoss - loserSteady - loseSam);               // samurai + redoubt steady it
     let feinted = false;
-    if (loseStance === "feign") { nLoss = Math.min(nLoss, 1); pendingFeigns.push({ side: loseSide, sec }); feinted = true; }  // give ground by design, spring next round
+    if (loseStance === "feign") { nLoss = Math.min(nLoss, 1); pendingFeigns.push({ side: loseSide, sec }); feinted = true; }  // give ground by design
     if (margin > 0) B.nerve[loseSide][sec] = Math.max(0, B.nerve[loseSide][sec] - nLoss);
     if (winStance === "charge") B.nerve[winSide][sec] = Math.max(0, B.nerve[winSide][sec] - 1);  // charging is exhausting
     if (loseStance === "charge") B.nerve[loseSide][sec] = Math.max(0, B.nerve[loseSide][sec] - 1);
 
-    let flankRout = false;
-    if (B.nerve[loseSide][sec] <= 0 && SR.secUnits(B, loseSide, sec).length) {
-      flankRout = true; B.flankRouted[loseSide][sec] = true;
-      SR.removeSecCas(B, loseSide, sec, SR.secUnits(B, loseSide, sec).length);  // the flank flees the field
-      B.morale[loseSide] -= 4;
-    }
+    // ---- ranged volleys: gunmen & archers do real work beyond the melee line ----
+    const volley = (fk) => {
+      const u = SR.secUnits(B, fk, sec);
+      const teppo = (!B.wet && B.round % 2 === 1) ? u.filter(x => x.type === "teppo").length : 0;
+      const arch = u.filter(x => x.type === "archers").length;
+      let n = teppo * 2 + Math.floor(arch / 2);
+      if (teppo && B.side[fk].trait === "Teppō") n += 1;              // the gun clan reloads faster
+      return { n, teppo, arch };
+    };
+    const vol = { att: volley("att"), def: volley("def") };
+    ["att", "def"].forEach(fk => {
+      const foe = fk === "att" ? "def" : "att";
+      if (vol[fk].n) B.nerve[foe][sec] = Math.max(0, B.nerve[foe][sec] - vol[fk].n);   // fire shakes their nerve
+      if (vol[fk].teppo >= 2 && SR.secUnits(B, foe, sec).length && SR.chance(0.5)) SR.removeSecCas(B, foe, sec, 1);  // a heavy volley fells a man
+    });
+
+    // ---- flank rout: a flank whose Nerve breaks flees; cavalry pursue the runners ----
+    let flankRout = false, routedSide = null;
+    ["att", "def"].forEach(fk => {
+      const foe = fk === "att" ? "def" : "att";
+      if (!B.flankRouted[fk][sec] && B.nerve[fk][sec] <= 0 && SR.secUnits(B, fk, sec).length) {
+        flankRout = true; routedSide = fk; B.flankRouted[fk][sec] = true;
+        const pursue = SR.countType(SR.secUnits(B, foe, sec), "cavalry") > 0;
+        SR.removeSecCas(B, fk, sec, SR.secUnits(B, fk, sec).length);   // the flank flees the field
+        B.morale[fk] -= 4 + (pursue ? 2 : 0);
+        B.broke[foe] = sec;
+      }
+    });
     const lostFront = SR.secUnits(B, loseSide, sec).length === 0;
     const broke = flankRout || margin >= 8 + loserSteady * 2 || lostFront;
-    if (broke) { if (B.deploy[loseSide]["p" + sec] === "Wide") B.morale[loseSide] -= 2; B.broke[winSide] = sec; }
+    if (broke && !B.broke[winSide] && !flankRout) { if (B.deploy[loseSide]["p" + sec] === "Wide") B.morale[loseSide] -= 2; B.broke[winSide] = sec; }
     results.push({ sector: sec, name: SR.sectorName[sec], attSS: a.ss, defSS: d.ss, attParts: a.parts, defParts: d.parts,
-      dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke, flip, decidedByDice, feinted, flankRout,
+      dieA, dieD, totA, totD, margin, winner: winSide, loseCas, broke, flip, decidedByDice, feinted, flankRout, routedSide,
+      volley: { att: vol.att.n, def: vol.def.n }, guns: { att: vol.att.teppo, def: vol.def.teppo }, arch: { att: vol.att.arch, def: vol.def.arch },
       attStance: B.stance.att[sec], defStance: B.stance.def[sec],
       attNerve: B.nerve.att[sec], defNerve: B.nerve.def[sec], attNerve0: B.nerve0.att[sec], defNerve0: B.nerve0.def[sec],
       text: `${SR.sectorName[sec]}: ${totA} vs ${totD} — ${winSide === "att" ? "you" : "they"}` +
             `${margin === 0 ? " hold, a bloody stand-off" : (feinted ? " give ground — a feigned retreat" : " win by " + margin) + (loseCas ? `, ${loseSide === "att" ? "you lose" : "they lose"} ${loseCas}` : "")}` +
-            `${flankRout ? " — the flank's nerve breaks and it routs!" : (broke ? " — the line breaks!" : "")}.` });
+            `${flankRout ? " — a flank's nerve breaks and it routs!" : (broke ? " — the line breaks!" : "")}.` });
   }
   // feints consumed this round; new ones set for next round's counter
   B.feign = { att: { L: 0, C: 0, R: 0 }, def: { L: 0, C: 0, R: 0 } };
