@@ -12,12 +12,22 @@
 const WARRIOR = {};
 
 WARRIOR.UNITS = {
-  ashigaru: { name: "Ashigaru", jp: "足軽", icon: "⚔️", hp: 34, st: 10, atk: 6, guard: 6, blurb: "A conscript spearman — dogged and tough. You start at the very bottom." },
-  samurai:  { name: "Samurai", jp: "侍", icon: "🗡️", hp: 38, st: 11, atk: 8, guard: 6, blurb: "Blade-born bushi, raised to the sword and the code. Balanced and deadly." },
-  ronin:    { name: "Rōnin", jp: "浪人", icon: "🥷", hp: 30, st: 13, atk: 9, guard: 4, blurb: "Masterless and hungry. Fast and ferocious — but you bruise easily." },
-  archer:   { name: "Yumi", jp: "弓", icon: "🏹", hp: 30, st: 12, atk: 6, guard: 4, blurb: "A bowman's eye. You open fights from range — pray it doesn't get close." },
-  teppo:    { name: "Teppō", jp: "鉄砲", icon: "🔫", hp: 28, st: 10, atk: 10, guard: 4, blurb: "The new fire from the west. Deadly, but you must live long enough to reload." },
-  cavalry:  { name: "Rider", jp: "騎馬", icon: "🐎", hp: 40, st: 11, atk: 8, guard: 5, blurb: "Thunder on hooves — hard to bring down once you're moving." },
+  ashigaru: { name: "Ashigaru", jp: "足軽", icon: "⚔️", hp: 34, st: 10, atk: 6, guard: 6, weapon: "yari",   blurb: "A conscript with a YARI (spear) — long reach lets you strike before the enemy closes. Dogged and tough." },
+  samurai:  { name: "Samurai", jp: "侍", icon: "🗡️", hp: 38, st: 11, atk: 8, guard: 6, weapon: "katana", blurb: "Bushi with the KATANA — balanced reach and power, the all-rounder's blade." },
+  ronin:    { name: "Rōnin", jp: "浪人", icon: "🥷", hp: 30, st: 13, atk: 9, guard: 4, weapon: "fastkatana", blurb: "A fast, aggressive KATANA and no lord to answer to. Hits hard — but you bruise easily." },
+  archer:   { name: "Yumi", jp: "弓", icon: "🏹", hp: 30, st: 12, atk: 6, guard: 4, weapon: "bow",    blurb: "The BOW — a deep quiver and deadly aimed shots. Weak up close, so soften them first." },
+  teppo:    { name: "Teppō", jp: "鉄砲", icon: "🔫", hp: 28, st: 10, atk: 10, guard: 4, weapon: "gunner", blurb: "The MATCHLOCK — a few devastating shots that stagger anything, then draw your blade." },
+  cavalry:  { name: "Rider", jp: "騎馬", icon: "🐎", hp: 40, st: 11, atk: 8, guard: 5, weapon: "naginata", blurb: "The NAGINATA — long, heavy sweeps that hit hardest of all. Slower, but brutal and tough." },
+};
+
+/* per-role weapons — each fights differently (reach, power, ranged option) */
+WARRIOR.WEAPONS = {
+  katana:     { name: "Katana", melee: "katana",   reach: 2.6, atkMult: 1.0,  ranged: "knife", quiver: 3, note: "balanced blade" },
+  fastkatana: { name: "Katana (rōnin)", melee: "katana", reach: 2.5, atkMult: 1.08, ranged: "knife", quiver: 3, note: "quick, aggressive" },
+  yari:       { name: "Yari", melee: "spear",      reach: 3.4, atkMult: 0.9,  ranged: "knife", quiver: 3, note: "long reach — poke before he closes" },
+  naginata:   { name: "Naginata", melee: "naginata", reach: 3.2, atkMult: 1.2, ranged: "knife", quiver: 2, note: "long, heavy sweeps" },
+  bow:        { name: "Yumi", melee: "katana",     reach: 2.3, atkMult: 0.82, ranged: "bow", quiver: 12, rangedMult: 1.35, note: "deep quiver, deadly at range" },
+  gunner:     { name: "Teppō", melee: "katana",    reach: 2.3, atkMult: 0.88, ranged: "gun", gun: 3, gunDmg: 16, quiver: 0, note: "a few devastating shots" },
 };
 
 /* the ladder — the top is DAIMYŌ */
@@ -94,8 +104,9 @@ WARRIOR.begin = function () {
     s.innerHTML = `<div class="wr-stage"><h1 class="wr-h1">3D not available</h1><p class="wr-sub">This mode needs 3D graphics (WebGL), which this browser/device doesn't support. Try a different browser. Your strategy game still works.</p><div style="text-align:center"><button class="wr-begin" style="max-width:260px" onclick="WARRIOR.toTitle()">‹ Back to menu</button></div></div>`;
     return;
   }
+  const weapon = WARRIOR.WEAPONS[u.weapon] || WARRIOR.WEAPONS.katana;
   WARRIOR3D.enter({ theme: "dawn", onExit: () => WARRIOR.toTitle(),
-    player: { maxHp: u.hp, hp: u.hp, maxSt: u.st, atk: u.atk, guard: u.guard, unit: p.unit, food: 80, rest: 80 } });
+    player: { maxHp: u.hp, hp: u.hp, maxSt: u.st, atk: u.atk, guard: u.guard, unit: p.unit, weapon, food: 80, rest: 80 } });
   WARRIOR.runStory().catch(() => {});
 };
 
@@ -104,7 +115,7 @@ WARRIOR.foe = function (key, name) { const f = Object.assign({}, WARRIOR.FOES[ke
 
 WARRIOR.camp = async function (intro) {
   const W = WARRIOR3D;
-  if (W.campfire) W.campfire(true);
+  if (W.campfire && !(WARRIOR3D._e && WARRIOR3D._e.fire)) W.campfire();   // ensure a fire if the marker didn't place one
   if (intro) await W.say(intro, { who: "" });
   while (WARRIOR3D._e) {
     const s = W.stats(); if (!s) break;
@@ -116,7 +127,6 @@ WARRIOR.camp = async function (intro) {
     else if (pick === 3) { await WARRIOR.train(); }
     else break;
   }
-  if (W.campfire) W.campfire(false);
 };
 
 /* spend skill points to upgrade your warrior */
@@ -125,12 +135,12 @@ WARRIOR.train = async function () {
   while (WARRIOR3D._e) {
     const s = W.stats(); if (!s) return;
     if (s.sp <= 0) { await W.say("No skill points to spend yet — win battles and rise in rank to earn them.", { choices: ["‹ Back"] }); return; }
-    const pick = await W.say(`🎖️ <b>Train</b> — ${s.sp} skill point${s.sp > 1 ? "s" : ""} to spend.<br>Attack ${s.atk} · Vitality ${s.maxHp} · Stamina ${s.maxSt} · Guard ${s.guard}.`,
-      { choices: ["🗡️ +1 Attack", "❤️ +4 Vitality", "⚡ +2 Stamina", "🛡️ +1 Guard", "‹ Back"] });
-    if (pick === 0) { W.buff({ atk: 1 }); W.addSp(-1); W.banner("🎖️ Attack up"); }
-    else if (pick === 1) { W.buff({ maxHp: 4 }); W.addSp(-1); W.banner("🎖️ Vitality up"); }
-    else if (pick === 2) { W.buff({ maxSt: 2 }); W.addSp(-1); W.banner("🎖️ Stamina up"); }
-    else if (pick === 3) { W.buff({ guard: 1 }); W.addSp(-1); W.banner("🎖️ Guard up"); }
+    const pick = await W.say(`🎖️ <b>Train</b> — ${s.sp} skill point${s.sp > 1 ? "s" : ""} to spend.<br>Attack <b>${s.atk}</b> (more damage) · Vitality <b>${s.maxHp}</b> · Stamina <b>${s.maxSt}</b> (more moves) · Guard <b>${s.guard}</b> (less damage taken).`,
+      { choices: ["🗡️ +2 Attack — hit harder", "❤️ +7 Vitality — survive more", "⚡ +3 Stamina — act more", "🛡️ +2 Guard — take less", "‹ Back"] });
+    if (pick === 0) { W.buff({ atk: 2 }); W.addSp(-1); W.banner("🎖️ Attack +2 — your blows bite deeper"); }
+    else if (pick === 1) { W.buff({ maxHp: 7 }); W.addSp(-1); W.banner("🎖️ Vitality +7"); }
+    else if (pick === 2) { W.buff({ maxSt: 3 }); W.addSp(-1); W.banner("🎖️ Stamina +3 — more moves before winding"); }
+    else if (pick === 3) { W.buff({ guard: 2 }); W.addSp(-1); W.banner("🎖️ Guard +2 — you weather blows better"); }
     else break;
   }
 };
@@ -166,54 +176,52 @@ WARRIOR.runStory = async function () {
   W.setTheme("dawn");
   await W.say(`Ōmi province, the hour before dawn. You are <b>${esc(you)}</b> — nobody, a levy with a chipped blade. But every daimyō was once someone's footman.`, { big: true });
   await W.say(`<b>Move</b> with WASD or drag the <b>left</b> of the screen. <b>Look</b> by dragging the <b>right</b> (or the mouse). Follow the glowing marker to the muster.`);
-  await W.goto(3, -13, "the muster ground");
+  await W.goto(3, -13, "the muster ground", "muster");
   await W.say(`Sergeant Gorō looks you over. "Another stray with a grudge. Let's see if you can hold a blade — come at me."`, { who: "Sergeant Gorō" });
   await W.say(`<b>How to fight — blend attack &amp; defence.</b> When he strikes, a <b>direction</b> flashes: parry that same way (overhead ↑, low ↓, left ←, right →, thrust E). Parrying <b>cracks his guard</b>. In the gaps between his blows, <b>press your own attacks</b> (the same direction keys/buttons) to batter his guard down — he'll turn a blade or two, so vary your line. When his <b>guard breaks</b>, cut the opening for a heavy blow. Every move costs <b>stamina</b>, and the bow holds only a few arrows — you can't spam your way to victory. Read him.`, { big: true });
   await WARRIOR.battle([WARRIOR.foe("ashigaru", "Sergeant Gorō")], { tutorial: true });
   await W.say(`Gorō spits, and grins. "Huh. You'll do." You are ${clan} now — the lowest rung of it, but yours.`, { who: "Sergeant Gorō" });
   WARRIOR.rankUp(1, "a footman of the " + clan);
 
-  await W.goto(-5, -7, "the campfire");
+  await W.goto(-5, -7, "the campfire", "camp");
   await WARRIOR.camp(`You reach the fire as the host stirs. Your strength won't return on its own — <b>eat, rest, or sleep</b> to recover.`);
 
   // ---------- CH.1 — first blood on the field ----------
   W.setTheme("day");
   await W.say(`Dawn breaks grey over the river. A rival column is fording below, and you are shoved into the front rank. "Hold the line!" the drums roar.`, { big: true });
-  await W.goto(0, -11, "the shield line");
-  W.landmark("shieldwall", 6, -12);
+  await W.goto(0, -11, "the shield line", "line");
   await W.say(`Your comrades lock shields to your right. They hit the line — parry each blade, break his guard, and strike.`, { who: "" });
   await WARRIOR.battle([WARRIOR.foe("looter"), WARRIOR.foe("ashigaru"), WARRIOR.foe("bandit")]);
   await W.say(`The column breaks and runs. You are still standing — bloodied, ears ringing, alive. Men who did not know your face now nod to it.`, { who: "" });
   WARRIOR.rankUp(2, "a retainer, trusted with real work");
-  await W.goto(-6, -6, "the night camp");
+  await W.goto(-6, -6, "the night camp", "camp");
   await WARRIOR.camp(`Night falls. Rest — tomorrow's work is quieter, and deadlier.`);
 
   // ---------- CH.2 — night work (assassination) ----------
   W.setTheme("night");
   await W.say(`A woman in grey finds you — Aya, who deals in the work done after dark. "A rival captain holds the river fort. Tonight he dies, and the fort opens. You have a talent for staying alive; prove you have one for endings."`, { who: "Aya" });
   await W.say(`She nods to the treeline. "Over the wall. Quiet as you can — but if they wake, cut your way through."`, { who: "Aya" });
-  await W.goto(2, -14, "the fort wall");
-  W.landmark("fort", 2, -18);
+  await W.goto(2, -14, "the fort wall", "fort");
   await W.say(`The palisade looms — a torch-lit fort gate. A guard turns at the last instant. Take him — fast.`, { who: "" });
   await WARRIOR.battle([WARRIOR.foe("guard", "Gate Guard")]);
   await W.say(`Inside, the captain is already on his feet, blade drawn. He is fast, and he is not afraid.`, { who: "" });
   await WARRIOR.battle([WARRIOR.foe("captain", "Guard Captain")]);
   await W.say(`The captain falls and the fort's heart goes out of it. By dawn it flies ${clan} colours. Aya regards you with something close to respect. "Now you're worth a name."`, { who: "Aya" });
   WARRIOR.rankUp(3, "a samurai in your own right");
-  await W.goto(-5, -6, "the fire");
+  await W.goto(-5, -6, "the fire", "camp");
   await WARRIOR.camp(`Recover. Aya has one more road for you — the one you've carried since your village burned.`);
 
   // ---------- CH.3 — the Ash-Maker ----------
   W.setTheme("dusk");
   await W.say(`"Kuroda the Ash-Maker rides with the enemy now," Aya says. "A mountain shrine, north. Cut through his raiders — and finish it."`, { who: "Aya", big: true });
-  await W.goto(0, -12, "the shrine road");
+  await W.goto(0, -12, "the shrine road", "shrine");
   await W.say(`His raiders boil out of the treeline. Carve the path yourself.`, { who: "" });
   await WARRIOR.battle([WARRIOR.foe("bandit"), WARRIOR.foe("ronin"), WARRIOR.foe("looter"), WARRIOR.foe("ronin")]);
   WARRIOR.rankUp(4, "a hatamoto — a bannerman");
-  await W.goto(-4, -7, "a shrine of stone");
+  await W.goto(-4, -7, "a shrine of stone", "shrine");
   await WARRIOR.camp(`The shrine steps are close. Steady yourself — what waits above will not be easy.`);
   await W.say(`The enemy Champion bars the steps — a giant in black lacquer. Behind him, a man with a burn scar down one cheek watches, and laughs.`, { who: "" });
-  await W.goto(1, -13, "the shrine steps");
+  await W.goto(1, -13, "the shrine steps", "shrine");
   await WARRIOR.battle([WARRIOR.foe("champion", "Enemy Champion")]);
   await W.say(`The Champion crashes down. Kuroda stops laughing. "So the little farm-boy grew teeth. I remember your village. They blur together after a while."`, { who: "Kuroda" });
   await W.say(`He is faster than the Champion, and there is no one left between you. This is the moment you have carried since the smoke came over the ridge.`, { who: "" });

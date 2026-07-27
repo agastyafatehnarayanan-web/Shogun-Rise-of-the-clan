@@ -124,13 +124,15 @@ WARRIOR3D.enter = function (opts) {
     food: p.food != null ? p.food : 80, rest: p.rest != null ? p.rest : 80,
     atk: p.atk || 6, guard: p.guard || 4, sp: p.sp != null ? p.sp : 1,
     unit: p.unit || "samurai",
+    weapon: p.weapon || { name: "Katana", melee: "katana", reach: 2.6, atkMult: 1, ranged: "knife", quiver: 3 },
     // world / director
     mode: "explore", foe: null, queue: [], waypoint: null, fightRes: null, onContinue: null, tutorial: false,
     // input
     px: 0, pz: 0, km: {}, joy: { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 }, look: { active: false, id: null, lx: 0, ly: 0 },
     viewYaw: 0, viewPitch: 0,
     vmClip: "idle", vmT: 0, blocking: false, aiming: false, aimT: 0, dodgeT: 0, dodgeDir: 1, shake: 0, hitFlash: 0,
-    winded: 0, vulnT: 0, combo: 0, fov: 72, fovTarget: 72, quiver: 6,
+    winded: 0, vulnT: 0, combo: 0, fov: 72, fovTarget: 72,
+    quiver: (p.weapon && p.weapon.quiver) || 3, gunAmmo: (p.weapon && p.weapon.gun) || 0,
     particles: [], arrows: [],
   };
 
@@ -149,7 +151,7 @@ WARRIOR3D.setTheme = function (name) {
   const theme = WARRIOR3D.THEMES[name] || WARRIOR3D.THEMES.day;
   E.theme = theme; E.themeName = name;
   E.dress.forEach(o => { E.scene.remove(o); o.traverse && o.traverse(x => { if (x.geometry) x.geometry.dispose(); }); });
-  E.dress = [];
+  E.dress = []; E.fire = null;
   const add = (o) => { E.dress.push(o); E.scene.add(o); return o; };
   E.scene.fog = new THREE.Fog(theme.fog, 16, 78);
   add(WARRIOR3D._sky(theme));
@@ -283,32 +285,80 @@ WARRIOR3D._makeFoe = function (def) {
   g.userData = { torso, head, lArm, rArm, lLeg, rLeg };
   return g;
 };
+WARRIOR3D._MAT = function () { return {
+  skin: new THREE.MeshStandardMaterial({ color: 0xcaa27a, roughness: 0.85 }),
+  cloth: new THREE.MeshStandardMaterial({ color: 0x384a34, roughness: 1 }),
+  dark: new THREE.MeshStandardMaterial({ color: 0x14110c, roughness: 0.9 }),
+  gold: new THREE.MeshStandardMaterial({ color: 0x9a7a1c, roughness: 0.4, metalness: 0.7 }),
+  steel: new THREE.MeshStandardMaterial({ color: 0xe9eef4, roughness: 0.13, metalness: 0.92 }),
+  wood: new THREE.MeshStandardMaterial({ color: 0x6a4a26, roughness: 0.8 }),
+}; };
+
+/* the melee weapon in hand, posed at its rest pose */
+WARRIOR3D._meleeModel = function (type) {
+  const M = WARRIOR3D._MAT(); const kg = new THREE.Group();
+  if (type === "spear" || type === "naginata") {
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), M.skin); hand.scale.set(1, 0.85, 1.2); hand.position.z = 0.15; kg.add(hand);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, type === "naginata" ? 1.5 : 2.0, 8), M.wood); pole.rotation.x = Math.PI / 2; pole.position.z = type === "naginata" ? -0.55 : -0.8; pole.castShadow = true; kg.add(pole);
+    if (type === "spear") {
+      kg.add(WARRIOR3D._m(new THREE.ConeGeometry(0.05, 0.34, 6), M.steel, [0, 0, -1.9], [-Math.PI / 2, 0, 0]));
+      kg.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.05, 0.05, 0.1, 8), M.gold, [0, 0, -1.72], [Math.PI / 2, 0, 0]));
+      kg.position.set(0.2, -0.32, -0.4); kg.rotation.set(-0.04, 0.05, 0);
+    } else {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.12, 0.72), M.steel); blade.position.set(0, 0.12, -1.45); blade.rotation.x = -0.5; blade.castShadow = true; kg.add(blade);
+      kg.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.05, 0.05, 0.12, 8), M.gold, [0, 0, -1.2], [Math.PI / 2, 0, 0]));
+      kg.position.set(0.2, -0.3, -0.42); kg.rotation.set(-0.06, 0.06, 0);
+    }
+    return kg;
+  }
+  // katana (default)
+  kg.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.023, 0.026, 0.24, 10), M.dark, [0, 0, 0.11], [Math.PI / 2, 0, 0]));
+  const hand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), M.skin); hand.scale.set(1, 0.85, 1.25); hand.position.z = 0.06; kg.add(hand);
+  kg.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.055, 0.055, 0.014, 16), M.gold, [0, 0, -0.02], [Math.PI / 2, 0, 0]));
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.052, 1.22), M.steel); blade.position.z = -0.65; blade.castShadow = true; kg.add(blade);
+  kg.add(WARRIOR3D._m(new THREE.ConeGeometry(0.026, 0.12, 4), M.steel, [0, 0, -1.27], [-Math.PI / 2, 0, 0]));
+  kg.position.set(0.26, -0.34, -0.72); kg.rotation.set(-0.78, 0.34, -0.12);
+  return kg;
+};
+
+/* the ranged sidearm (bow / matchlock / thrown knife), hidden until used */
+WARRIOR3D._rangedModel = function (type) {
+  const M = WARRIOR3D._MAT();
+  if (type === "bow") {
+    const bg = new THREE.Group(); const bwood = new THREE.MeshStandardMaterial({ color: 0x6a4423, roughness: 0.7 });
+    bg.add(new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.32, 0.08), new THREE.MeshStandardMaterial({ color: 0x452c17, roughness: 0.7 })));
+    [[1, 0.3, 0.5, 0.34], [1, 0.56, 0.95, 0.22], [-1, 0.3, -0.5, 0.34], [-1, 0.56, -0.95, 0.22]].forEach(([s, y, rx, len]) => { const lb = new THREE.Mesh(new THREE.BoxGeometry(0.032, len, 0.05), bwood); lb.position.set(0, s * y, -0.06 - (Math.abs(rx) > 0.6 ? 0.14 : 0)); lb.rotation.x = rx; bg.add(lb); });
+    const draw = new THREE.Group(); bg.add(draw); const strMat = new THREE.MeshBasicMaterial({ color: 0xe8e4d0 });
+    const strand = (ax, ay, az) => { const a = new THREE.Vector3(ax, ay, az), b = new THREE.Vector3(0, 0, 0); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, a.distanceTo(b), 4), strMat); m.position.copy(a.clone().add(b).multiplyScalar(0.5)); m.lookAt(b); m.rotateX(Math.PI / 2); return m; };
+    draw.add(strand(0, 0.66, -0.34)); draw.add(strand(0, -0.66, -0.34));
+    draw.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.0075, 0.0075, 1.4, 5), new THREE.MeshStandardMaterial({ color: 0x7a5a2e }), [0, 0, -0.62], [Math.PI / 2, 0, 0]));
+    draw.add(WARRIOR3D._m(new THREE.BoxGeometry(0.002, 0.055, 0.09), new THREE.MeshBasicMaterial({ color: 0xb43a2a }), [0, 0, 0.06]));
+    bg.position.set(-0.06, -0.16, -0.92); bg.rotation.set(0.06, 0.16, 0.13); bg.scale.setScalar(0.82); bg.visible = false;
+    return { group: bg, draw };
+  }
+  if (type === "gun") {
+    const gg = new THREE.Group();
+    const stock = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.09, 0.5), M.wood); stock.position.z = 0.05; gg.add(stock);
+    gg.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.022, 0.022, 1.1, 8), M.dark, [0, 0.02, -0.5], [Math.PI / 2, 0, 0]));
+    gg.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.032, 0.032, 0.07, 8), M.dark, [0, 0.02, -1.05], [Math.PI / 2, 0, 0]));
+    const flash = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.34, 7), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.9, fog: false })); flash.rotation.x = -Math.PI / 2; flash.position.set(0, 0.02, -1.25); flash.visible = false; gg.add(flash);
+    gg.position.set(0.15, -0.26, -0.5); gg.rotation.set(0, 0.05, 0); gg.visible = false; gg.userData.flash = flash;
+    return { group: gg };
+  }
+  // thrown knife
+  const kn = new THREE.Group();
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.05, 0.34), M.steel); blade.position.z = -0.2; kn.add(blade);
+  kn.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.02, 0.02, 0.12, 6), M.dark, [0, 0, 0.02], [Math.PI / 2, 0, 0]));
+  kn.position.set(0.12, -0.3, -0.5); kn.rotation.set(-0.2, 0.1, 0); kn.visible = false;
+  return { group: kn };
+};
+
 WARRIOR3D._viewmodel = function (p) {
-  const g = new THREE.Group();
-  const skin = new THREE.MeshStandardMaterial({ color: 0xcaa27a, roughness: 0.85 }), cloth = new THREE.MeshStandardMaterial({ color: 0x384a34, roughness: 1 });
-  const dark = new THREE.MeshStandardMaterial({ color: 0x14110c, roughness: 0.9 }), gold = new THREE.MeshStandardMaterial({ color: 0x9a7a1c, roughness: 0.4, metalness: 0.7 });
-  const steel = new THREE.MeshStandardMaterial({ color: 0xe9eef4, roughness: 0.13, metalness: 0.92 });
-  const kg = new THREE.Group();
-  kg.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.023, 0.026, 0.24, 10), dark, [0, 0, 0.11], [Math.PI / 2, 0, 0]));
-  const hand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), skin); hand.scale.set(1, 0.85, 1.25); hand.position.z = 0.06; kg.add(hand);
-  kg.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.055, 0.055, 0.014, 16), gold, [0, 0, -0.02], [Math.PI / 2, 0, 0]));
-  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.052, 1.22), steel); blade.position.z = -0.65; blade.castShadow = true; kg.add(blade);
-  kg.add(WARRIOR3D._m(new THREE.ConeGeometry(0.026, 0.12, 4), steel, [0, 0, -1.27], [-Math.PI / 2, 0, 0]));
-  kg.position.set(0.26, -0.34, -0.72); kg.rotation.set(-0.78, 0.34, -0.12); g.add(kg);
-  g.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.055, 0.065, 0.46, 8), cloth, [0.42, -0.66, -0.4], [-0.95, -0.25, 0.2]));
-  // bow
-  const bg = new THREE.Group();
-  const bwood = new THREE.MeshStandardMaterial({ color: 0x6a4423, roughness: 0.7 });
-  bg.add(new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.32, 0.08), new THREE.MeshStandardMaterial({ color: 0x452c17, roughness: 0.7 })));
-  [[1, 0.3, 0.5, 0.34], [1, 0.56, 0.95, 0.22], [-1, 0.3, -0.5, 0.34], [-1, 0.56, -0.95, 0.22]].forEach(([s, y, rx, len]) => { const lb = new THREE.Mesh(new THREE.BoxGeometry(0.032, len, 0.05), bwood); lb.position.set(0, s * y, -0.06 - (Math.abs(rx) > 0.6 ? 0.14 : 0)); lb.rotation.x = rx; bg.add(lb); });
-  const draw = new THREE.Group(); bg.add(draw);
-  const strMat = new THREE.MeshBasicMaterial({ color: 0xe8e4d0 });
-  const strand = (ax, ay, az) => { const a = new THREE.Vector3(ax, ay, az), b = new THREE.Vector3(0, 0, 0); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, a.distanceTo(b), 4), strMat); m.position.copy(a.clone().add(b).multiplyScalar(0.5)); m.lookAt(b); m.rotateX(Math.PI / 2); return m; };
-  draw.add(strand(0, 0.66, -0.34)); draw.add(strand(0, -0.66, -0.34));
-  draw.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.0075, 0.0075, 1.4, 5), new THREE.MeshStandardMaterial({ color: 0x7a5a2e }), [0, 0, -0.62], [Math.PI / 2, 0, 0]));
-  draw.add(WARRIOR3D._m(new THREE.BoxGeometry(0.002, 0.055, 0.09), new THREE.MeshBasicMaterial({ color: 0xb43a2a }), [0, 0, 0.06]));
-  bg.position.set(-0.06, -0.16, -0.92); bg.rotation.set(0.06, 0.16, 0.13); bg.scale.setScalar(0.82); bg.visible = false; g.add(bg);
-  g.userData = { katana: kg, bow: bg, bowDraw: draw, rest: { pos: kg.position.clone(), rot: kg.rotation.clone() } };
+  const g = new THREE.Group(); const w = (p && p.weapon) || {};
+  const kg = WARRIOR3D._meleeModel(w.melee || "katana"); g.add(kg);
+  g.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.055, 0.065, 0.46, 8), new THREE.MeshStandardMaterial({ color: 0x384a34, roughness: 1 }), [0.42, -0.66, -0.4], [-0.95, -0.25, 0.2]));
+  const rg = WARRIOR3D._rangedModel(w.ranged || "knife"); g.add(rg.group);
+  g.userData = { katana: kg, bow: rg.group, bowDraw: rg.draw || null, rangedType: w.ranged || "knife", rest: { pos: kg.position.clone(), rot: kg.rotation.clone() } };
   return g;
 };
 
@@ -339,8 +389,9 @@ WARRIOR3D.banner = function (text, ms) {
   clearTimeout(WARRIOR3D._bnT); WARRIOR3D._bnT = setTimeout(() => el.classList.remove("on"), ms || 2600);
 };
 WARRIOR3D.objective = function (text) { const el = document.getElementById("w3-obj"); if (el) el.innerHTML = text ? `🎯 ${text}` : ""; };
-WARRIOR3D.goto = function (x, z, label) {
+WARRIOR3D.goto = function (x, z, label, type) {
   const E = WARRIOR3D._e; if (!E) return Promise.resolve();
+  if (type) WARRIOR3D._dest(type, x, z);         // put the actual place at the marker
   return new Promise(resolve => {
     const mk = new THREE.Group();
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.95, 28), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.85, side: THREE.DoubleSide, fog: false }));
@@ -355,7 +406,8 @@ WARRIOR3D.goto = function (x, z, label) {
 WARRIOR3D.fight = function (defs, opts) {
   opts = opts || {}; const E = WARRIOR3D._e; if (!E) return Promise.resolve(true);
   return new Promise(resolve => {
-    E.mode = "fight"; E.tutorial = !!opts.tutorial; E.queue = defs.slice(); E.foe = null; E.combo = 0; E.quiver = 6; E.fightRes = resolve;
+    E.mode = "fight"; E.tutorial = !!opts.tutorial; E.queue = defs.slice(); E.foe = null; E.combo = 0;
+    E.quiver = E.weapon.quiver || 0; E.gunAmmo = E.weapon.gun || 0; E.fightRes = resolve;
     document.getElementById("w3-foewrap").classList.add("on");
     WARRIOR3D._nextFoe(E);
   });
@@ -368,18 +420,38 @@ WARRIOR3D.buff = function (o) { const E = WARRIOR3D._e; if (!E) return; o = o ||
   if (o.maxHp) { E.maxHp += o.maxHp; E.hp = E.maxHp; } if (o.atk) E.atk += o.atk; if (o.guard) E.guard += o.guard; if (o.maxSt) { E.maxSt += o.maxSt; E.st = E.maxSt; } WARRIOR3D._updateMeters(E); };
 WARRIOR3D.stats = function () { const E = WARRIOR3D._e; return E ? { hp: E.hp, maxHp: E.maxHp, food: E.food, rest: E.rest, sp: E.sp, atk: E.atk, guard: E.guard, maxSt: E.maxSt } : null; };
 
-/* a real campfire spawned in front of you at a camp */
-WARRIOR3D.campfire = function (on) {
+/* a real, flickering campfire placed at a spot (or in front of you) */
+WARRIOR3D.campfire = function (pos) {
+  const E = WARRIOR3D._e; if (!E) return; const g = new THREE.Group();
+  for (let i = 0; i < 4; i++) { const log = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.74, 6), new THREE.MeshStandardMaterial({ color: 0x3a2414, roughness: 1 })); log.rotation.set(Math.PI / 2, i * Math.PI / 4, 0); log.position.y = 0.09; log.castShadow = true; g.add(log); }
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.05, 6, 16), new THREE.MeshStandardMaterial({ color: 0x565049, roughness: 1 })); ring.rotation.x = Math.PI / 2; ring.position.y = 0.03; g.add(ring);
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.62, 7), new THREE.MeshBasicMaterial({ color: 0xff7a2a, transparent: true, opacity: 0.92, fog: false })); flame.position.y = 0.42; g.add(flame);
+  const flame2 = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.4, 6), new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.96, fog: false })); flame2.position.y = 0.36; g.add(flame2);
+  const light = new THREE.PointLight(0xff8a3a, 2.0, 15); light.position.set(0, 1.1, 0); g.add(light);
+  if (pos) g.position.set(pos[0], 0, pos[2]); else { const fwx = -Math.sin(E.viewYaw), fwz = -Math.cos(E.viewYaw); g.position.set(E.px + fwx * 2.6, 0, E.pz + fwz * 2.6); }
+  g.userData.flames = [flame, flame2]; E.dress.push(g); E.scene.add(g); E.fire = g;
+};
+
+/* the actual place a marker points to (spawned at the marker) */
+WARRIOR3D._dest = function (type, x, z) {
   const E = WARRIOR3D._e; if (!E) return;
-  if (on) { if (E.fire) return; const g = new THREE.Group();
-    for (let i = 0; i < 4; i++) { const log = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.74, 6), new THREE.MeshStandardMaterial({ color: 0x3a2414, roughness: 1 })); log.rotation.set(Math.PI / 2, i * Math.PI / 4, 0); log.position.y = 0.09; log.castShadow = true; g.add(log); }
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.05, 6, 16), new THREE.MeshStandardMaterial({ color: 0x565049, roughness: 1 })); ring.rotation.x = Math.PI / 2; ring.position.y = 0.03; g.add(ring);
-    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.62, 7), new THREE.MeshBasicMaterial({ color: 0xff7a2a, transparent: true, opacity: 0.92, fog: false })); flame.position.y = 0.42; g.add(flame);
-    const flame2 = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.4, 6), new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.96, fog: false })); flame2.position.y = 0.36; g.add(flame2);
-    const light = new THREE.PointLight(0xff8a3a, 2.0, 15); light.position.set(0, 1.1, 0); g.add(light);
-    const fwx = -Math.sin(E.viewYaw), fwz = -Math.cos(E.viewYaw);
-    g.position.set(E.px + fwx * 2.6, 0, E.pz + fwz * 2.6); g.userData.flames = [flame, flame2]; E.scene.add(g); E.fire = g;
-  } else if (E.fire) { E.scene.remove(E.fire); E.fire = null; }
+  if (type === "camp") return WARRIOR3D.campfire([x, 0, z]);
+  if (type === "fort") return WARRIOR3D.landmark("fort", x, z);
+  if (type === "line") return WARRIOR3D.landmark("shieldwall", x, z);
+  const add = (o) => { E.dress.push(o); E.scene.add(o); }; const S = (m) => { m.castShadow = true; m.receiveShadow = true; return m; };
+  if (type === "shrine") {
+    const red = new THREE.MeshStandardMaterial({ color: 0x9a4030, roughness: 0.9 }), dark = new THREE.MeshStandardMaterial({ color: 0x2f2416, roughness: 1 }), stone = new THREE.MeshStandardMaterial({ color: 0x8a8a80, roughness: 1, flatShading: true });
+    const g = new THREE.Group();
+    [-1.5, 1.5].forEach(px => { const p = S(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 5, 10), red)); p.position.set(px, 2.5, 0); g.add(p); });
+    g.add(S(WARRIOR3D._m(new THREE.BoxGeometry(4.6, 0.4, 0.5), red, [0, 5, 0])));
+    g.add(S(WARRIOR3D._m(new THREE.BoxGeometry(3.9, 0.28, 0.4), dark, [0, 4.4, 0])));
+    for (let i = 0; i < 3; i++) { const stp = S(new THREE.Mesh(new THREE.BoxGeometry(4 - i * 0.6, 0.35, 1.2), stone)); stp.position.set(0, 0.18 + i * 0.35, -1.6 - i * 0.6); g.add(stp); }
+    g.position.set(x, 0, z); add(g);
+  } else if (type === "muster") {
+    for (let i = 0; i < 3; i++) { const t = S(new THREE.Mesh(new THREE.ConeGeometry(1.4, 1.9, 4), new THREE.MeshStandardMaterial({ color: 0x7a6440, roughness: 1 }))); t.position.set(x + (i - 1) * 3, 0.95, z - Math.abs(i - 1) * 1.4); t.rotation.y = Math.PI / 4; add(t); }
+    [-2.6, 2.6].forEach(bx => { const pole = S(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 4, 6), new THREE.MeshStandardMaterial({ color: 0x2a1f14 }))); pole.position.set(x + bx, 2, z + 1); add(pole);
+      const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 2.2), new THREE.MeshStandardMaterial({ color: 0x9a2b1e, side: THREE.DoubleSide, roughness: 1 })); flag.position.set(x + bx + 0.45, 2.6, z + 1); flag.userData.flag = 1; add(flag); });
+  }
 };
 
 /* landmarks the story can drop into the world (cleared on the next setTheme) */
@@ -454,7 +526,7 @@ WARRIOR3D._dir = function (E, d) {
     if (d === f.dir) {
       const p = f.stateT / (f.winMs / 1000);
       if (p >= 0.55) { f.defended = true; f.poise -= 1; E.combo++; E.shake = Math.max(E.shake, 0.3); E.st = Math.min(E.maxSt, E.st + 1);
-        WARRIOR3D._spawnSpark(E, f); WARRIOR3D._damageFoe(E, Math.max(1, Math.round(E.atk * 0.6)), true);
+        WARRIOR3D._spawnSpark(E, f); WARRIOR3D._damageFoe(E, Math.max(1, Math.round(E.atk * 0.6 * E.weapon.atkMult)), true);
         if (!f.dead && f.poise <= 0) { f.state = "staggered"; f.stateT = 0; f.openSide = f.dir; f.poise = f.poiseMax; WARRIOR3D._prompt(E, `⚔️ <b>Parry breaks his guard!</b> Strike hard!`, "good"); }
         else if (!f.dead) { f.state = "open"; f.stateT = 0; f.openSide = f.dir; WARRIOR3D._prompt(E, `⚔️ <b>Parry!</b> A quick opening — cut him now, then keep pressing!`, "good"); }
         WARRIOR3D._updateMeters(E); }
@@ -462,19 +534,23 @@ WARRIOR3D._dir = function (E, d) {
     } else { f.defended = true; f.state = "strike"; f.stateT = 0; WARRIOR3D._foeHits(E, 1); E.combo = 0; WARRIOR3D._prompt(E, `❌ Wrong guard! He struck ${WARRIOR3D.DIRWORD[f.dir]}.`, "warn"); }
     return;
   }
+  const dist = Math.hypot(f.mesh.position.x - E.px, f.mesh.position.z - E.pz), reach = E.weapon.reach || 2.6;
   if (f.state === "staggered" || f.state === "open") {
+    if (dist > reach + 0.5) { WARRIOR3D._prompt(E, "Too far — close in to strike!", "warn"); return; }
     if (!WARRIOR3D._costOrWinded(E, 2)) return;
     WARRIOR3D._vm(E, "cut_" + d); E.combo++;
-    let dm = E.atk + 2 + Math.min(5, E.combo) + (d === "thrust" ? 2 : 0); if (f.openSide && d === f.openSide) dm += 2;
+    let dm = Math.round((E.atk + Math.min(6, E.combo * 1.2)) * E.weapon.atkMult) + (d === "thrust" ? 2 : 0); if (f.openSide && d === f.openSide) dm += 2;
     WARRIOR3D._damageFoe(E, dm, false); if (!f.dead) WARRIOR3D._prompt(E, `🗡️ cut into the gap — <b>−${dm}</b>!`, "good");
     return;
   }
   // ---- press the attack against his guard (offense breaks his poise) ----
+  // long weapons (spear/naginata) can poke him even as he closes; short ones must be in tight.
+  if (dist > reach) { WARRIOR3D._prompt(E, reach > 3 ? "Just out of reach — a step closer." : "Too far to reach him — close in!", "warn"); return; }
   if (!WARRIOR3D._costOrWinded(E, 2)) return;
   WARRIOR3D._vm(E, "cut_" + d);
-  if (f.state === "guard" || f.state === "recover") {
+  if (f.state === "guard" || f.state === "recover" || f.state === "approach") {
     if (Math.random() < 0.2 + f.skill * 0.28) { E.vulnT = 0.4; E.shake = Math.max(E.shake, 0.16); WARRIOR3D._prompt(E, "🛡️ He turns your blade — come from another line!", "warn"); }
-    else { f.poise -= 1; WARRIOR3D._damageFoe(E, Math.max(1, Math.round(E.atk * 0.35)), false);
+    else { f.poise -= 1; WARRIOR3D._damageFoe(E, Math.max(1, Math.round(E.atk * 0.35 * E.weapon.atkMult)), false);
       if (!f.dead && f.poise <= 0) { f.state = "staggered"; f.stateT = 0; f.openSide = d; f.poise = f.poiseMax; WARRIOR3D._prompt(E, `💥 <b>Guard broken!</b> Strike the opening!`, "good"); }
       else if (!f.dead) WARRIOR3D._prompt(E, `⚔️ You batter his guard — poise ${Math.max(0, f.poise)}. Keep pressing — but watch his blade.`, ""); }
   }
@@ -485,11 +561,19 @@ WARRIOR3D._input = function (action) {
   if (E.onContinue && (action === "continue" || action === "dodge")) { E.onContinue(); return; }  // space/enter/tap advances dialogue
   if (action === "block") { E.blocking = true; WARRIOR3D._vm(E, "block"); return; }
   if (action === "aim") { if (E.mode !== "fight") return; E.aiming = true; E.aimT = 0; E.fovTarget = 52; WARRIOR3D._vm(E, "aim"); const rt = document.getElementById("w3-reticle"); if (rt) rt.classList.add("on"); return; }
-  if (action === "shoot") { if (E.mode !== "fight") return; const cost = 2;
-    if (E.quiver <= 0) { WARRIOR3D._prompt(E, "Out of arrows — draw your blade.", "warn"); return; }
+  if (action === "shoot") { if (E.mode !== "fight") return; const rt = E.weapon.ranged;
+    if (rt === "gun") {
+      if (E.gunAmmo <= 0) { WARRIOR3D._prompt(E, "Out of shot — draw your blade.", "warn"); return; }
+      if (E.winded > 0) return;
+      E.gunAmmo--; E.st = Math.max(0, E.st - 1); WARRIOR3D._vm(E, "shoot"); E.shake = Math.max(E.shake, 0.45);
+      const dm = E.weapon.gunDmg || 15; if (E.foe && !E.foe.dead) { E.foe.poise -= 2; WARRIOR3D._damageFoe(E, dm, false); if (E.foe && !E.foe.dead && E.foe.poise <= 0) { E.foe.state = "staggered"; E.foe.stateT = 0; E.foe.poise = E.foe.poiseMax; } }
+      WARRIOR3D._prompt(E, `🔫 <b>Matchlock roars!</b> −${dm}. ${E.gunAmmo} shot${E.gunAmmo === 1 ? "" : "s"} left.`, "good"); WARRIOR3D._updateMeters(E); return;
+    }
+    const cost = 2; if (E.quiver <= 0) { WARRIOR3D._prompt(E, "Out of arrows — draw your blade.", "warn"); return; }
     if (E.winded > 0 || E.st < cost) { WARRIOR3D._prompt(E, "No stamina to shoot.", "warn"); return; }
-    E.st -= cost; E.quiver--; WARRIOR3D._vm(E, "shoot"); const charged = Math.min(1, E.aimT / 0.9); const dm = Math.round((E.atk / 3 + 1) + charged * (E.atk / 2 + 2)); WARRIOR3D._fireArrow(E, dm);
-    WARRIOR3D._prompt(E, `🏹 loosed — <b>${E.quiver}</b> arrow${E.quiver === 1 ? "" : "s"} left.`, ""); WARRIOR3D._updateMeters(E); return; }
+    E.st -= cost; E.quiver--; WARRIOR3D._vm(E, "shoot"); const charged = Math.min(1, E.aimT / 0.9);
+    const dm = Math.round(((E.atk / 3 + 1) + charged * (E.atk / 2 + 2)) * (E.weapon.rangedMult || (rt === "knife" ? 0.7 : 1))); WARRIOR3D._fireArrow(E, dm);
+    WARRIOR3D._prompt(E, `${rt === "knife" ? "🗡️ knife thrown" : "🏹 loosed"} — <b>${E.quiver}</b> left.`, ""); WARRIOR3D._updateMeters(E); return; }
   if (action === "dodge") { if (E.winded > 0) return; const cost = 3.5; if (E.st < cost) { WARRIOR3D._prompt(E, "Too winded to dodge.", "warn"); return; }
     E.st -= cost; E.dodgeT = 0.4; E.dodgeDir = (E.km.a || (E.joy.active && E.joy.x < -0.2)) ? -1 : 1; WARRIOR3D._vm(E, "dodge");
     const f = E.foe; if (f && f.state === "windup") { f.defended = true; f.state = "recover"; f.stateT = 0; WARRIOR3D._prompt(E, "💨 You roll clear — untouched.", "good"); } WARRIOR3D._updateMeters(E); return; }
@@ -503,8 +587,8 @@ WARRIOR3D._release = function (action) {
 };
 
 WARRIOR3D._foeHits = function (E, mult) {
-  if (E.blocking && E.st > 0) { const chip = Math.max(1, Math.round(E.foe.dmg * 0.3)); E.hp -= chip; E.st = Math.max(0, E.st - 2); if (E.st <= 0) E.winded = 1.0; }
-  else { let dmg = Math.round(E.foe.dmg * (mult == null ? 1 : mult)); if (E.winded > 0 || E.vulnT > 0) dmg = Math.round(dmg * 1.5); E.hp -= dmg; }
+  if (E.blocking && E.st > 0) { const chip = Math.max(1, Math.round(E.foe.dmg * 0.3) - Math.floor(E.guard * 0.5)); E.hp -= chip; E.st = Math.max(0, E.st - 2); if (E.st <= 0) E.winded = 1.0; }
+  else { let dmg = Math.round(E.foe.dmg * (mult == null ? 1 : mult)); if (E.winded > 0 || E.vulnT > 0) dmg = Math.round(dmg * 1.5); dmg = Math.max(1, dmg - Math.floor(E.guard * 0.4)); E.hp -= dmg; }
   E.hitFlash = 1; E.shake = Math.max(E.shake, 0.55); WARRIOR3D._updateMeters(E);
   if (E.hp <= 0) WARRIOR3D._defeat(E);
 };
@@ -624,8 +708,15 @@ WARRIOR3D._updateViewmodel = function (E, dt) {
   const bob = Math.sin(E.clock / 600) * 0.012, sway = Math.cos(E.clock / 900) * 0.01;
   const showBow = (E.vmClip === "aim" || E.vmClip === "shoot"); kg.visible = !showBow; bow.visible = showBow;
   const set = (px, py, pz, rx, ry, rz) => { kg.position.set(px, py, pz); kg.rotation.set(rx, ry, rz); };
-  if (showBow) { const d = V.bowDraw; if (E.vmClip === "aim") d.position.z = THREE.MathUtils.lerp(d.position.z, 0.24, dt * 9);
-    else { const t = Math.min(1, E.vmT / 0.16); d.position.z = THREE.MathUtils.lerp(0.24, 0, t); if (t >= 1) WARRIOR3D._vm(E, E.aiming ? "aim" : "idle"); } return; }
+  if (showBow) {
+    const d = V.bowDraw;
+    if (d) { if (E.vmClip === "aim") d.position.z = THREE.MathUtils.lerp(d.position.z, 0.24, dt * 9);
+      else { const t = Math.min(1, E.vmT / 0.16); d.position.z = THREE.MathUtils.lerp(0.24, 0, t); if (t >= 1) WARRIOR3D._vm(E, E.aiming ? "aim" : "idle"); } }
+    else { const flash = V.bow.userData && V.bow.userData.flash;   // gun / knife
+      if (E.vmClip === "shoot") { const t = Math.min(1, E.vmT / 0.22); if (flash) flash.visible = t < 0.4; if (t >= 1) { if (flash) flash.visible = false; WARRIOR3D._vm(E, E.aiming ? "aim" : "idle"); } }
+      else if (flash) flash.visible = false; }
+    return;
+  }
   const sw = WARRIOR3D.SWING[E.vmClip];
   if (sw) { const t = Math.min(1, E.vmT / sw.dur), s = Math.sin(t * Math.PI);
     set(R.pos.x + sw.dp[0] * s, R.pos.y + sw.dp[1] * s, R.pos.z + sw.dp[2] * s, R.rot.x + sw.dr[0] * s, R.rot.y + sw.dr[1] * s, R.rot.z + sw.dr[2] * s);
