@@ -80,20 +80,21 @@ WARRIOR3D.enter = function (opts) {
         <div class="w3-joy" id="w3-joy"><span class="w3-joy-base"></span><span class="w3-joy-knob"></span></div>
         <div class="w3-controls" id="w3-controls">
           <div class="w3-cluster left">
+            <button class="w3-b parry" data-a="parry">⚔️<i>Parry</i></button>
             <button class="w3-b block" data-a="block" data-hold="1">🛡️<i>Block</i></button>
             <button class="w3-b dodge" data-a="dodge">💨<i>Dodge</i></button>
             <button class="w3-b aim" data-a="aim" data-hold="1">🎯<i>Aim</i></button>
             <button class="w3-b shoot" data-a="shoot">🏹<i>Shoot</i></button>
           </div>
           <div class="w3-rosette">
-            <button class="w3-b up" data-a="dir_up" title="parry/cut high">⤒</button>
-            <button class="w3-b left" data-a="dir_left" title="parry/cut left">⇤</button>
-            <button class="w3-b stab" data-a="dir_thrust" title="parry/thrust">✦</button>
-            <button class="w3-b right" data-a="dir_right" title="parry/cut right">⇥</button>
-            <button class="w3-b down" data-a="dir_down" title="parry/cut low">⤓</button>
+            <button class="w3-b up atk" data-a="dir_up" title="cut high">⤒</button>
+            <button class="w3-b left atk" data-a="dir_left" title="cut left">⇤</button>
+            <button class="w3-b stab atk" data-a="dir_thrust" title="thrust">✦</button>
+            <button class="w3-b right atk" data-a="dir_right" title="cut right">⇥</button>
+            <button class="w3-b down atk" data-a="dir_down" title="cut low">⤓</button>
           </div>
         </div>
-        <div class="w3-hint" id="w3-hint">Move: left-drag/WASD · Look: right-drag/mouse · Parry the shown direction · Dodge Space · Block L · Aim Q · Shoot F</div>
+        <div class="w3-hint" id="w3-hint">Move WASD · Look right-drag · ATTACK ↑↓←→/E (rosette) · PARRY Space (time the flash) · Block L · Dodge C · Aim Q · Shoot F</div>
       </div>
     </div>`;
 
@@ -131,7 +132,7 @@ WARRIOR3D.enter = function (opts) {
     px: 0, pz: 0, km: {}, joy: { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 }, look: { active: false, id: null, lx: 0, ly: 0 },
     viewYaw: 0, viewPitch: 0,
     vmClip: "idle", vmT: 0, blocking: false, aiming: false, aimT: 0, dodgeT: 0, dodgeDir: 1, shake: 0, hitFlash: 0,
-    winded: 0, vulnT: 0, combo: 0, fov: 72, fovTarget: 72,
+    winded: 0, vulnT: 0, combo: 0, parryCd: 0, drawCd: 0, fov: 72, fovTarget: 72,
     quiver: (p.weapon && p.weapon.quiver) || 3, gunAmmo: (p.weapon && p.weapon.gun) || 0,
     particles: [], arrows: [],
   };
@@ -162,6 +163,7 @@ WARRIOR3D.setTheme = function (name) {
   sun.shadow.mapSize.set(1024, 1024); sun.shadow.camera.near = 1; sun.shadow.camera.far = 46;
   sun.shadow.camera.left = -12; sun.shadow.camera.right = 12; sun.shadow.camera.top = 12; sun.shadow.camera.bottom = -12; sun.shadow.bias = -0.0006; add(sun);
   add(new THREE.DirectionalLight(0xffe9c8, 0.4).translateX(8).translateY(5).translateZ(9));
+  add(new THREE.DirectionalLight(0xbcd0ff, 0.34).translateX(7).translateY(7).translateZ(-15));   // cool rim from behind — separates figures from the scene
   add(new THREE.AmbientLight(theme.amb, 0.42));
   WARRIOR3D._terrain(E, theme, add); WARRIOR3D._grass(E, theme, add);
   WARRIOR3D._mountains(E, theme, add); WARRIOR3D._structures(E, theme, add); WARRIOR3D._props(E, theme, add);
@@ -210,13 +212,16 @@ WARRIOR3D._terrain = function (E, theme, add) {
   m.rotation.x = -Math.PI / 2; m.receiveShadow = true; add(m);
 };
 WARRIOR3D._grass = function (E, theme, add) {
-  const inst = new THREE.InstancedMesh(new THREE.ConeGeometry(0.03, 0.44, 3), new THREE.MeshStandardMaterial({ color: theme.grass, roughness: 1, flatShading: true }), 640);
-  const d = new THREE.Object3D();
-  for (let i = 0; i < 640; i++) { const a = Math.random() * Math.PI * 2, r = 2.5 + Math.random() * 13.5;
-    d.position.set(Math.sin(a) * r, 0.2, -Math.abs(Math.cos(a) * r) - 1); const s = 0.6 + Math.random() * 0.9;
-    d.scale.set(s, s * (0.7 + Math.random() * 0.7), s); d.rotation.set((Math.random() - 0.5) * 0.3, Math.random() * 3, (Math.random() - 0.5) * 0.3);
-    d.updateMatrix(); inst.setMatrixAt(i, d.matrix); }
-  add(inst);
+  const N = 1200;
+  const inst = new THREE.InstancedMesh(new THREE.ConeGeometry(0.03, 0.46, 3), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, flatShading: true }), N);
+  const d = new THREE.Object3D(); const base = new THREE.Color(theme.grass), col = new THREE.Color();
+  for (let i = 0; i < N; i++) { const a = Math.random() * Math.PI * 2, r = 2.2 + Math.random() * 17;
+    d.position.set(Math.sin(a) * r, 0.2, -Math.abs(Math.cos(a) * r) - 1); const s = 0.55 + Math.random() * 1.0;
+    d.scale.set(s, s * (0.7 + Math.random() * 0.9), s); d.rotation.set((Math.random() - 0.5) * 0.35, Math.random() * 3, (Math.random() - 0.5) * 0.35);
+    d.updateMatrix(); inst.setMatrixAt(i, d.matrix);
+    col.copy(base).offsetHSL((Math.random() - 0.5) * 0.04, (Math.random() - 0.5) * 0.12, (Math.random() - 0.5) * 0.16); if (inst.setColorAt) inst.setColorAt(i, col); }
+  if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+  inst.receiveShadow = true; add(inst);
 };
 WARRIOR3D._mountains = function (E, theme, add) {
   for (let i = 0; i < 11; i++) { const h = 10 + Math.random() * 18;
@@ -277,6 +282,7 @@ WARRIOR3D._makeFoe = function (def) {
   const helm = new THREE.Mesh(new THREE.SphereGeometry(0.175, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.58), dark); helm.position.y = 0.79; helm.castShadow = true; torso.add(helm);
   const crest = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.014, 6, 14, Math.PI), steel); crest.position.set(0, 0.9, 0.03); crest.rotation.x = -0.35; torso.add(crest);
   torso.add(WARRIOR3D._m(new THREE.BoxGeometry(0.17, 0.09, 0.03), dark, [0, 0.69, 0.12]));
+  const saya = WARRIOR3D._m(new THREE.CylinderGeometry(0.022, 0.02, 0.72, 8), dark, [-0.24, 0.14, 0.04], [0.42, 0, 0.5]); saya.castShadow = true; torso.add(saya);   // sheathed sword at the hip
   const lArm = L(0.6, 0.09, 0.07, armor, true); lArm.position.set(-0.28, 0.52, 0); lArm.rotation.z = 0.16; torso.add(lArm);
   const rArm = new THREE.Group(); rArm.position.set(0.28, 0.52, 0); torso.add(rArm); rArm.add(L(0.58, 0.09, 0.07, armor, true));
   const kat = new THREE.Group(); kat.add(WARRIOR3D._m(new THREE.CylinderGeometry(0.024, 0.024, 0.22, 8), dark, [0, 0, 0.08], [Math.PI / 2, 0, 0]));
@@ -451,6 +457,21 @@ WARRIOR3D._dest = function (type, x, z) {
     for (let i = 0; i < 3; i++) { const t = S(new THREE.Mesh(new THREE.ConeGeometry(1.4, 1.9, 4), new THREE.MeshStandardMaterial({ color: 0x7a6440, roughness: 1 }))); t.position.set(x + (i - 1) * 3, 0.95, z - Math.abs(i - 1) * 1.4); t.rotation.y = Math.PI / 4; add(t); }
     [-2.6, 2.6].forEach(bx => { const pole = S(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 4, 6), new THREE.MeshStandardMaterial({ color: 0x2a1f14 }))); pole.position.set(x + bx, 2, z + 1); add(pole);
       const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 2.2), new THREE.MeshStandardMaterial({ color: 0x9a2b1e, side: THREE.DoubleSide, roughness: 1 })); flag.position.set(x + bx + 0.45, 2.6, z + 1); flag.userData.flag = 1; add(flag); });
+  } else if (type === "village") {
+    const wall = new THREE.MeshStandardMaterial({ color: 0x6b5433, roughness: 1 }), thatch = new THREE.MeshStandardMaterial({ color: 0x8a7038, roughness: 1, flatShading: true });
+    const g = new THREE.Group();
+    [[-3.2, 0.4, 0], [2.8, -0.6, 0.5], [0.2, 2.6, -0.3]].forEach(([hx, hz, r]) => {
+      const h = S(new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.6, 2.2), wall)); h.position.set(hx, 0.8, hz); h.rotation.y = r; g.add(h);
+      const roof = S(new THREE.Mesh(new THREE.ConeGeometry(1.9, 1.2, 4), thatch)); roof.position.set(hx, 2.2, hz); roof.rotation.y = Math.PI / 4 + r; g.add(roof); });
+    const well = S(new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, 0.7, 10), new THREE.MeshStandardMaterial({ color: 0x777069, roughness: 1 }))); well.position.set(0, 0.35, 1.6); g.add(well);
+    g.position.set(x, 0, z); add(g);
+  } else if (type === "bridge") {
+    const wood = new THREE.MeshStandardMaterial({ color: 0x5a4326, roughness: 1 }), dark = new THREE.MeshStandardMaterial({ color: 0x3a2c18, roughness: 1 });
+    const g = new THREE.Group();
+    g.add(S(WARRIOR3D._m(new THREE.BoxGeometry(2.4, 0.22, 7), wood, [0, 0.5, 0])));
+    for (let i = -3; i <= 3; i += 1.5) { [-1.15, 1.15].forEach(rx => { const post = S(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.9, 0.16), dark)); post.position.set(rx, 0.95, i); g.add(post); }); }
+    [-1.15, 1.15].forEach(rx => { const rail = S(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 7), dark)); rail.position.set(rx, 1.35, 0); g.add(rail); });
+    g.position.set(x, 0, z); add(g);
   }
 };
 
@@ -505,10 +526,10 @@ WARRIOR3D._foeTelegraph = function (E) {
   const f = E.foe; if (!f) return;
   f.state = "windup"; f.stateT = 0; f.defended = false;
   f.dir = WARRIOR3D.DIRS[Math.floor(Math.random() * 5)];
-  f.feint = !E.tutorial && Math.random() < f.skill * 0.22;         // veterans feint
+  f.feint = !E.tutorial && Math.random() < f.skill * 0.28;         // veterans feint — don't parry those
   const inc = document.getElementById("w3-incoming");
-  if (inc) { inc.className = "w3-incoming on"; inc.innerHTML = `<span class="dir">${WARRIOR3D.DIRWORD[f.dir]}</span><span class="key">parry: ${E.tutorial ? "press " : ""}${WARRIOR3D.DIRKEY[f.dir]}</span>`; }
-  WARRIOR3D._prompt(E, `⚠ ${f.def.name} attacks — <b>parry ${WARRIOR3D.DIRWORD[f.dir]}</b>!`, "warn");
+  if (inc) { inc.className = "w3-incoming on"; inc.innerHTML = `<span class="dir">⚔ incoming</span><span class="key">PARRY${E.tutorial ? " — press Space" : " ⎵"}</span>`; }
+  WARRIOR3D._prompt(E, `⚠ ${f.def.name} winds up — <b>parry on the flash</b> (Space), then cut!`, "warn");
 };
 
 WARRIOR3D._costOrWinded = function (E, cost) {
@@ -517,48 +538,69 @@ WARRIOR3D._costOrWinded = function (E, cost) {
   E.st -= cost; WARRIOR3D._updateMeters(E); return true;
 };
 
+// ── PARRY (Space / Parry button) — a timed, non-directional defence ──
+// Press on the flash (end of his wind-up) to turn the blow and crack his guard.
+// A parry does NO damage on its own — it only OPENS him; you must ATTACK to hurt him.
+WARRIOR3D._parry = function (E) {
+  const f = E.foe; if (!f || f.dead) return;
+  if (E.parryCd > 0) return;                              // brief recovery — you can't machine-gun the parry
+  E.parryCd = 0.42;
+  WARRIOR3D._vm(E, "parry");
+  if (f.state !== "windup") {                             // nothing to parry — you flail and leave a gap
+    E.vulnT = 0.45; WARRIOR3D._prompt(E, "You parry at air — save it for his blade.", "warn"); return;
+  }
+  if (!WARRIOR3D._costOrWinded(E, 1)) return;             // parrying still costs a little wind
+  if (f.feint) { E.vulnT = 0.55; WARRIOR3D._prompt(E, "✋ A feint! You committed — recover fast.", "warn"); return; }
+  const p = f.stateT / (f.winMs / 1000);
+  if (p >= 0.5) {                                          // clean parry on the flash — cracks poise, opens him
+    f.defended = true; f.poise -= (p >= 0.78 ? 2 : 1); E.shake = Math.max(E.shake, 0.32); E.st = Math.min(E.maxSt, E.st + 1); E.combo = 0;
+    WARRIOR3D._spawnSpark(E, f);
+    if (f.poise <= 0) { f.state = "staggered"; f.stateT = 0; f.openSide = f.dir; f.poise = f.poiseMax; WARRIOR3D._prompt(E, "⚔️ <b>Parry! His guard shatters</b> — cut him down now!", "good"); }
+    else { f.state = "open"; f.stateT = 0; f.openSide = f.dir; WARRIOR3D._prompt(E, "⚔️ <b>Parried!</b> An opening — <b>attack now</b> (↑↓←→ / E).", "good"); }
+    WARRIOR3D._updateMeters(E);
+  } else {                                                 // too early — you turn it but it clips you
+    f.defended = true; f.state = "recover"; f.stateT = 0; WARRIOR3D._foeHits(E, 0.3); WARRIOR3D._prompt(E, "Too early — you turned it, but it stung. Wait for the flash.", "warn");
+  }
+};
+
+// ── ATTACK (arrows / rosette / E) — always a swing, never a parry ──
 WARRIOR3D._dir = function (E, d) {
   const f = E.foe; if (!f || f.dead) return;
+  // swinging INTO his wind-up is a bad trade — you should PARRY (Space), not attack
   if (f.state === "windup") {
-    if (!WARRIOR3D._costOrWinded(E, 1.5)) { WARRIOR3D._vm(E, "parry"); return; }
-    WARRIOR3D._vm(E, "parry_" + d);
-    if (f.feint) { WARRIOR3D._prompt(E, "✋ A feint! You bit on it — recover.", "warn"); E.vulnT = 0.5; return; }  // parrying a feint whiffs
-    if (d === f.dir) {
-      const p = f.stateT / (f.winMs / 1000);
-      if (p >= 0.55) { f.defended = true; f.poise -= 1; E.combo++; E.shake = Math.max(E.shake, 0.3); E.st = Math.min(E.maxSt, E.st + 1);
-        WARRIOR3D._spawnSpark(E, f); WARRIOR3D._damageFoe(E, Math.max(1, Math.round(E.atk * 0.6 * E.weapon.atkMult)), true);
-        if (!f.dead && f.poise <= 0) { f.state = "staggered"; f.stateT = 0; f.openSide = f.dir; f.poise = f.poiseMax; WARRIOR3D._prompt(E, `⚔️ <b>Parry breaks his guard!</b> Strike hard!`, "good"); }
-        else if (!f.dead) { f.state = "open"; f.stateT = 0; f.openSide = f.dir; WARRIOR3D._prompt(E, `⚔️ <b>Parry!</b> A quick opening — cut him now, then keep pressing!`, "good"); }
-        WARRIOR3D._updateMeters(E); }
-      else { f.defended = true; f.state = "recover"; f.stateT = 0; WARRIOR3D._foeHits(E, 0.35); WARRIOR3D._prompt(E, "Blocked, but early — it still stung.", "warn"); }
-    } else { f.defended = true; f.state = "strike"; f.stateT = 0; WARRIOR3D._foeHits(E, 1); E.combo = 0; WARRIOR3D._prompt(E, `❌ Wrong guard! He struck ${WARRIOR3D.DIRWORD[f.dir]}.`, "warn"); }
+    if (!WARRIOR3D._costOrWinded(E, 2)) return;
+    WARRIOR3D._vm(E, "cut_" + d); f.defended = true; f.state = "strike"; f.stateT = 0; E.combo = 0;
+    WARRIOR3D._foeHits(E, 1.2);                            // he lands his cut AND you're caught out of position
+    WARRIOR3D._prompt(E, "❌ Reckless trade! <b>Parry his attack</b> (Space), then cut.", "warn");
     return;
   }
   const dist = Math.hypot(f.mesh.position.x - E.px, f.mesh.position.z - E.pz), reach = E.weapon.reach || 2.6;
+  // strike a broken / open foe — the real damage window
   if (f.state === "staggered" || f.state === "open") {
     if (dist > reach + 0.5) { WARRIOR3D._prompt(E, "Too far — close in to strike!", "warn"); return; }
     if (!WARRIOR3D._costOrWinded(E, 2)) return;
     WARRIOR3D._vm(E, "cut_" + d); E.combo++;
-    let dm = Math.round((E.atk + Math.min(6, E.combo * 1.2)) * E.weapon.atkMult) + (d === "thrust" ? 2 : 0); if (f.openSide && d === f.openSide) dm += 2;
-    WARRIOR3D._damageFoe(E, dm, false); if (!f.dead) WARRIOR3D._prompt(E, `🗡️ cut into the gap — <b>−${dm}</b>!`, "good");
+    let dm = Math.round((E.atk + Math.min(7, E.combo * 1.5)) * E.weapon.atkMult) + (d === "thrust" ? 2 : 0); if (f.openSide && d === f.openSide) dm += 3;
+    WARRIOR3D._damageFoe(E, dm, false); if (!f.dead) WARRIOR3D._prompt(E, `🗡️ cut into the gap — <b>−${dm}</b>! Keep pressing.`, "good");
     return;
   }
-  // ---- press the attack against his guard (offense breaks his poise) ----
-  // long weapons (spear/naginata) can poke him even as he closes; short ones must be in tight.
+  // press his guard — offense chips poise, but a skilled foe reads the swing, turns it, and punishes
   if (dist > reach) { WARRIOR3D._prompt(E, reach > 3 ? "Just out of reach — a step closer." : "Too far to reach him — close in!", "warn"); return; }
-  if (!WARRIOR3D._costOrWinded(E, 2)) return;
+  if (!WARRIOR3D._costOrWinded(E, 2.5)) return;
   WARRIOR3D._vm(E, "cut_" + d);
-  if (f.state === "guard" || f.state === "recover" || f.state === "approach") {
-    if (Math.random() < 0.2 + f.skill * 0.28) { E.vulnT = 0.4; E.shake = Math.max(E.shake, 0.16); WARRIOR3D._prompt(E, "🛡️ He turns your blade — come from another line!", "warn"); }
-    else { f.poise -= 1; WARRIOR3D._damageFoe(E, Math.max(1, Math.round(E.atk * 0.35 * E.weapon.atkMult)), false);
-      if (!f.dead && f.poise <= 0) { f.state = "staggered"; f.stateT = 0; f.openSide = d; f.poise = f.poiseMax; WARRIOR3D._prompt(E, `💥 <b>Guard broken!</b> Strike the opening!`, "good"); }
-      else if (!f.dead) WARRIOR3D._prompt(E, `⚔️ You batter his guard — poise ${Math.max(0, f.poise)}. Keep pressing — but watch his blade.`, ""); }
-  }
+  if (Math.random() < 0.26 + f.skill * 0.34) {            // he reads your blind swing
+    E.vulnT = 0.42; E.shake = Math.max(E.shake, 0.18); E.combo = 0;
+    if (Math.random() < f.aggr * 0.5) { f.state = "recover"; f.stateT = 0; WARRIOR3D._foeHits(E, 0.5); WARRIOR3D._prompt(E, "🛡️ He turns your blade and counters! Bait his attack, parry, punish.", "warn"); }
+    else WARRIOR3D._prompt(E, "🛡️ He turns your blade — swinging blind won't break him. Wait for his cut.", "warn");
+  } else { f.poise -= 1; WARRIOR3D._damageFoe(E, Math.max(1, Math.round(E.atk * 0.3 * E.weapon.atkMult)), false);
+    if (!f.dead && f.poise <= 0) { f.state = "staggered"; f.stateT = 0; f.openSide = d; f.poise = f.poiseMax; WARRIOR3D._prompt(E, "💥 <b>Guard broken!</b> Strike the opening!", "good"); }
+    else if (!f.dead) WARRIOR3D._prompt(E, `⚔️ You batter his guard — poise ${Math.max(0, f.poise)}. Watch for his cut.`, ""); }
 };
 
 WARRIOR3D._input = function (action) {
   const E = WARRIOR3D._e; if (!E || !E.running) return;
-  if (E.onContinue && (action === "continue" || action === "dodge")) { E.onContinue(); return; }  // space/enter/tap advances dialogue
+  if (E.onContinue && (action === "continue" || action === "parry")) { E.onContinue(); return; }  // space/enter/tap advances dialogue
+  if (action === "parry") { if (E.mode === "fight") WARRIOR3D._parry(E); return; }
   if (action === "block") { E.blocking = true; WARRIOR3D._vm(E, "block"); return; }
   if (action === "aim") { if (E.mode !== "fight") return; E.aiming = true; E.aimT = 0; E.fovTarget = 52; WARRIOR3D._vm(E, "aim"); const rt = document.getElementById("w3-reticle"); if (rt) rt.classList.add("on"); return; }
   if (action === "shoot") { if (E.mode !== "fight") return; const rt = E.weapon.ranged;
@@ -569,11 +611,14 @@ WARRIOR3D._input = function (action) {
       const dm = E.weapon.gunDmg || 15; if (E.foe && !E.foe.dead) { E.foe.poise -= 2; WARRIOR3D._damageFoe(E, dm, false); if (E.foe && !E.foe.dead && E.foe.poise <= 0) { E.foe.state = "staggered"; E.foe.stateT = 0; E.foe.poise = E.foe.poiseMax; } }
       WARRIOR3D._prompt(E, `🔫 <b>Matchlock roars!</b> −${dm}. ${E.gunAmmo} shot${E.gunAmmo === 1 ? "" : "s"} left.`, "good"); WARRIOR3D._updateMeters(E); return;
     }
-    const cost = 2; if (E.quiver <= 0) { WARRIOR3D._prompt(E, "Out of arrows — draw your blade.", "warn"); return; }
+    const cost = 3; if (E.quiver <= 0) { WARRIOR3D._prompt(E, "Out of arrows — draw your blade.", "warn"); return; }
     if (E.winded > 0 || E.st < cost) { WARRIOR3D._prompt(E, "No stamina to shoot.", "warn"); return; }
-    E.st -= cost; E.quiver--; WARRIOR3D._vm(E, "shoot"); const charged = Math.min(1, E.aimT / 0.9);
-    const dm = Math.round(((E.atk / 3 + 1) + charged * (E.atk / 2 + 2)) * (E.weapon.rangedMult || (rt === "knife" ? 0.7 : 1))); WARRIOR3D._fireArrow(E, dm);
-    WARRIOR3D._prompt(E, `${rt === "knife" ? "🗡️ knife thrown" : "🏹 loosed"} — <b>${E.quiver}</b> left.`, ""); WARRIOR3D._updateMeters(E); return; }
+    if (E.drawCd > 0) return;                                   // you can't loose faster than you can nock — no spam
+    E.drawCd = 0.55; E.st -= cost; E.quiver--; WARRIOR3D._vm(E, "shoot"); const charged = Math.min(1, E.aimT / 0.9);
+    // a snap shot barely stings — you must AIM (hold) for a full draw to hurt
+    const base = (E.atk / 3) + charged * (E.atk / 1.5);
+    const dm = Math.max(1, Math.round(base * (E.weapon.rangedMult || (rt === "knife" ? 0.7 : 1)) * (charged < 0.35 ? 0.5 : 1))); WARRIOR3D._fireArrow(E, dm);
+    WARRIOR3D._prompt(E, `${rt === "knife" ? "🗡️ knife thrown" : charged < 0.35 ? "🏹 snap shot (weak — aim next time)" : "🏹 loosed"} — <b>${E.quiver}</b> left.`, ""); WARRIOR3D._updateMeters(E); return; }
   if (action === "dodge") { if (E.winded > 0) return; const cost = 3.5; if (E.st < cost) { WARRIOR3D._prompt(E, "Too winded to dodge.", "warn"); return; }
     E.st -= cost; E.dodgeT = 0.4; E.dodgeDir = (E.km.a || (E.joy.active && E.joy.x < -0.2)) ? -1 : 1; WARRIOR3D._vm(E, "dodge");
     const f = E.foe; if (f && f.state === "windup") { f.defended = true; f.state = "recover"; f.stateT = 0; WARRIOR3D._prompt(E, "💨 You roll clear — untouched.", "good"); } WARRIOR3D._updateMeters(E); return; }
@@ -626,6 +671,8 @@ WARRIOR3D._loop = function () {
   // stamina & winded
   if (E.winded > 0) E.winded = Math.max(0, E.winded - dt);
   if (E.vulnT > 0) E.vulnT = Math.max(0, E.vulnT - dt);
+  if (E.parryCd > 0) E.parryCd = Math.max(0, E.parryCd - dt);
+  if (E.drawCd > 0) E.drawCd = Math.max(0, E.drawCd - dt);
   if (E.aiming) E.aimT += dt;
   const regen = (E.rest < 30 ? 1.7 : 2.6) * (E.blocking ? 0.2 : 1);
   if (E.winded <= 0 && E.st < E.maxSt) { E.st = Math.min(E.maxSt, E.st + dt * regen); WARRIOR3D._updateMeters(E, true); }
@@ -683,7 +730,9 @@ WARRIOR3D._updateFoe = function (E, dt) {
     const wait = 0.34 + (1 - f.aggr) * 0.55;
     if (f.stateT > wait) { if (Math.random() < 0.88) WARRIOR3D._foeTelegraph(E); else { f.state = "open"; f.stateT = 0; f.openSide = WARRIOR3D.DIRS[Math.floor(Math.random() * 5)]; WARRIOR3D._prompt(E, `${f.def.name} overreaches — <b>an opening! Cut!</b>`, "good"); } }
   } else if (f.state === "windup") {
-    if (u.rArm) { const p = Math.min(1, f.stateT / (f.winMs / 1000)); const tgt = f.dir === "up" ? -2.4 : f.dir === "down" ? 0.7 : f.dir === "thrust" ? -1.3 : -1.0; u.rArm.rotation.x = THREE.MathUtils.lerp(-0.3, tgt, p); if (u.torso) u.torso.rotation.z = (f.dir === "left" ? 0.5 : f.dir === "right" ? -0.5 : 0) * p; }
+    const p = Math.min(1, f.stateT / (f.winMs / 1000));
+    if (u.rArm) { const tgt = f.dir === "up" ? -2.4 : f.dir === "down" ? 0.7 : f.dir === "thrust" ? -1.3 : -1.0; u.rArm.rotation.x = THREE.MathUtils.lerp(-0.3, tgt, p); if (u.torso) u.torso.rotation.z = (f.dir === "left" ? 0.5 : f.dir === "right" ? -0.5 : 0) * p; }
+    if (p >= 0.5) { const inc = document.getElementById("w3-incoming"); if (inc && inc.className.indexOf("ready") < 0) inc.className = "w3-incoming on ready"; }   // the flash — parry NOW
     if (f.stateT >= f.winMs / 1000) { if (f.feint) { f.state = "guard"; f.stateT = 0; const inc = document.getElementById("w3-incoming"); if (inc) inc.className = "w3-incoming"; if (u.torso) u.torso.rotation.z = 0; }
       else if (!f.defended) { if (dist < 2.9) WARRIOR3D._foeHits(E, 1); else WARRIOR3D._prompt(E, "You keep your distance — his cut finds only air.", "good"); f.state = "strike"; f.stateT = 0; if (u.torso) u.torso.rotation.z = 0; const inc = document.getElementById("w3-incoming"); if (inc) inc.className = "w3-incoming"; } }
   } else if (f.state === "strike") { if (u.rArm) u.rArm.rotation.x = THREE.MathUtils.lerp(u.rArm.rotation.x, 0.6, dt * 14); if (f.stateT > 0.16) { f.state = "recover"; f.stateT = 0; const inc = document.getElementById("w3-incoming"); if (inc) inc.className = "w3-incoming"; }
@@ -802,7 +851,7 @@ WARRIOR3D._bindControls = function (E) {
     b.addEventListener("touchstart", press, { passive: false }); b.addEventListener("mousedown", press);
     if (hold) { const rel = () => WARRIOR3D._release(action); b.addEventListener("touchend", rel); b.addEventListener("mouseup", rel); b.addEventListener("mouseleave", rel); } });
 
-  const KEY = { arrowup: "dir_up", arrowdown: "dir_down", arrowleft: "dir_left", arrowright: "dir_right", e: "dir_thrust", " ": "dodge", f: "shoot", enter: "continue" };
+  const KEY = { arrowup: "dir_up", arrowdown: "dir_down", arrowleft: "dir_left", arrowright: "dir_right", e: "dir_thrust", " ": "parry", c: "dodge", f: "shoot", enter: "continue" };
   const HOLD = { l: "block", shift: "block", q: "aim" }; const MOVE = { w: 1, a: 1, s: 1, d: 1 };
   E._key = (e) => { const k = e.key.toLowerCase();
     if (MOVE[k]) { E.km[k] = 1; e.preventDefault(); return; }

@@ -788,3 +788,8 @@ body.phone .wr-cardgrid{grid-template-columns:1fr 1fr}
 .w3-incoming.on{opacity:1}
 .w3-incoming .dir{display:block;font-family:var(--font-h);font-size:30px;font-weight:700;color:#ffdf8a;text-shadow:0 2px 8px #000,0 0 18px rgba(224,120,74,.7)}
 .w3-incoming .key{display:block;margin-top:2px;font-size:14px;color:#ffe;background:rgba(160,30,20,.6);border:1px solid #e0805a;border-radius:20px;padding:2px 12px}
+/* the "flash" — enemy blade is committed, PARRY window is open now */
+.w3-incoming.ready{animation:w3flash .18s steps(1) infinite}
+.w3-incoming.ready .dir{color:#fff;text-shadow:0 0 10px #fff,0 0 26px #ffd36a}
+.w3-incoming.ready .key{background:rgba(230,60,40,.92);border-color:#fff;transform:scale(1.12)}
+@keyframes w3flash{0%{filter:brightness(2.2)}50%{filter:brightness(1)}}

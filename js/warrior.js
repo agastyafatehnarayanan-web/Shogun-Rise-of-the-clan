@@ -26,26 +26,35 @@ WARRIOR.WEAPONS = {
   fastkatana: { name: "Katana (rōnin)", melee: "katana", reach: 2.5, atkMult: 1.08, ranged: "knife", quiver: 3, note: "quick, aggressive" },
   yari:       { name: "Yari", melee: "spear",      reach: 3.4, atkMult: 0.9,  ranged: "knife", quiver: 3, note: "long reach — poke before he closes" },
   naginata:   { name: "Naginata", melee: "naginata", reach: 3.2, atkMult: 1.2, ranged: "knife", quiver: 2, note: "long, heavy sweeps" },
-  bow:        { name: "Yumi", melee: "katana",     reach: 2.3, atkMult: 0.82, ranged: "bow", quiver: 12, rangedMult: 1.35, note: "deep quiver, deadly at range" },
-  gunner:     { name: "Teppō", melee: "katana",    reach: 2.3, atkMult: 0.88, ranged: "gun", gun: 3, gunDmg: 16, quiver: 0, note: "a few devastating shots" },
+  bow:        { name: "Yumi", melee: "katana",     reach: 2.3, atkMult: 0.86, ranged: "bow", quiver: 5, rangedMult: 0.8, note: "a few arrows to soften them — then draw your blade" },
+  gunner:     { name: "Teppō", melee: "katana",    reach: 2.3, atkMult: 0.9, ranged: "gun", gun: 2, gunDmg: 15, quiver: 0, note: "one or two devastating shots" },
 };
 
-/* the ladder — the top is DAIMYŌ */
+/* the ladder — a long climb; the top is DAIMYŌ */
 WARRIOR.RANKS = [
-  { name: "Nameless", jp: "無名" }, { name: "Footman", jp: "足軽" }, { name: "Retainer", jp: "郎党" },
-  { name: "Samurai", jp: "侍" }, { name: "Hatamoto", jp: "旗本" }, { name: "Taishō", jp: "大将" }, { name: "Daimyō", jp: "大名" },
+  { name: "Nameless", jp: "無名" }, { name: "Footman", jp: "足軽" }, { name: "Spear-Corporal", jp: "組頭" },
+  { name: "Retainer", jp: "郎党" }, { name: "Samurai", jp: "侍" }, { name: "Squad Leader", jp: "士大将" },
+  { name: "Hatamoto", jp: "旗本" }, { name: "Bugyō", jp: "奉行" }, { name: "Taishō", jp: "大将" },
+  { name: "Karō", jp: "家老" }, { name: "Daimyō", jp: "大名" },
 ];
 
-/* foe templates — skill sets the parry window; tuned to be demanding */
+/* foe templates — skill sets the parry window; tuned HARD (Minecraft+10).
+ * A veteran foe winds up fast, feints often, and reads a blind swing. */
 WARRIOR.FOES = {
-  bandit:   { name: "Bandit", hp: 20, dmg: 7, skill: 0.62, aggr: 0.72, color: 0x6a5a3a },
-  looter:   { name: "Looter", hp: 18, dmg: 7, skill: 0.58, aggr: 0.78, color: 0x5a4a34 },
-  ashigaru: { name: "Enemy Ashigaru", hp: 26, dmg: 8, skill: 0.66, aggr: 0.72, color: 0x4a5a3a },
-  ronin:    { name: "Rōnin Blade", hp: 30, dmg: 10, skill: 0.8, aggr: 0.9, color: 0x3a3a3a },
-  guard:    { name: "Gate Guard", hp: 34, dmg: 9, skill: 0.74, aggr: 0.64, color: 0x40506a },
-  captain:  { name: "Guard Captain", hp: 48, dmg: 12, skill: 0.86, aggr: 0.84, color: 0x5a2f2a },
-  champion: { name: "Enemy Champion", hp: 66, dmg: 14, skill: 0.9, aggr: 0.86, color: 0x3a2a4a },
-  kuro:     { name: "Kuroda the Ash-Maker", hp: 84, dmg: 16, skill: 0.95, aggr: 0.92, color: 0x2a2a2a },
+  bandit:   { name: "Bandit", hp: 24, dmg: 9, skill: 0.7, aggr: 0.8, color: 0x6a5a3a },
+  looter:   { name: "Looter", hp: 22, dmg: 9, skill: 0.66, aggr: 0.86, color: 0x5a4a34 },
+  brigand:  { name: "Brigand", hp: 30, dmg: 11, skill: 0.74, aggr: 0.9, color: 0x574733 },
+  ashigaru: { name: "Enemy Ashigaru", hp: 32, dmg: 11, skill: 0.74, aggr: 0.78, color: 0x4a5a3a },
+  spearman: { name: "Enemy Spearman", hp: 34, dmg: 12, skill: 0.76, aggr: 0.7, color: 0x445238 },
+  ronin:    { name: "Rōnin Blade", hp: 38, dmg: 13, skill: 0.86, aggr: 0.95, color: 0x3a3a3a },
+  duelist:  { name: "Wandering Duelist", hp: 42, dmg: 14, skill: 0.9, aggr: 0.9, color: 0x2f3540 },
+  guard:    { name: "Gate Guard", hp: 42, dmg: 12, skill: 0.8, aggr: 0.66, color: 0x40506a },
+  sohei:    { name: "Warrior Monk", hp: 52, dmg: 14, skill: 0.84, aggr: 0.72, color: 0x6a5030 },
+  captain:  { name: "Guard Captain", hp: 60, dmg: 16, skill: 0.9, aggr: 0.86, color: 0x5a2f2a },
+  general:  { name: "Rival General", hp: 74, dmg: 18, skill: 0.92, aggr: 0.82, color: 0x503a5a },
+  champion: { name: "Enemy Champion", hp: 88, dmg: 19, skill: 0.94, aggr: 0.88, color: 0x3a2a4a },
+  oni:      { name: "Oni-Masked Killer", hp: 96, dmg: 21, skill: 0.96, aggr: 0.94, color: 0x5a1f1f },
+  kuro:     { name: "Kuroda the Ash-Maker", hp: 118, dmg: 22, skill: 0.98, aggr: 0.96, color: 0x2a2a2a },
 };
 
 WARRIOR.rankFor = function (i) { return WARRIOR.RANKS[Math.max(0, Math.min(WARRIOR.RANKS.length - 1, i))]; };
@@ -178,7 +187,7 @@ WARRIOR.runStory = async function () {
   await W.say(`<b>Move</b> with WASD or drag the <b>left</b> of the screen. <b>Look</b> by dragging the <b>right</b> (or the mouse). Follow the glowing marker to the muster.`);
   await W.goto(3, -13, "the muster ground", "muster");
   await W.say(`Sergeant Gorō looks you over. "Another stray with a grudge. Let's see if you can hold a blade — come at me."`, { who: "Sergeant Gorō" });
-  await W.say(`<b>How to fight — blend attack &amp; defence.</b> When he strikes, a <b>direction</b> flashes: parry that same way (overhead ↑, low ↓, left ←, right →, thrust E). Parrying <b>cracks his guard</b>. In the gaps between his blows, <b>press your own attacks</b> (the same direction keys/buttons) to batter his guard down — he'll turn a blade or two, so vary your line. When his <b>guard breaks</b>, cut the opening for a heavy blow. Every move costs <b>stamina</b>, and the bow holds only a few arrows — you can't spam your way to victory. Read him.`, { big: true });
+  await W.say(`<b>Attack and defence are two different things now.</b><br>• <b>PARRY</b> is one button — <b>Space</b> (or the ⚔️ Parry button). When he winds up, his blade <b>flashes</b>; press parry <b>on the flash</b> to turn it and crack his guard. Parrying does <b>no damage on its own</b> — it only opens him.<br>• <b>ATTACK</b> is the <b>directions</b> — ↑ ↓ ← → and <b>E</b> to thrust (or the rosette buttons). After a parry, an <b>opening</b> appears — that's when your cuts land hard.<br>• Swing <b>into</b> his wind-up and you'll trade badly — parry first, then cut. Swing at a braced guard and a good foe turns it and counters. Every move burns <b>stamina</b>; mash and you wind yourself. <b>Bait his attack → parry the flash → cut the opening.</b>`, { big: true });
   await WARRIOR.battle([WARRIOR.foe("ashigaru", "Sergeant Gorō")], { tutorial: true });
   await W.say(`Gorō spits, and grins. "Huh. You'll do." You are ${clan} now — the lowest rung of it, but yours.`, { who: "Sergeant Gorō" });
   WARRIOR.rankUp(1, "a footman of the " + clan);
@@ -186,52 +195,128 @@ WARRIOR.runStory = async function () {
   await W.goto(-5, -7, "the campfire", "camp");
   await WARRIOR.camp(`You reach the fire as the host stirs. Your strength won't return on its own — <b>eat, rest, or sleep</b> to recover.`);
 
-  // ---------- CH.1 — first blood on the field ----------
+  // ---------- CH.1 — first blood at the ford ----------
   W.setTheme("day");
   await W.say(`Dawn breaks grey over the river. A rival column is fording below, and you are shoved into the front rank. "Hold the line!" the drums roar.`, { big: true });
   await W.goto(0, -11, "the shield line", "line");
-  await W.say(`Your comrades lock shields to your right. They hit the line — parry each blade, break his guard, and strike.`, { who: "" });
+  await W.say(`Your comrades lock shields to your right. They hit the line — bait each blade, parry the flash, and cut the opening.`, { who: "" });
   await WARRIOR.battle([WARRIOR.foe("looter"), WARRIOR.foe("ashigaru"), WARRIOR.foe("bandit")]);
+  await W.say(`The first rank breaks — but the ford is churned red and more are wading across. Set your feet.`, { who: "" });
+  await WARRIOR.battle([WARRIOR.foe("bandit"), WARRIOR.foe("ashigaru"), WARRIOR.foe("looter")]);
   await W.say(`The column breaks and runs. You are still standing — bloodied, ears ringing, alive. Men who did not know your face now nod to it.`, { who: "" });
-  WARRIOR.rankUp(2, "a retainer, trusted with real work");
+  WARRIOR.rankUp(2, "a spear-corporal — men at your shoulder now");
   await W.goto(-6, -6, "the night camp", "camp");
-  await WARRIOR.camp(`Night falls. Rest — tomorrow's work is quieter, and deadlier.`);
+  await WARRIOR.camp(`Night falls. Rest — and <b>train</b>: the foes ahead hit harder, and raw skill won't be enough. Your stats decide who walks away.`);
 
-  // ---------- CH.2 — night work (assassination) ----------
+  // ---------- CH.2 — raiders in the village ----------
+  W.setTheme("day");
+  await W.say(`Smoke on the wind. Kuroda's raiders are burning a farming village for grain — the same way yours went. You don't wait for orders.`, { big: true });
+  await W.goto(2, -12, "the burning village", "village");
+  await W.say(`Brigands are dragging rice from the stores. They turn on you, laughing. Cut them down.`, { who: "" });
+  await WARRIOR.battle([WARRIOR.foe("brigand"), WARRIOR.foe("looter"), WARRIOR.foe("brigand")]);
+  await W.say(`An old farmer clutches your sleeve. "You wear the ${clan} mon. My grandson — they took the boys toward the bridge. Please." You go.`, { who: "Old Farmer" });
+  await W.goto(-4, -8, "the fire", "camp");
+  await WARRIOR.camp(`Bind your wounds by the well. The bridge road is next.`);
+
+  // ---------- CH.3 — hold the bridge ----------
+  W.setTheme("dusk");
+  await W.say(`The old wooden bridge over the gorge — the only way the raiders can drive their loot out. Hold it, and they're trapped. A spear-file forms at the far rail.`, { big: true });
+  await W.goto(0, -13, "the bridge", "bridge");
+  await W.say(`One at a time on the planks — the reach of a spear rules here. Time the flash; punish the opening.`, { who: "" });
+  await WARRIOR.battle([WARRIOR.foe("spearman"), WARRIOR.foe("ashigaru"), WARRIOR.foe("spearman"), WARRIOR.foe("brigand")]);
+  await W.say(`The last of them goes over the rail into the white water. The captive boys stumble free. Word runs up the line: the corporal held the bridge alone.`, { who: "" });
+  WARRIOR.rankUp(3, "a retainer, trusted with real work");
+  await W.goto(-5, -6, "the fire", "camp");
+  await WARRIOR.camp(`Rest. Whet your blade — and yourself.`);
+
+  // ---------- CH.4 — the wandering duelist ----------
   W.setTheme("night");
-  await W.say(`A woman in grey finds you — Aya, who deals in the work done after dark. "A rival captain holds the river fort. Tonight he dies, and the fort opens. You have a talent for staying alive; prove you have one for endings."`, { who: "Aya" });
-  await W.say(`She nods to the treeline. "Over the wall. Quiet as you can — but if they wake, cut your way through."`, { who: "Aya" });
+  await W.say(`A lone swordsman waits on the road under a dead pine, blade already bare. "They say a corporal held the bridge. I collect names. Draw." No line, no shields — just the two of you.`, { who: "Wandering Duelist", big: true });
+  await W.goto(1, -11, "the duelling ground", "muster");
+  await W.say(`He is patient and terribly fast, and he <b>feints</b> — don't parry the first twitch. Read the real cut.`, { who: "" });
+  await WARRIOR.battle([WARRIOR.foe("duelist", "Wandering Duelist")]);
+  await W.say(`He sinks to one knee, astonished, and bows his head. "…A good name. Keep it." He is gone into the dark before you can answer.`, { who: "Wandering Duelist" });
+  WARRIOR.rankUp(4, "a samurai in your own right");
+  await W.goto(-4, -7, "the fire", "camp");
+  await WARRIOR.camp(`Aya finds you at the fire. "There's darker work, if your nerve holds."`);
+
+  // ---------- CH.5 — night work (the river fort) ----------
+  W.setTheme("night");
+  await W.say(`Aya deals in the work done after dark. "A rival captain holds the river fort. Tonight he dies, and the fort opens. Over the wall — quiet as you can, but if they wake, cut your way through."`, { who: "Aya" });
   await W.goto(2, -14, "the fort wall", "fort");
-  await W.say(`The palisade looms — a torch-lit fort gate. A guard turns at the last instant. Take him — fast.`, { who: "" });
-  await WARRIOR.battle([WARRIOR.foe("guard", "Gate Guard")]);
-  await W.say(`Inside, the captain is already on his feet, blade drawn. He is fast, and he is not afraid.`, { who: "" });
+  await W.say(`The palisade looms — a torch-lit gate. A guard turns at the last instant. Take him fast, before he shouts.`, { who: "" });
+  await WARRIOR.battle([WARRIOR.foe("guard", "Gate Guard"), WARRIOR.foe("guard", "Roused Guard")]);
+  await W.say(`A bell begins to toll — they're awake. The captain is already on his feet in the yard, blade drawn, unafraid.`, { who: "" });
   await WARRIOR.battle([WARRIOR.foe("captain", "Guard Captain")]);
   await W.say(`The captain falls and the fort's heart goes out of it. By dawn it flies ${clan} colours. Aya regards you with something close to respect. "Now you're worth a name."`, { who: "Aya" });
-  WARRIOR.rankUp(3, "a samurai in your own right");
+  WARRIOR.rankUp(5, "a squad leader — a banner of your own");
   await W.goto(-5, -6, "the fire", "camp");
-  await WARRIOR.camp(`Recover. Aya has one more road for you — the one you've carried since your village burned.`);
+  await WARRIOR.camp(`Sleep in a taken fort. Train hard — the mountain temple ahead does not forgive.`);
 
-  // ---------- CH.3 — the Ash-Maker ----------
+  // ---------- CH.6 — the warrior monks ----------
   W.setTheme("dusk");
-  await W.say(`"Kuroda the Ash-Maker rides with the enemy now," Aya says. "A mountain shrine, north. Cut through his raiders — and finish it."`, { who: "Aya", big: true });
-  await W.goto(0, -12, "the shrine road", "shrine");
-  await W.say(`His raiders boil out of the treeline. Carve the path yourself.`, { who: "" });
-  await WARRIOR.battle([WARRIOR.foe("bandit"), WARRIOR.foe("ronin"), WARRIOR.foe("looter"), WARRIOR.foe("ronin")]);
-  WARRIOR.rankUp(4, "a hatamoto — a bannerman");
-  await W.goto(-4, -7, "a shrine of stone", "shrine");
-  await WARRIOR.camp(`The shrine steps are close. Steady yourself — what waits above will not be easy.`);
+  await W.say(`The enemy has bought the sōhei — warrior monks of the mountain temple, and they do not sell cheaply. Naginatas gleam on the temple steps. There is no way around.`, { big: true });
+  await W.goto(0, -12, "the temple steps", "shrine");
+  await W.say(`They fight with long, heavy sweeps — stay patient, parry the arc, and get inside the reach to answer.`, { who: "" });
+  await WARRIOR.battle([WARRIOR.foe("sohei"), WARRIOR.foe("sohei")]);
+  await W.say(`The abbot himself blocks the gate, calm as still water. "Prove your cause is worth their bones." He raises the naginata.`, { who: "Abbot" });
+  await WARRIOR.battle([WARRIOR.foe("sohei", "The Abbot")]);
+  await W.say(`The abbot lowers his blade and steps aside. "Pass. And carry them lightly." The temple bell rings once behind you.`, { who: "Abbot" });
+  WARRIOR.rankUp(6, "a hatamoto — a bannerman of the lord");
+  await W.goto(-4, -7, "the fire", "camp");
+  await WARRIOR.camp(`Rest under the temple eaves. A rival general marches to meet you on the plain.`);
+
+  // ---------- CH.7 — the rival general ----------
+  W.setTheme("day");
+  await W.say(`A rival general has drawn up his best on the open plain to end your rise before it becomes a threat. His guard forms a wall of blades. You lead the charge.`, { big: true });
+  await W.goto(0, -11, "the enemy line", "line");
+  await W.say(`Break his household guard first — then the general has nowhere to stand.`, { who: "" });
+  await WARRIOR.battle([WARRIOR.foe("ashigaru"), WARRIOR.foe("ronin"), WARRIOR.foe("spearman"), WARRIOR.foe("ronin")]);
+  await W.say(`His guard is shattered. The general spurs forward himself, ivory war-fan snapping shut. "Upstart. I've buried better than you."`, { who: "Rival General" });
+  await WARRIOR.battle([WARRIOR.foe("general", "Rival General")]);
+  await W.say(`The general topples from the saddle and the plain is yours. Your lord sends his own sword-token in thanks — you command wings of the army now.`, { who: "" });
+  WARRIOR.rankUp(7, "a bugyō — a commander of men");
+  await W.goto(-5, -6, "the fire", "camp");
+  await WARRIOR.camp(`Recover. Only the mountains lie between you and the Ash-Maker now.`);
+
+  // ---------- CH.8 — the mountain pass ----------
+  W.setTheme("dusk");
+  await W.say(`The pass into Kuroda's country is a knife of stone, and he has salted it with rōnin sworn to die on it. Climb, and cut them loose from the road.`, { big: true });
+  await W.goto(1, -13, "the high pass", "shrine");
+  await W.say(`Loose scree, a long drop, and blades from every rock. Footing and patience — don't overreach.`, { who: "" });
+  await WARRIOR.battle([WARRIOR.foe("ronin"), WARRIOR.foe("duelist"), WARRIOR.foe("ronin"), WARRIOR.foe("brigand")]);
+  await W.say(`The last body slides off the path into the cloud below. Above you, torchlight — Kuroda's shrine-camp. He knows you're coming.`, { who: "" });
+  WARRIOR.rankUp(8, "a taishō — a general in your own right");
+  await W.goto(-4, -7, "the fire", "camp");
+  await WARRIOR.camp(`The last fire before the summit. Eat well. Spend every skill point you've earned. What waits above will not be easy.`);
+
+  // ---------- CH.9 — the Ash-Maker's vanguard ----------
+  W.setTheme("night");
+  await W.say(`Kuroda's vanguard holds the burnt shrine-town under a red moon — and at its heart, an oni-masked killer he keeps for men exactly like you.`, { big: true });
+  await W.goto(0, -12, "the burnt town", "village");
+  await W.say(`Cut through his vanguard to reach the steps.`, { who: "" });
+  await WARRIOR.battle([WARRIOR.foe("brigand"), WARRIOR.foe("ronin"), WARRIOR.foe("duelist")]);
+  await W.say(`The oni-mask steps over his own men, saying nothing. Whatever face was under it, Kuroda burned away long ago.`, { who: "" });
+  await WARRIOR.battle([WARRIOR.foe("oni", "Oni-Masked Killer")]);
+  await W.say(`The mask cracks on the stones. Only the steps remain now — and the man at the top of them.`, { who: "" });
+  WARRIOR.rankUp(9, "a karō — chief retainer of the clan");
+  await W.goto(-4, -7, "the shrine fire", "camp");
+  await WARRIOR.camp(`The shrine steps are close. Steady yourself. This is the reckoning you have carried since the smoke came over your ridge.`);
+
+  // ---------- CH.10 — the Champion and the Ash-Maker ----------
+  W.setTheme("dusk");
   await W.say(`The enemy Champion bars the steps — a giant in black lacquer. Behind him, a man with a burn scar down one cheek watches, and laughs.`, { who: "" });
   await W.goto(1, -13, "the shrine steps", "shrine");
   await WARRIOR.battle([WARRIOR.foe("champion", "Enemy Champion")]);
   await W.say(`The Champion crashes down. Kuroda stops laughing. "So the little farm-boy grew teeth. I remember your village. They blur together after a while."`, { who: "Kuroda" });
-  await W.say(`He is faster than the Champion, and there is no one left between you. This is the moment you have carried since the smoke came over the ridge.`, { who: "" });
+  await W.say(`He is faster than the Champion, and there is no one left between you. Everything — every fire, every rank, every scar — was the road to this breath.`, { who: "" });
   await WARRIOR.battle([WARRIOR.foe("kuro", "Kuroda the Ash-Maker")]);
 
   // ---------- FINALE — become daimyō ----------
   W.setTheme("day");
   await W.say(`Kuroda folds around your blade and goes still among the ash of a hundred villages. The valley is yours; ${clan} banners climb the shrine as the mist burns off.`, { who: "", big: true });
   await W.say(`Aya finds you on the steps. "It's done. And you — you're no footman now. The lord is dead without heir, and the retainers look to the one who took the valley." She kneels. "They look to you."`, { who: "Aya" });
-  WARRIOR.rankUp(6, "proclaimed lord of the clan");
+  WARRIOR.rankUp(10, "proclaimed lord of the clan");
   await W.say(`You sheathe the chipped blade your father gave you. It has carried you from a rice paddy to this — <b>daimyō</b> of the ${clan}. The war is not over. But the ash is answered, and the road runs on.`, { big: true });
   const again = await W.say(`⚔ <b>Way of the Warrior — complete.</b>`, { choices: ["Begin a new life", "Return to menu"] });
   if (again === 0) { WARRIOR3D.leave(); WARRIOR.open(); } else WARRIOR.toTitle();
