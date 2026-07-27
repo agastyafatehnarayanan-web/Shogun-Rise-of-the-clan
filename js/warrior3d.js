@@ -80,21 +80,21 @@ WARRIOR3D.enter = function (opts) {
         <div class="w3-joy" id="w3-joy"><span class="w3-joy-base"></span><span class="w3-joy-knob"></span></div>
         <div class="w3-controls" id="w3-controls">
           <div class="w3-cluster left">
-            <button class="w3-b parry" data-a="parry" data-hold="1">⚔️<i>Guard</i></button>
-            <button class="w3-b block" data-a="block" data-hold="1">🛡️<i>Block</i></button>
+            <button class="w3-b parry" data-a="parry" data-hold="1">🛡️<i>Guard/Parry</i></button>
             <button class="w3-b dodge" data-a="dodge">💨<i>Dodge</i></button>
             <button class="w3-b aim" data-a="aim" data-hold="1">🎯<i>Aim</i></button>
             <button class="w3-b shoot" data-a="shoot">🏹<i>Shoot</i></button>
           </div>
           <div class="w3-rosette">
-            <button class="w3-b up atk" data-a="dir_up" title="cut high">⤒</button>
-            <button class="w3-b left atk" data-a="dir_left" title="cut left">⇤</button>
+            <button class="w3-b up atk" data-a="dir_up" title="light cut — high">⤒</button>
+            <button class="w3-b left atk" data-a="dir_left" title="light cut — left">⇤</button>
             <button class="w3-b stab atk" data-a="dir_thrust" title="thrust">✦</button>
-            <button class="w3-b right atk" data-a="dir_right" title="cut right">⇥</button>
-            <button class="w3-b down atk" data-a="dir_down" title="cut low">⤓</button>
+            <button class="w3-b right atk" data-a="dir_right" title="light cut — right">⇥</button>
+            <button class="w3-b down atk" data-a="dir_down" title="light cut — low">⤓</button>
+            <button class="w3-b heavy" data-a="heavy" title="heavy blow (R)">💥</button>
           </div>
         </div>
-        <div class="w3-hint" id="w3-hint">Move WASD · Look right-drag · ATTACK ↑↓←→/E (rosette) · PARRY = HOLD Space on the flash, release to cut · Block L · Dodge C · Aim Q · Shoot F</div>
+        <div class="w3-hint" id="w3-hint">Move WASD · Look drag · LIGHT ↑↓←→/E · HEAVY R/💥 · PARRY = HOLD Space on the flash, release to strike · Dodge C · Aim Q · Shoot F</div>
       </div>
     </div>`;
 
@@ -132,7 +132,7 @@ WARRIOR3D.enter = function (opts) {
     px: 0, pz: 0, km: {}, joy: { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 }, look: { active: false, id: null, lx: 0, ly: 0 },
     viewYaw: 0, viewPitch: 0,
     vmClip: "idle", vmT: 0, blocking: false, aiming: false, aimT: 0, dodgeT: 0, dodgeDir: 1, shake: 0, hitFlash: 0,
-    winded: 0, vulnT: 0, combo: 0, parrying: false, parryHoldT: 0, drawCd: 0, fov: 72, fovTarget: 72,
+    winded: 0, vulnT: 0, combo: 0, parrying: false, parryHoldT: 0, parryFlash: 0, hitStop: 0, heavyCd: 0, drawCd: 0, fov: 72, fovTarget: 72,
     quiver: (p.weapon && p.weapon.quiver) || 3, gunAmmo: (p.weapon && p.weapon.gun) || 0,
     particles: [], arrows: [],
   };
@@ -563,13 +563,16 @@ WARRIOR3D._dir = function (E, d) {
     return;
   }
   const dist = Math.hypot(f.mesh.position.x - E.px, f.mesh.position.z - E.pz), reach = E.weapon.reach || 2.6;
-  // strike a broken / open foe — the real damage window
+  // a STUNNED foe — a brutal finisher; an OPEN foe — a clean heavy cut
   if (f.state === "staggered" || f.state === "open") {
     if (dist > reach + 0.5) { WARRIOR3D._prompt(E, "Too far — close in to strike!", "warn"); return; }
     if (!WARRIOR3D._costOrWinded(E, 2)) return;
-    WARRIOR3D._vm(E, "cut_" + d); E.combo++;
+    const finisher = f.state === "staggered";
+    WARRIOR3D._vm(E, finisher ? "finish" : "cut_" + d); E.combo++;
     let dm = Math.round((E.atk + Math.min(7, E.combo * 1.5)) * E.weapon.atkMult) + (d === "thrust" ? 2 : 0); if (f.openSide && d === f.openSide) dm += 3;
-    WARRIOR3D._damageFoe(E, dm, false); if (!f.dead) WARRIOR3D._prompt(E, `🗡️ cut into the gap — <b>−${dm}</b>! Keep pressing.`, "good");
+    if (finisher) { dm = Math.round(dm * 1.9); E.hitStop = 0.09; E.shake = Math.max(E.shake, 0.7); }   // weighty, brutal
+    WARRIOR3D._damageFoe(E, dm, false); WARRIOR3D._spawnBlood(E, f); if (finisher) WARRIOR3D._spawnBlood(E, f);
+    if (!f.dead) WARRIOR3D._prompt(E, finisher ? `🩸 <b>FINISHER — −${dm}!</b> Press him!` : `🗡️ cut into the gap — <b>−${dm}</b>! Keep pressing.`, "good");
     return;
   }
   // press his guard — offense chips poise, but a skilled foe reads the swing, turns it, and punishes
@@ -585,10 +588,38 @@ WARRIOR3D._dir = function (E, d) {
     else if (!f.dead) WARRIOR3D._prompt(E, `⚔️ You batter his guard — poise ${Math.max(0, f.poise)}. Watch for his cut.`, ""); }
 };
 
+// ── HEAVY attack (R / Heavy button) — slow, committed, brutal. Breaks a guard,
+//    but you're wide open after: use it when he's not swinging. ──
+WARRIOR3D._heavy = function (E) {
+  const f = E.foe; if (!f || f.dead) return;
+  if (E.parrying) { WARRIOR3D._prompt(E, "Release your guard to strike.", ""); return; }
+  if (E.heavyCd > 0) return;
+  if (f.state === "windup") {                              // too slow into his cut — you get clipped
+    if (!WARRIOR3D._costOrWinded(E, 4)) return;
+    E.heavyCd = 0.75; WARRIOR3D._vm(E, "heavy"); f.defended = true; f.state = "strike"; f.stateT = 0; E.combo = 0;
+    WARRIOR3D._foeHits(E, 1.3); WARRIOR3D._prompt(E, "❌ Too slow into his cut — <b>parry first</b>, heavy after.", "warn"); return;
+  }
+  const dist = Math.hypot(f.mesh.position.x - E.px, f.mesh.position.z - E.pz), reach = (E.weapon.reach || 2.6) + 0.2;
+  if (dist > reach) { WARRIOR3D._prompt(E, "Too far for a heavy blow — close in.", "warn"); return; }
+  if (!WARRIOR3D._costOrWinded(E, 4)) return;              // heavies cost a lot of wind
+  E.heavyCd = 0.75; WARRIOR3D._vm(E, "heavy"); E.combo = 0;
+  if (f.state === "staggered" || f.state === "open") {     // crushing finisher
+    const dm = Math.round((E.atk * 1.8 + 6) * E.weapon.atkMult); E.hitStop = 0.1; E.shake = Math.max(E.shake, 0.78);
+    WARRIOR3D._damageFoe(E, dm, false); WARRIOR3D._spawnBlood(E, f); WARRIOR3D._spawnBlood(E, f);
+    if (!f.dead) WARRIOR3D._prompt(E, `🩸 <b>Crushing blow — −${dm}!</b>`, "good"); return;
+  }
+  // vs a braced guard: a heavy rocks it hard, but leaves you open
+  f.poise -= 2; E.vulnT = 0.5; E.hitStop = 0.05; E.shake = Math.max(E.shake, 0.42);
+  WARRIOR3D._damageFoe(E, Math.max(2, Math.round(E.atk * 0.6 * E.weapon.atkMult)), false);
+  if (!f.dead && f.poise <= 0) { f.state = "staggered"; f.stateT = 0; f.openSide = "up"; f.poise = f.poiseMax; WARRIOR3D._prompt(E, "💥 <b>Heavy blow staggers him!</b> Finish it!", "good"); }
+  else if (!f.dead) WARRIOR3D._prompt(E, `💥 A heavy rocks his guard — poise ${Math.max(0, f.poise)}. <b>You're open — recover!</b>`, "warn");
+};
+
 WARRIOR3D._input = function (action) {
   const E = WARRIOR3D._e; if (!E || !E.running) return;
   if (E.onContinue && (action === "continue" || action === "parry")) { E.onContinue(); return; }  // space/enter/tap advances dialogue
   if (action === "parry") { if (E.mode === "fight") WARRIOR3D._parry(E); return; }
+  if (action === "heavy") { if (E.mode === "fight") WARRIOR3D._heavy(E); return; }
   if (action === "block") { E.blocking = true; WARRIOR3D._vm(E, "block"); return; }
   if (action === "aim") { if (E.mode !== "fight") return; E.aiming = true; E.aimT = 0; E.fovTarget = 52; WARRIOR3D._vm(E, "aim"); const rt = document.getElementById("w3-reticle"); if (rt) rt.classList.add("on"); return; }
   if (action === "shoot") { if (E.mode !== "fight") return; const rt = E.weapon.ranged;
@@ -656,17 +687,21 @@ WARRIOR3D._loop = function () {
   E.raf = requestAnimationFrame(WARRIOR3D._loop);
   const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
   let dt = (now - E.clock) / 1000; E.clock = now; if (dt > 0.05) dt = 0.05;
+  const realDt = dt;
+  if (E.hitStop > 0) { E.hitStop = Math.max(0, E.hitStop - realDt); dt *= 0.08; }   // brief freeze-frame on heavy impacts — weight
 
+  // timers (real time, so a hit-stop can't stall them)
+  if (E.parryFlash > 0) E.parryFlash = Math.max(0, E.parryFlash - realDt);
+  if (E.heavyCd > 0) E.heavyCd = Math.max(0, E.heavyCd - realDt);
+  if (E.drawCd > 0) E.drawCd = Math.max(0, E.drawCd - realDt);
   // stamina & winded
   if (E.winded > 0) E.winded = Math.max(0, E.winded - dt);
   if (E.vulnT > 0) E.vulnT = Math.max(0, E.vulnT - dt);
-  if (E.parryCd > 0) E.parryCd = Math.max(0, E.parryCd - dt);
-  if (E.drawCd > 0) E.drawCd = Math.max(0, E.drawCd - dt);
   if (E.aiming) E.aimT += dt;
   const regen = (E.rest < 30 ? 1.7 : 2.6) * (E.blocking ? 0.2 : 1);
   if (E.winded <= 0 && E.st < E.maxSt) { E.st = Math.min(E.maxSt, E.st + dt * regen); WARRIOR3D._updateMeters(E, true); }
   if (E.blocking && E.mode === "fight") { E.st = Math.max(0, E.st - dt * 1.1); if (E.st <= 0) { E.winded = 1.0; E.blocking = false; } WARRIOR3D._updateMeters(E, true); }
-  if (E.parrying && E.mode === "fight") { E.parryHoldT += dt; E.st = Math.max(0, E.st - dt * 1.35); if (E.st <= 0) { E.winded = 1.0; E.parrying = false; if (E.vmClip === "parry") WARRIOR3D._vm(E, "idle"); } WARRIOR3D._updateMeters(E, true); }
+  if (E.parrying && E.mode === "fight") { E.parryHoldT += dt; E.st = Math.max(0, E.st - dt * 1.0); if (E.st <= 0) { E.winded = 1.0; E.parrying = false; if (E.vmClip === "parry") WARRIOR3D._vm(E, "idle"); } WARRIOR3D._updateMeters(E, true); }
 
   if (E.foe) WARRIOR3D._updateFoe(E, dt);
   WARRIOR3D._updateViewmodel(E, dt);
@@ -727,13 +762,14 @@ WARRIOR3D._updateFoe = function (E, dt) {
       else if (!f.defended) {
         const inc = document.getElementById("w3-incoming"); if (inc) inc.className = "w3-incoming"; if (u.torso) u.torso.rotation.z = 0;
         if (E.parrying && dist < 3.4) {
-          // HELD GUARD catches the blow. Raised reactively (on the flash) = crack his guard; turtled up early = safe block only.
-          const perfect = E.parryHoldT <= (f.winMs / 1000) * 0.6;
-          f.defended = true; f.poise -= perfect ? 2 : 1; E.combo = 0; E.shake = Math.max(E.shake, 0.32); WARRIOR3D._spawnSpark(E, f);
-          if (perfect) E.st = Math.min(E.maxSt, E.st + 1.5);
-          if (f.poise <= 0) { f.state = "staggered"; f.stateT = 0; f.openSide = f.dir; f.poise = f.poiseMax; WARRIOR3D._prompt(E, "⚔️ <b>Deflected — his guard shatters!</b> Release &amp; cut!", "good"); }
-          else if (perfect) { f.state = "open"; f.stateT = 0; f.openSide = f.dir; WARRIOR3D._prompt(E, "⚔️ <b>Parried!</b> An opening — <b>release Space, then attack</b>.", "good"); }
-          else { f.state = "recover"; f.stateT = 0; WARRIOR3D._prompt(E, "🛡️ Safe block — but you guarded too early to open him. Raise it on the flash.", ""); }
+          // HELD GUARD catches the blow. Raised reactively (on the flash) = a PARRY that stuns; turtled up early = a safe block.
+          const perfect = E.parryHoldT <= (f.winMs / 1000) * 0.62;
+          f.defended = true; E.combo = 0; WARRIOR3D._spawnSpark(E, f);
+          E.parryFlash = 0.25; E.hitStop = perfect ? 0.07 : 0.04; E.shake = Math.max(E.shake, perfect ? 0.55 : 0.3);
+          if (perfect) { f.poise -= 3; E.st = Math.min(E.maxSt, E.st + 2); } else f.poise -= 1;
+          if (f.poise <= 0) { f.state = "staggered"; f.stateT = 0; f.openSide = f.dir; f.poise = f.poiseMax; WARRIOR3D._prompt(E, "⚔️ <b>PARRY! He's stunned</b> — release and <b>FINISH him</b>!", "good"); }
+          else if (perfect) { f.state = "open"; f.stateT = 0; f.openSide = f.dir; WARRIOR3D._prompt(E, "⚔️ <b>Parried!</b> Guard cracked — release &amp; strike!", "good"); }
+          else { f.state = "recover"; f.stateT = 0; WARRIOR3D._prompt(E, "🛡️ Blocked — but you turtled. Raise the guard <b>on the flash</b> to PARRY.", ""); }
           WARRIOR3D._updateMeters(E);
         } else {
           if (dist < 2.9) WARRIOR3D._foeHits(E, 1); else WARRIOR3D._prompt(E, "You keep your distance — his cut finds only air.", "good");
@@ -749,12 +785,11 @@ WARRIOR3D._updateFoe = function (E, dt) {
 
 /* per-attack viewmodel animation */
 WARRIOR3D.SWING = {
-  cut_up: { dp: [-0.15, 0.34, 0.30], dr: [-2.0, -0.5, 0], dur: 0.28 }, cut_down: { dp: [-0.10, -0.30, 0.26], dr: [1.5, 0.3, 0], dur: 0.28 },
-  cut_left: { dp: [-0.58, 0.12, 0.20], dr: [-0.3, 1.5, -1.3], dur: 0.26 }, cut_right: { dp: [0.34, 0.12, 0.20], dr: [-0.3, -1.5, 1.3], dur: 0.26 },
-  cut_thrust: { dp: [-0.10, -0.04, 0.62], dr: [-0.2, 0.1, 0], dur: 0.24 },
-  parry_up: { dp: [-0.05, 0.24, 0.06], dr: [-0.9, 0.3, 0.2], dur: 0.2 }, parry_down: { dp: [-0.05, -0.14, 0.06], dr: [0.7, 0.3, 0.2], dur: 0.2 },
-  parry_left: { dp: [-0.24, 0.12, 0.05], dr: [-0.3, 0.9, 0.7], dur: 0.2 }, parry_right: { dp: [0.18, 0.12, 0.05], dr: [-0.3, -0.7, -0.5], dur: 0.2 },
-  parry_thrust: { dp: [-0.02, 0.04, 0.14], dr: [-0.2, 0.5, 0.3], dur: 0.2 }, parry: { dp: [-0.1, 0.14, 0.05], dr: [-0.4, 0.6, 0.4], dur: 0.18 },
+  cut_up: { dp: [-0.15, 0.34, 0.30], dr: [-2.0, -0.5, 0], dur: 0.26 }, cut_down: { dp: [-0.10, -0.30, 0.26], dr: [1.5, 0.3, 0], dur: 0.26 },
+  cut_left: { dp: [-0.58, 0.12, 0.20], dr: [-0.3, 1.5, -1.3], dur: 0.24 }, cut_right: { dp: [0.34, 0.12, 0.20], dr: [-0.3, -1.5, 1.3], dur: 0.24 },
+  cut_thrust: { dp: [-0.10, -0.04, 0.62], dr: [-0.2, 0.1, 0], dur: 0.22 },
+  heavy: { dp: [-0.14, 0.52, 0.46], dr: [-2.7, -0.2, 0], dur: 0.44 },     // slow, brutal overhead
+  finish: { dp: [-0.06, -0.5, 0.66], dr: [2.4, 0.2, 0], dur: 0.38 },      // downward killing blow
 };
 WARRIOR3D._vm = function (E, clip) { E.vmClip = clip; E.vmT = 0; };
 WARRIOR3D._updateViewmodel = function (E, dt) {
@@ -772,7 +807,11 @@ WARRIOR3D._updateViewmodel = function (E, dt) {
     return;
   }
   const sw = WARRIOR3D.SWING[E.vmClip];
-  if (sw) { const t = Math.min(1, E.vmT / sw.dur), s = Math.sin(t * Math.PI);
+  if (E.parrying) {                              // HELD GUARD — a raised parry stance that persists while held
+    const t = Math.min(1, E.vmT / 0.09);         // snap the blade up fast, then hold it there
+    const jitter = E.parryFlash > 0 ? (Math.random() - 0.5) * 0.03 : 0;   // shudder on a deflect
+    set(R.pos.x - 0.18 * t + jitter, R.pos.y + 0.3 * t, R.pos.z + 0.16 * t, R.rot.x - 0.4 * t, R.rot.y + 1.0 * t, R.rot.z - 0.55 * t);
+  } else if (sw) { const t = Math.min(1, E.vmT / sw.dur), s = Math.sin(t * Math.PI);
     set(R.pos.x + sw.dp[0] * s, R.pos.y + sw.dp[1] * s, R.pos.z + sw.dp[2] * s, R.rot.x + sw.dr[0] * s, R.rot.y + sw.dr[1] * s, R.rot.z + sw.dr[2] * s);
     if (t >= 1) WARRIOR3D._vm(E, E.blocking ? "block" : "idle");
   } else if (E.vmClip === "block") { set(R.pos.x - 0.2, R.pos.y + 0.24, R.pos.z + 0.14, R.rot.x - 0.2, R.rot.y + 1.25, -0.5);
@@ -856,7 +895,7 @@ WARRIOR3D._bindControls = function (E) {
     b.addEventListener("touchstart", press, { passive: false }); b.addEventListener("mousedown", press);
     if (hold) { const rel = () => WARRIOR3D._release(action); b.addEventListener("touchend", rel); b.addEventListener("mouseup", rel); b.addEventListener("mouseleave", rel); } });
 
-  const KEY = { arrowup: "dir_up", arrowdown: "dir_down", arrowleft: "dir_left", arrowright: "dir_right", e: "dir_thrust", c: "dodge", f: "shoot", enter: "continue" };
+  const KEY = { arrowup: "dir_up", arrowdown: "dir_down", arrowleft: "dir_left", arrowright: "dir_right", e: "dir_thrust", r: "heavy", c: "dodge", f: "shoot", enter: "continue" };
   const HOLD = { l: "block", shift: "block", q: "aim", " ": "parry" }; const MOVE = { w: 1, a: 1, s: 1, d: 1 };
   E._key = (e) => { const k = e.key.toLowerCase();
     if (MOVE[k]) { E.km[k] = 1; e.preventDefault(); return; }

@@ -634,9 +634,10 @@ button{touch-action:manipulation}
 /* rosette: plus-shaped attack pad */
 .w3-rosette{display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,52px);gap:5px;pointer-events:none}
 .w3-rosette .up{grid-area:1/2}.w3-rosette .left{grid-area:2/1}.w3-rosette .stab{grid-area:2/2}
-.w3-rosette .right{grid-area:2/3}.w3-rosette .down{grid-area:3/2}
+.w3-rosette .right{grid-area:2/3}.w3-rosette .down{grid-area:3/2}.w3-rosette .heavy{grid-area:3/3}
 .w3-rosette .w3-b{font-size:24px;background:linear-gradient(rgba(150,44,32,.9),rgba(104,22,16,.93));border-color:#e0805a}
 .w3-rosette .stab{background:linear-gradient(rgba(190,150,50,.92),rgba(130,92,20,.94));border-color:#f0d27a}
+.w3-rosette .heavy{font-size:22px;background:linear-gradient(rgba(150,26,26,.95),rgba(84,10,10,.97));border-color:#ff9a8a;box-shadow:0 0 10px rgba(220,60,40,.4)}
 .w3-b.cont{min-width:260px;min-height:54px;font-size:17px;margin:0 auto;background:linear-gradient(var(--vermilion),var(--vermilion2));
   border-color:#6e1610;font-family:var(--font-h);letter-spacing:2px}
 .w3-hint{position:absolute;left:0;right:0;bottom:2px;text-align:center;font-size:10px;color:rgba(240,230,200,.5);pointer-events:none;padding:0 8px}
