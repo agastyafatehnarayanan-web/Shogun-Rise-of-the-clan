@@ -5314,7 +5314,7 @@ WARRIOR3D.enter = function (opts) {
         <div class="w3-joy" id="w3-joy"><span class="w3-joy-base"></span><span class="w3-joy-knob"></span></div>
         <div class="w3-controls" id="w3-controls">
           <div class="w3-cluster left">
-            <button class="w3-b parry" data-a="parry">⚔️<i>Parry</i></button>
+            <button class="w3-b parry" data-a="parry" data-hold="1">⚔️<i>Guard</i></button>
             <button class="w3-b block" data-a="block" data-hold="1">🛡️<i>Block</i></button>
             <button class="w3-b dodge" data-a="dodge">💨<i>Dodge</i></button>
             <button class="w3-b aim" data-a="aim" data-hold="1">🎯<i>Aim</i></button>
@@ -5328,7 +5328,7 @@ WARRIOR3D.enter = function (opts) {
             <button class="w3-b down atk" data-a="dir_down" title="cut low">⤓</button>
           </div>
         </div>
-        <div class="w3-hint" id="w3-hint">Move WASD · Look right-drag · ATTACK ↑↓←→/E (rosette) · PARRY Space (time the flash) · Block L · Dodge C · Aim Q · Shoot F</div>
+        <div class="w3-hint" id="w3-hint">Move WASD · Look right-drag · ATTACK ↑↓←→/E (rosette) · PARRY = HOLD Space on the flash, release to cut · Block L · Dodge C · Aim Q · Shoot F</div>
       </div>
     </div>`;
 
@@ -5366,7 +5366,7 @@ WARRIOR3D.enter = function (opts) {
     px: 0, pz: 0, km: {}, joy: { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 }, look: { active: false, id: null, lx: 0, ly: 0 },
     viewYaw: 0, viewPitch: 0,
     vmClip: "idle", vmT: 0, blocking: false, aiming: false, aimT: 0, dodgeT: 0, dodgeDir: 1, shake: 0, hitFlash: 0,
-    winded: 0, vulnT: 0, combo: 0, parryCd: 0, drawCd: 0, fov: 72, fovTarget: 72,
+    winded: 0, vulnT: 0, combo: 0, parrying: false, parryHoldT: 0, drawCd: 0, fov: 72, fovTarget: 72,
     quiver: (p.weapon && p.weapon.quiver) || 3, gunAmmo: (p.weapon && p.weapon.gun) || 0,
     particles: [], arrows: [],
   };
@@ -5762,8 +5762,8 @@ WARRIOR3D._foeTelegraph = function (E) {
   f.dir = WARRIOR3D.DIRS[Math.floor(Math.random() * 5)];
   f.feint = !E.tutorial && Math.random() < f.skill * 0.28;         // veterans feint — don't parry those
   const inc = document.getElementById("w3-incoming");
-  if (inc) { inc.className = "w3-incoming on"; inc.innerHTML = `<span class="dir">⚔ incoming</span><span class="key">PARRY${E.tutorial ? " — press Space" : " ⎵"}</span>`; }
-  WARRIOR3D._prompt(E, `⚠ ${f.def.name} winds up — <b>parry on the flash</b> (Space), then cut!`, "warn");
+  if (inc) { inc.className = "w3-incoming on"; inc.innerHTML = `<span class="dir">⚔ incoming</span><span class="key">HOLD${E.tutorial ? " Space to guard" : " ⎵"}</span>`; }
+  WARRIOR3D._prompt(E, `⚠ ${f.def.name} winds up — <b>hold Space to guard</b> as it flashes, then release &amp; cut!`, "warn");
 };
 
 WARRIOR3D._costOrWinded = function (E, cost) {
@@ -5772,34 +5772,22 @@ WARRIOR3D._costOrWinded = function (E, cost) {
   E.st -= cost; WARRIOR3D._updateMeters(E); return true;
 };
 
-// ── PARRY (Space / Parry button) — a timed, non-directional defence ──
-// Press on the flash (end of his wind-up) to turn the blow and crack his guard.
-// A parry does NO damage on its own — it only OPENS him; you must ATTACK to hurt him.
-WARRIOR3D._parry = function (E) {
-  const f = E.foe; if (!f || f.dead) return;
-  if (E.parryCd > 0) return;                              // brief recovery — you can't machine-gun the parry
-  E.parryCd = 0.42;
-  WARRIOR3D._vm(E, "parry");
-  if (f.state !== "windup") {                             // nothing to parry — you flail and leave a gap
-    E.vulnT = 0.45; WARRIOR3D._prompt(E, "You parry at air — save it for his blade.", "warn"); return;
-  }
-  if (!WARRIOR3D._costOrWinded(E, 1)) return;             // parrying still costs a little wind
-  if (f.feint) { E.vulnT = 0.55; WARRIOR3D._prompt(E, "✋ A feint! You committed — recover fast.", "warn"); return; }
-  const p = f.stateT / (f.winMs / 1000);
-  if (p >= 0.5) {                                          // clean parry on the flash — cracks poise, opens him
-    f.defended = true; f.poise -= (p >= 0.78 ? 2 : 1); E.shake = Math.max(E.shake, 0.32); E.st = Math.min(E.maxSt, E.st + 1); E.combo = 0;
-    WARRIOR3D._spawnSpark(E, f);
-    if (f.poise <= 0) { f.state = "staggered"; f.stateT = 0; f.openSide = f.dir; f.poise = f.poiseMax; WARRIOR3D._prompt(E, "⚔️ <b>Parry! His guard shatters</b> — cut him down now!", "good"); }
-    else { f.state = "open"; f.stateT = 0; f.openSide = f.dir; WARRIOR3D._prompt(E, "⚔️ <b>Parried!</b> An opening — <b>attack now</b> (↑↓←→ / E).", "good"); }
-    WARRIOR3D._updateMeters(E);
-  } else {                                                 // too early — you turn it but it clips you
-    f.defended = true; f.state = "recover"; f.stateT = 0; WARRIOR3D._foeHits(E, 0.3); WARRIOR3D._prompt(E, "Too early — you turned it, but it stung. Wait for the flash.", "warn");
-  }
+// ── PARRY (HOLD Space / Parry button) — raise your guard and hold ──
+// Raise the stance as his blade FLASHES and hold through the blow: you'll
+// deflect it. Raise it late/reactively (on the flash) to CRACK his guard and
+// open him; turtle it up early and you only block safely (no opening) while
+// bleeding stamina. Deflecting does no damage — release and ATTACK the opening.
+WARRIOR3D._parry = function (E) {   // raise the held guard stance
+  if (E.mode !== "fight") return;
+  if (E.winded > 0) { WARRIOR3D._prompt(E, "Too winded to raise your guard.", "warn"); return; }
+  if (E.parrying) return;
+  E.parrying = true; E.parryHoldT = 0; E.blocking = false; WARRIOR3D._vm(E, "parry");
 };
 
 // ── ATTACK (arrows / rosette / E) — always a swing, never a parry ──
 WARRIOR3D._dir = function (E, d) {
   const f = E.foe; if (!f || f.dead) return;
+  if (E.parrying) { WARRIOR3D._prompt(E, "You're guarding — <b>release Space</b> to strike the opening.", ""); return; }
   // swinging INTO his wind-up is a bad trade — you should PARRY (Space), not attack
   if (f.state === "windup") {
     if (!WARRIOR3D._costOrWinded(E, 2)) return;
@@ -5861,6 +5849,7 @@ WARRIOR3D._input = function (action) {
 };
 WARRIOR3D._release = function (action) {
   const E = WARRIOR3D._e; if (!E) return;
+  if (action === "parry") { E.parrying = false; if (E.vmClip === "parry") WARRIOR3D._vm(E, "idle"); }
   if (action === "block") { E.blocking = false; if (E.vmClip === "block") WARRIOR3D._vm(E, "idle"); }
   if (action === "aim") { E.aiming = false; E.fovTarget = 72; const rt = document.getElementById("w3-reticle"); if (rt) rt.classList.remove("on"); if (E.vmClip === "aim") WARRIOR3D._vm(E, "idle"); }
 };
@@ -5911,6 +5900,7 @@ WARRIOR3D._loop = function () {
   const regen = (E.rest < 30 ? 1.7 : 2.6) * (E.blocking ? 0.2 : 1);
   if (E.winded <= 0 && E.st < E.maxSt) { E.st = Math.min(E.maxSt, E.st + dt * regen); WARRIOR3D._updateMeters(E, true); }
   if (E.blocking && E.mode === "fight") { E.st = Math.max(0, E.st - dt * 1.1); if (E.st <= 0) { E.winded = 1.0; E.blocking = false; } WARRIOR3D._updateMeters(E, true); }
+  if (E.parrying && E.mode === "fight") { E.parryHoldT += dt; E.st = Math.max(0, E.st - dt * 1.35); if (E.st <= 0) { E.winded = 1.0; E.parrying = false; if (E.vmClip === "parry") WARRIOR3D._vm(E, "idle"); } WARRIOR3D._updateMeters(E, true); }
 
   if (E.foe) WARRIOR3D._updateFoe(E, dt);
   WARRIOR3D._updateViewmodel(E, dt);
@@ -5968,7 +5958,22 @@ WARRIOR3D._updateFoe = function (E, dt) {
     if (u.rArm) { const tgt = f.dir === "up" ? -2.4 : f.dir === "down" ? 0.7 : f.dir === "thrust" ? -1.3 : -1.0; u.rArm.rotation.x = THREE.MathUtils.lerp(-0.3, tgt, p); if (u.torso) u.torso.rotation.z = (f.dir === "left" ? 0.5 : f.dir === "right" ? -0.5 : 0) * p; }
     if (p >= 0.5) { const inc = document.getElementById("w3-incoming"); if (inc && inc.className.indexOf("ready") < 0) inc.className = "w3-incoming on ready"; }   // the flash — parry NOW
     if (f.stateT >= f.winMs / 1000) { if (f.feint) { f.state = "guard"; f.stateT = 0; const inc = document.getElementById("w3-incoming"); if (inc) inc.className = "w3-incoming"; if (u.torso) u.torso.rotation.z = 0; }
-      else if (!f.defended) { if (dist < 2.9) WARRIOR3D._foeHits(E, 1); else WARRIOR3D._prompt(E, "You keep your distance — his cut finds only air.", "good"); f.state = "strike"; f.stateT = 0; if (u.torso) u.torso.rotation.z = 0; const inc = document.getElementById("w3-incoming"); if (inc) inc.className = "w3-incoming"; } }
+      else if (!f.defended) {
+        const inc = document.getElementById("w3-incoming"); if (inc) inc.className = "w3-incoming"; if (u.torso) u.torso.rotation.z = 0;
+        if (E.parrying && dist < 3.4) {
+          // HELD GUARD catches the blow. Raised reactively (on the flash) = crack his guard; turtled up early = safe block only.
+          const perfect = E.parryHoldT <= (f.winMs / 1000) * 0.6;
+          f.defended = true; f.poise -= perfect ? 2 : 1; E.combo = 0; E.shake = Math.max(E.shake, 0.32); WARRIOR3D._spawnSpark(E, f);
+          if (perfect) E.st = Math.min(E.maxSt, E.st + 1.5);
+          if (f.poise <= 0) { f.state = "staggered"; f.stateT = 0; f.openSide = f.dir; f.poise = f.poiseMax; WARRIOR3D._prompt(E, "⚔️ <b>Deflected — his guard shatters!</b> Release &amp; cut!", "good"); }
+          else if (perfect) { f.state = "open"; f.stateT = 0; f.openSide = f.dir; WARRIOR3D._prompt(E, "⚔️ <b>Parried!</b> An opening — <b>release Space, then attack</b>.", "good"); }
+          else { f.state = "recover"; f.stateT = 0; WARRIOR3D._prompt(E, "🛡️ Safe block — but you guarded too early to open him. Raise it on the flash.", ""); }
+          WARRIOR3D._updateMeters(E);
+        } else {
+          if (dist < 2.9) WARRIOR3D._foeHits(E, 1); else WARRIOR3D._prompt(E, "You keep your distance — his cut finds only air.", "good");
+          f.state = "strike"; f.stateT = 0;
+        }
+      } }
   } else if (f.state === "strike") { if (u.rArm) u.rArm.rotation.x = THREE.MathUtils.lerp(u.rArm.rotation.x, 0.6, dt * 14); if (f.stateT > 0.16) { f.state = "recover"; f.stateT = 0; const inc = document.getElementById("w3-incoming"); if (inc) inc.className = "w3-incoming"; }
   } else if (f.state === "staggered") { if (u.rArm) u.rArm.rotation.x = THREE.MathUtils.lerp(u.rArm.rotation.x, 0.9, dt * 8); if (u.torso) u.torso.rotation.x = -0.25; if (f.stateT > 0.65) { if (u.torso) u.torso.rotation.x = 0; f.state = "recover"; f.stateT = 0; f.openSide = null; }
   } else if (f.state === "open") { if (u.torso) u.torso.rotation.x = 0.15; if (f.stateT > 0.75) { if (u.torso) u.torso.rotation.x = 0; f.state = "guard"; f.stateT = 0; f.openSide = null; }
@@ -6085,8 +6090,8 @@ WARRIOR3D._bindControls = function (E) {
     b.addEventListener("touchstart", press, { passive: false }); b.addEventListener("mousedown", press);
     if (hold) { const rel = () => WARRIOR3D._release(action); b.addEventListener("touchend", rel); b.addEventListener("mouseup", rel); b.addEventListener("mouseleave", rel); } });
 
-  const KEY = { arrowup: "dir_up", arrowdown: "dir_down", arrowleft: "dir_left", arrowright: "dir_right", e: "dir_thrust", " ": "parry", c: "dodge", f: "shoot", enter: "continue" };
-  const HOLD = { l: "block", shift: "block", q: "aim" }; const MOVE = { w: 1, a: 1, s: 1, d: 1 };
+  const KEY = { arrowup: "dir_up", arrowdown: "dir_down", arrowleft: "dir_left", arrowright: "dir_right", e: "dir_thrust", c: "dodge", f: "shoot", enter: "continue" };
+  const HOLD = { l: "block", shift: "block", q: "aim", " ": "parry" }; const MOVE = { w: 1, a: 1, s: 1, d: 1 };
   E._key = (e) => { const k = e.key.toLowerCase();
     if (MOVE[k]) { E.km[k] = 1; e.preventDefault(); return; }
     if (HOLD[k]) { e.preventDefault(); if (!E["_h" + k]) { E["_h" + k] = 1; WARRIOR3D._input(HOLD[k]); } return; }
@@ -6275,6 +6280,61 @@ WARRIOR.rankUp = function (i, note) {
 };
 
 /* ================================================================== *
+ *  PROCEDURAL CAMPAIGNS — the length. Between the scripted acts you
+ *  conquer province after province in randomised field battles, the
+ *  way Black Flag strings dozens of encounters between story beats.
+ * ================================================================== */
+WARRIOR._rand = function (a) { return a[Math.floor(Math.random() * a.length)]; };
+WARRIOR.TIER_POOL = {
+  1: ["bandit", "looter", "brigand", "ashigaru"],
+  2: ["ashigaru", "spearman", "brigand", "ronin", "guard"],
+  3: ["ronin", "duelist", "guard", "sohei", "spearman"],
+  4: ["duelist", "sohei", "captain", "general", "ronin"],
+  5: ["captain", "general", "champion", "oni", "duelist"],
+};
+WARRIOR.PLACES = ["the Ōmi border", "the Mino road", "the Kiso valley", "the Owari plain", "the Nagara ford",
+  "the Ise coast road", "the Suwa shrine-road", "the Kai foothills", "the Tōtōmi march", "the Echizen pass",
+  "the Mikawa woods", "the Hida highlands", "the Sagami shore", "the Shinano ridge", "the Tanba hills",
+  "the Wakasa inlet", "the Nōbi plain", "the Kiso rapids", "the Ibuki slopes", "the Yōrō gorge"];
+WARRIOR.SCENES = [
+  { theme: "day", dest: "line", intro: "A rival column bars the road — break their line." },
+  { theme: "dusk", dest: "village", intro: "Raiders are stripping a village bare. End it." },
+  { theme: "night", dest: "fort", intro: "A torch-lit outpost blocks the advance. Take the gate." },
+  { theme: "day", dest: "bridge", intro: "Hold the crossing — one blade at a time on the planks." },
+  { theme: "dawn", dest: "muster", intro: "Their muster forms in the mist. Scatter it before it sets." },
+  { theme: "dusk", dest: "shrine", intro: "Sworn men wait on the shrine-road. Cut the path clear." },
+];
+
+/* one randomised field battle at a given difficulty tier */
+WARRIOR.skirmish = async function (tier, provinceName) {
+  const W = WARRIOR3D; const sc = WARRIOR._rand(WARRIOR.SCENES); const pool = WARRIOR.TIER_POOL[tier] || WARRIOR.TIER_POOL[1];
+  W.setTheme(sc.theme);
+  await W.say(`<b>${provinceName}.</b> ${sc.intro}`, { who: "" });
+  const x = Math.round((-5 + Math.random() * 9) * 10) / 10, z = Math.round((-14 + Math.random() * 4) * 10) / 10;
+  await W.goto(x, z, provinceName, sc.dest);
+  const n = 2 + Math.floor(Math.random() * 2) + (tier >= 4 ? 1 : 0);   // 2–4 foes; +1 in the late war
+  const wave = []; for (let i = 0; i < n; i++) wave.push(WARRIOR.foe(WARRIOR._rand(pool)));
+  await WARRIOR.battle(wave);
+};
+
+/* a run of provinces to conquer, with a war-camp between each */
+WARRIOR.campaign = async function (regionName, provinces, tier) {
+  const W = WARRIOR3D;
+  await W.say(`<b>The ${regionName} campaign.</b> Your lord gives you a free hand: take it field by field, and every banner you plant grows your name.`, { big: true });
+  const picks = WARRIOR.PLACES.slice();
+  for (let i = 0; i < provinces; i++) {
+    const place = picks.length ? picks.splice(Math.floor(Math.random() * picks.length), 1)[0] : `a nameless field`;
+    W.objective(`${regionName} — province ${i + 1} of ${provinces}`);
+    await WARRIOR.skirmish(tier, place);
+    if (i < provinces - 1) { const cx = Math.round((-5 + Math.random() * 9) * 10) / 10;
+      await W.goto(cx, -7, "the war camp", "camp");
+      await WARRIOR.camp(`Province taken. Eat, rest, and <b>train</b> — the next field won't be softer.`);
+    }
+  }
+  await W.say(`The ${regionName} is yours. Word of it runs ahead of you to the capital.`, { who: "" });
+};
+
+/* ================================================================== *
  *  THE STORY — an async director script through the 3D world
  * ================================================================== */
 WARRIOR.runStory = async function () {
@@ -6287,7 +6347,7 @@ WARRIOR.runStory = async function () {
   await W.say(`<b>Move</b> with WASD or drag the <b>left</b> of the screen. <b>Look</b> by dragging the <b>right</b> (or the mouse). Follow the glowing marker to the muster.`);
   await W.goto(3, -13, "the muster ground", "muster");
   await W.say(`Sergeant Gorō looks you over. "Another stray with a grudge. Let's see if you can hold a blade — come at me."`, { who: "Sergeant Gorō" });
-  await W.say(`<b>Attack and defence are two different things now.</b><br>• <b>PARRY</b> is one button — <b>Space</b> (or the ⚔️ Parry button). When he winds up, his blade <b>flashes</b>; press parry <b>on the flash</b> to turn it and crack his guard. Parrying does <b>no damage on its own</b> — it only opens him.<br>• <b>ATTACK</b> is the <b>directions</b> — ↑ ↓ ← → and <b>E</b> to thrust (or the rosette buttons). After a parry, an <b>opening</b> appears — that's when your cuts land hard.<br>• Swing <b>into</b> his wind-up and you'll trade badly — parry first, then cut. Swing at a braced guard and a good foe turns it and counters. Every move burns <b>stamina</b>; mash and you wind yourself. <b>Bait his attack → parry the flash → cut the opening.</b>`, { big: true });
+  await W.say(`<b>Attack and defence are two different things — and parry is a HOLD.</b><br>• <b>PARRY</b> = <b>hold Space</b> (or hold the ⚔️ Guard button). When he winds up, his blade <b>flashes</b>; <b>raise your guard on the flash and hold</b> through the blow to deflect it and <b>crack his guard</b>. Raise it too early and you only block safely — and holding drains stamina, so don't turtle. A deflect does <b>no damage</b>; it opens him.<br>• <b>ATTACK</b> = the <b>directions</b> ↑ ↓ ← → and <b>E</b> to thrust (or the rosette). You can't swing while guarding — <b>release Space, then cut</b> the opening a deflect creates.<br>• Swing <b>into</b> his wind-up and you'll trade badly; hack at a braced guard and a good foe counters. <b>Bait his attack → hold guard on the flash → release &amp; cut the opening.</b>`, { big: true });
   await WARRIOR.battle([WARRIOR.foe("ashigaru", "Sergeant Gorō")], { tutorial: true });
   await W.say(`Gorō spits, and grins. "Huh. You'll do." You are ${clan} now — the lowest rung of it, but yours.`, { who: "Sergeant Gorō" });
   WARRIOR.rankUp(1, "a footman of the " + clan);
@@ -6307,6 +6367,9 @@ WARRIOR.runStory = async function () {
   WARRIOR.rankUp(2, "a spear-corporal — men at your shoulder now");
   await W.goto(-6, -6, "the night camp", "camp");
   await WARRIOR.camp(`Night falls. Rest — and <b>train</b>: the foes ahead hit harder, and raw skill won't be enough. Your stats decide who walks away.`);
+
+  // ===== ACT I — the border war (procedural campaign) =====
+  await WARRIOR.campaign("Ōmi border", 4, 1);
 
   // ---------- CH.2 — raiders in the village ----------
   W.setTheme("day");
@@ -6328,6 +6391,9 @@ WARRIOR.runStory = async function () {
   WARRIOR.rankUp(3, "a retainer, trusted with real work");
   await W.goto(-5, -6, "the fire", "camp");
   await WARRIOR.camp(`Rest. Whet your blade — and yourself.`);
+
+  // ===== ACT II — the Mino front (procedural campaign) =====
+  await WARRIOR.campaign("Mino front", 4, 2);
 
   // ---------- CH.4 — the wandering duelist ----------
   W.setTheme("night");
@@ -6364,7 +6430,10 @@ WARRIOR.runStory = async function () {
   await W.say(`The abbot lowers his blade and steps aside. "Pass. And carry them lightly." The temple bell rings once behind you.`, { who: "Abbot" });
   WARRIOR.rankUp(6, "a hatamoto — a bannerman of the lord");
   await W.goto(-4, -7, "the fire", "camp");
-  await WARRIOR.camp(`Rest under the temple eaves. A rival general marches to meet you on the plain.`);
+  await WARRIOR.camp(`Rest under the temple eaves. The plain beyond is a patchwork of contested fields — clear them.`);
+
+  // ===== ACT III — the Owari plain (procedural campaign) =====
+  await WARRIOR.campaign("Owari plain", 5, 3);
 
   // ---------- CH.7 — the rival general ----------
   W.setTheme("day");
@@ -6377,7 +6446,10 @@ WARRIOR.runStory = async function () {
   await W.say(`The general topples from the saddle and the plain is yours. Your lord sends his own sword-token in thanks — you command wings of the army now.`, { who: "" });
   WARRIOR.rankUp(7, "a bugyō — a commander of men");
   await W.goto(-5, -6, "the fire", "camp");
-  await WARRIOR.camp(`Recover. Only the mountains lie between you and the Ash-Maker now.`);
+  await WARRIOR.camp(`Recover. The road north to the Ash-Maker runs through a dozen contested fields — take them, one by one.`);
+
+  // ===== ACT IV — the northern march (procedural campaign) =====
+  await WARRIOR.campaign("northern march", 5, 4);
 
   // ---------- CH.8 — the mountain pass ----------
   W.setTheme("dusk");
@@ -6418,8 +6490,21 @@ WARRIOR.runStory = async function () {
   await W.say(`Aya finds you on the steps. "It's done. And you — you're no footman now. The lord is dead without heir, and the retainers look to the one who took the valley." She kneels. "They look to you."`, { who: "Aya" });
   WARRIOR.rankUp(10, "proclaimed lord of the clan");
   await W.say(`You sheathe the chipped blade your father gave you. It has carried you from a rice paddy to this — <b>daimyō</b> of the ${clan}. The war is not over. But the ash is answered, and the road runs on.`, { big: true });
-  const again = await W.say(`⚔ <b>Way of the Warrior — complete.</b>`, { choices: ["Begin a new life", "Return to menu"] });
-  if (again === 0) { WARRIOR3D.leave(); WARRIOR.open(); } else WARRIOR.toTitle();
+
+  // ---------- POST-GAME — endless border wars (the open world) ----------
+  let won = 0;
+  while (WARRIOR3D._e) {
+    const pick = await W.say(`⚔ <b>Way of the Warrior — complete.</b> The realm always has enemies. Ride out on endless border wars for glory without end${won ? ` — <b>${won}</b> won since` : ""}.`,
+      { choices: ["🏇 Ride to the next war", "🌱 Begin a new life", "⛩️ Rest at your castle (menu)"] });
+    if (pick === 1) { WARRIOR3D.leave(); WARRIOR.open(); return; }
+    if (pick === 2) { WARRIOR.toTitle(); return; }
+    await WARRIOR.skirmish(5, WARRIOR._rand(WARRIOR.PLACES));
+    if (!WARRIOR3D._e) return;
+    won++;
+    const cx = Math.round((-5 + Math.random() * 9) * 10) / 10;
+    await W.goto(cx, -7, "your war camp", "camp");
+    await WARRIOR.camp(`Another field won. Recover — then ride again, or rest.`);
+  }
 };
 
 /* ---------- title-screen wiring (additive; no ui.js edits) ---------- */

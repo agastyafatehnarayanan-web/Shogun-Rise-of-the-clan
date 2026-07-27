@@ -175,6 +175,61 @@ WARRIOR.rankUp = function (i, note) {
 };
 
 /* ================================================================== *
+ *  PROCEDURAL CAMPAIGNS — the length. Between the scripted acts you
+ *  conquer province after province in randomised field battles, the
+ *  way Black Flag strings dozens of encounters between story beats.
+ * ================================================================== */
+WARRIOR._rand = function (a) { return a[Math.floor(Math.random() * a.length)]; };
+WARRIOR.TIER_POOL = {
+  1: ["bandit", "looter", "brigand", "ashigaru"],
+  2: ["ashigaru", "spearman", "brigand", "ronin", "guard"],
+  3: ["ronin", "duelist", "guard", "sohei", "spearman"],
+  4: ["duelist", "sohei", "captain", "general", "ronin"],
+  5: ["captain", "general", "champion", "oni", "duelist"],
+};
+WARRIOR.PLACES = ["the Ōmi border", "the Mino road", "the Kiso valley", "the Owari plain", "the Nagara ford",
+  "the Ise coast road", "the Suwa shrine-road", "the Kai foothills", "the Tōtōmi march", "the Echizen pass",
+  "the Mikawa woods", "the Hida highlands", "the Sagami shore", "the Shinano ridge", "the Tanba hills",
+  "the Wakasa inlet", "the Nōbi plain", "the Kiso rapids", "the Ibuki slopes", "the Yōrō gorge"];
+WARRIOR.SCENES = [
+  { theme: "day", dest: "line", intro: "A rival column bars the road — break their line." },
+  { theme: "dusk", dest: "village", intro: "Raiders are stripping a village bare. End it." },
+  { theme: "night", dest: "fort", intro: "A torch-lit outpost blocks the advance. Take the gate." },
+  { theme: "day", dest: "bridge", intro: "Hold the crossing — one blade at a time on the planks." },
+  { theme: "dawn", dest: "muster", intro: "Their muster forms in the mist. Scatter it before it sets." },
+  { theme: "dusk", dest: "shrine", intro: "Sworn men wait on the shrine-road. Cut the path clear." },
+];
+
+/* one randomised field battle at a given difficulty tier */
+WARRIOR.skirmish = async function (tier, provinceName) {
+  const W = WARRIOR3D; const sc = WARRIOR._rand(WARRIOR.SCENES); const pool = WARRIOR.TIER_POOL[tier] || WARRIOR.TIER_POOL[1];
+  W.setTheme(sc.theme);
+  await W.say(`<b>${provinceName}.</b> ${sc.intro}`, { who: "" });
+  const x = Math.round((-5 + Math.random() * 9) * 10) / 10, z = Math.round((-14 + Math.random() * 4) * 10) / 10;
+  await W.goto(x, z, provinceName, sc.dest);
+  const n = 2 + Math.floor(Math.random() * 2) + (tier >= 4 ? 1 : 0);   // 2–4 foes; +1 in the late war
+  const wave = []; for (let i = 0; i < n; i++) wave.push(WARRIOR.foe(WARRIOR._rand(pool)));
+  await WARRIOR.battle(wave);
+};
+
+/* a run of provinces to conquer, with a war-camp between each */
+WARRIOR.campaign = async function (regionName, provinces, tier) {
+  const W = WARRIOR3D;
+  await W.say(`<b>The ${regionName} campaign.</b> Your lord gives you a free hand: take it field by field, and every banner you plant grows your name.`, { big: true });
+  const picks = WARRIOR.PLACES.slice();
+  for (let i = 0; i < provinces; i++) {
+    const place = picks.length ? picks.splice(Math.floor(Math.random() * picks.length), 1)[0] : `a nameless field`;
+    W.objective(`${regionName} — province ${i + 1} of ${provinces}`);
+    await WARRIOR.skirmish(tier, place);
+    if (i < provinces - 1) { const cx = Math.round((-5 + Math.random() * 9) * 10) / 10;
+      await W.goto(cx, -7, "the war camp", "camp");
+      await WARRIOR.camp(`Province taken. Eat, rest, and <b>train</b> — the next field won't be softer.`);
+    }
+  }
+  await W.say(`The ${regionName} is yours. Word of it runs ahead of you to the capital.`, { who: "" });
+};
+
+/* ================================================================== *
  *  THE STORY — an async director script through the 3D world
  * ================================================================== */
 WARRIOR.runStory = async function () {
@@ -187,7 +242,7 @@ WARRIOR.runStory = async function () {
   await W.say(`<b>Move</b> with WASD or drag the <b>left</b> of the screen. <b>Look</b> by dragging the <b>right</b> (or the mouse). Follow the glowing marker to the muster.`);
   await W.goto(3, -13, "the muster ground", "muster");
   await W.say(`Sergeant Gorō looks you over. "Another stray with a grudge. Let's see if you can hold a blade — come at me."`, { who: "Sergeant Gorō" });
-  await W.say(`<b>Attack and defence are two different things now.</b><br>• <b>PARRY</b> is one button — <b>Space</b> (or the ⚔️ Parry button). When he winds up, his blade <b>flashes</b>; press parry <b>on the flash</b> to turn it and crack his guard. Parrying does <b>no damage on its own</b> — it only opens him.<br>• <b>ATTACK</b> is the <b>directions</b> — ↑ ↓ ← → and <b>E</b> to thrust (or the rosette buttons). After a parry, an <b>opening</b> appears — that's when your cuts land hard.<br>• Swing <b>into</b> his wind-up and you'll trade badly — parry first, then cut. Swing at a braced guard and a good foe turns it and counters. Every move burns <b>stamina</b>; mash and you wind yourself. <b>Bait his attack → parry the flash → cut the opening.</b>`, { big: true });
+  await W.say(`<b>Attack and defence are two different things — and parry is a HOLD.</b><br>• <b>PARRY</b> = <b>hold Space</b> (or hold the ⚔️ Guard button). When he winds up, his blade <b>flashes</b>; <b>raise your guard on the flash and hold</b> through the blow to deflect it and <b>crack his guard</b>. Raise it too early and you only block safely — and holding drains stamina, so don't turtle. A deflect does <b>no damage</b>; it opens him.<br>• <b>ATTACK</b> = the <b>directions</b> ↑ ↓ ← → and <b>E</b> to thrust (or the rosette). You can't swing while guarding — <b>release Space, then cut</b> the opening a deflect creates.<br>• Swing <b>into</b> his wind-up and you'll trade badly; hack at a braced guard and a good foe counters. <b>Bait his attack → hold guard on the flash → release &amp; cut the opening.</b>`, { big: true });
   await WARRIOR.battle([WARRIOR.foe("ashigaru", "Sergeant Gorō")], { tutorial: true });
   await W.say(`Gorō spits, and grins. "Huh. You'll do." You are ${clan} now — the lowest rung of it, but yours.`, { who: "Sergeant Gorō" });
   WARRIOR.rankUp(1, "a footman of the " + clan);
@@ -207,6 +262,9 @@ WARRIOR.runStory = async function () {
   WARRIOR.rankUp(2, "a spear-corporal — men at your shoulder now");
   await W.goto(-6, -6, "the night camp", "camp");
   await WARRIOR.camp(`Night falls. Rest — and <b>train</b>: the foes ahead hit harder, and raw skill won't be enough. Your stats decide who walks away.`);
+
+  // ===== ACT I — the border war (procedural campaign) =====
+  await WARRIOR.campaign("Ōmi border", 4, 1);
 
   // ---------- CH.2 — raiders in the village ----------
   W.setTheme("day");
@@ -228,6 +286,9 @@ WARRIOR.runStory = async function () {
   WARRIOR.rankUp(3, "a retainer, trusted with real work");
   await W.goto(-5, -6, "the fire", "camp");
   await WARRIOR.camp(`Rest. Whet your blade — and yourself.`);
+
+  // ===== ACT II — the Mino front (procedural campaign) =====
+  await WARRIOR.campaign("Mino front", 4, 2);
 
   // ---------- CH.4 — the wandering duelist ----------
   W.setTheme("night");
@@ -264,7 +325,10 @@ WARRIOR.runStory = async function () {
   await W.say(`The abbot lowers his blade and steps aside. "Pass. And carry them lightly." The temple bell rings once behind you.`, { who: "Abbot" });
   WARRIOR.rankUp(6, "a hatamoto — a bannerman of the lord");
   await W.goto(-4, -7, "the fire", "camp");
-  await WARRIOR.camp(`Rest under the temple eaves. A rival general marches to meet you on the plain.`);
+  await WARRIOR.camp(`Rest under the temple eaves. The plain beyond is a patchwork of contested fields — clear them.`);
+
+  // ===== ACT III — the Owari plain (procedural campaign) =====
+  await WARRIOR.campaign("Owari plain", 5, 3);
 
   // ---------- CH.7 — the rival general ----------
   W.setTheme("day");
@@ -277,7 +341,10 @@ WARRIOR.runStory = async function () {
   await W.say(`The general topples from the saddle and the plain is yours. Your lord sends his own sword-token in thanks — you command wings of the army now.`, { who: "" });
   WARRIOR.rankUp(7, "a bugyō — a commander of men");
   await W.goto(-5, -6, "the fire", "camp");
-  await WARRIOR.camp(`Recover. Only the mountains lie between you and the Ash-Maker now.`);
+  await WARRIOR.camp(`Recover. The road north to the Ash-Maker runs through a dozen contested fields — take them, one by one.`);
+
+  // ===== ACT IV — the northern march (procedural campaign) =====
+  await WARRIOR.campaign("northern march", 5, 4);
 
   // ---------- CH.8 — the mountain pass ----------
   W.setTheme("dusk");
@@ -318,8 +385,21 @@ WARRIOR.runStory = async function () {
   await W.say(`Aya finds you on the steps. "It's done. And you — you're no footman now. The lord is dead without heir, and the retainers look to the one who took the valley." She kneels. "They look to you."`, { who: "Aya" });
   WARRIOR.rankUp(10, "proclaimed lord of the clan");
   await W.say(`You sheathe the chipped blade your father gave you. It has carried you from a rice paddy to this — <b>daimyō</b> of the ${clan}. The war is not over. But the ash is answered, and the road runs on.`, { big: true });
-  const again = await W.say(`⚔ <b>Way of the Warrior — complete.</b>`, { choices: ["Begin a new life", "Return to menu"] });
-  if (again === 0) { WARRIOR3D.leave(); WARRIOR.open(); } else WARRIOR.toTitle();
+
+  // ---------- POST-GAME — endless border wars (the open world) ----------
+  let won = 0;
+  while (WARRIOR3D._e) {
+    const pick = await W.say(`⚔ <b>Way of the Warrior — complete.</b> The realm always has enemies. Ride out on endless border wars for glory without end${won ? ` — <b>${won}</b> won since` : ""}.`,
+      { choices: ["🏇 Ride to the next war", "🌱 Begin a new life", "⛩️ Rest at your castle (menu)"] });
+    if (pick === 1) { WARRIOR3D.leave(); WARRIOR.open(); return; }
+    if (pick === 2) { WARRIOR.toTitle(); return; }
+    await WARRIOR.skirmish(5, WARRIOR._rand(WARRIOR.PLACES));
+    if (!WARRIOR3D._e) return;
+    won++;
+    const cx = Math.round((-5 + Math.random() * 9) * 10) / 10;
+    await W.goto(cx, -7, "your war camp", "camp");
+    await WARRIOR.camp(`Another field won. Recover — then ride again, or rest.`);
+  }
 };
 
 /* ---------- title-screen wiring (additive; no ui.js edits) ---------- */
