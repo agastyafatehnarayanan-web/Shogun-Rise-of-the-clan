@@ -104,17 +104,19 @@ WARRIOR.foe = function (key, name) { const f = Object.assign({}, WARRIOR.FOES[ke
 
 WARRIOR.camp = async function (intro) {
   const W = WARRIOR3D;
+  if (W.campfire) W.campfire(true);
   if (intro) await W.say(intro, { who: "" });
   while (WARRIOR3D._e) {
-    const s = W.stats(); if (!s) return;
+    const s = W.stats(); if (!s) break;
     const pick = await W.say(`🔥 At the fire. <b>Vitality ${Math.round(s.hp)}/${s.maxHp}</b> · Food ${Math.round(s.food)} · Rest ${Math.round(s.rest)} · Skill pts <b>${s.sp}</b>.`,
-      { choices: ["🍚 Eat — restore vitality &amp; food", "😌 Rest — stamina, rest &amp; a little healing", "😴 Sleep — full heal &amp; grow tougher", "🎖️ Train — upgrade your character", "🚶 Break camp — march on"] });
-    if (pick === 0) { W.heal(18); W.setSurvival({ food: s.food + 45 }); W.banner("🍚 You eat — strength returns"); }
-    else if (pick === 1) { W.heal(9); W.setSurvival({ rest: s.rest + 35, st: 999 }); W.banner("😌 You rest by the fire"); }
-    else if (pick === 2) { W.addMaxHp(3); W.setSurvival({ food: s.food + 20, rest: 100, st: 999 }); W.banner("😴 You sleep — hardier for it (+max vitality)", 3000); }
+      { choices: ["🍚 Eat — restore vitality &amp; food", "😌 Rest — stamina, rest &amp; a little healing", "😴 Sleep — full heal, rest till dawn", "🎖️ Train — upgrade your character", "🚶 Break camp — march on"] });
+    if (pick === 0) { W.heal(16); W.setSurvival({ food: s.food + 40 }); W.banner("🍚 You eat — strength returns"); }
+    else if (pick === 1) { W.heal(8); W.setSurvival({ rest: s.rest + 32, st: 999 }); W.banner("😌 You rest by the fire"); }
+    else if (pick === 2) { W.heal(9999); W.setSurvival({ food: 100, rest: 100, st: 999 }); W.banner("😴 You sleep till dawn — fully rested.", 2600); break; }  // sleeping ends the camp (no spamming for stats)
     else if (pick === 3) { await WARRIOR.train(); }
     else break;
   }
+  if (W.campfire) W.campfire(false);
 };
 
 /* spend skill points to upgrade your warrior */
@@ -166,7 +168,7 @@ WARRIOR.runStory = async function () {
   await W.say(`<b>Move</b> with WASD or drag the <b>left</b> of the screen. <b>Look</b> by dragging the <b>right</b> (or the mouse). Follow the glowing marker to the muster.`);
   await W.goto(3, -13, "the muster ground");
   await W.say(`Sergeant Gorō looks you over. "Another stray with a grudge. Let's see if you can hold a blade — come at me."`, { who: "Sergeant Gorō" });
-  await W.say(`<b>How to fight:</b> when an enemy attacks, a <b>direction</b> flashes on screen — parry that same way: overhead <b>↑</b>, low <b>↓</b>, left <b>←</b>, right <b>→</b>, thrust <b>E</b>. Time it and you riposte. When he's staggered, <b>cut the opening</b>. Every move drains <b>stamina</b> — don't mash, or you'll be winded and wide open.`, { big: true });
+  await W.say(`<b>How to fight — blend attack &amp; defence.</b> When he strikes, a <b>direction</b> flashes: parry that same way (overhead ↑, low ↓, left ←, right →, thrust E). Parrying <b>cracks his guard</b>. In the gaps between his blows, <b>press your own attacks</b> (the same direction keys/buttons) to batter his guard down — he'll turn a blade or two, so vary your line. When his <b>guard breaks</b>, cut the opening for a heavy blow. Every move costs <b>stamina</b>, and the bow holds only a few arrows — you can't spam your way to victory. Read him.`, { big: true });
   await WARRIOR.battle([WARRIOR.foe("ashigaru", "Sergeant Gorō")], { tutorial: true });
   await W.say(`Gorō spits, and grins. "Huh. You'll do." You are ${clan} now — the lowest rung of it, but yours.`, { who: "Sergeant Gorō" });
   WARRIOR.rankUp(1, "a footman of the " + clan);
@@ -178,7 +180,8 @@ WARRIOR.runStory = async function () {
   W.setTheme("day");
   await W.say(`Dawn breaks grey over the river. A rival column is fording below, and you are shoved into the front rank. "Hold the line!" the drums roar.`, { big: true });
   await W.goto(0, -11, "the shield line");
-  await W.say(`They hit the line. Read each blade and answer it.`, { who: "" });
+  W.landmark("shieldwall", 6, -12);
+  await W.say(`Your comrades lock shields to your right. They hit the line — parry each blade, break his guard, and strike.`, { who: "" });
   await WARRIOR.battle([WARRIOR.foe("looter"), WARRIOR.foe("ashigaru"), WARRIOR.foe("bandit")]);
   await W.say(`The column breaks and runs. You are still standing — bloodied, ears ringing, alive. Men who did not know your face now nod to it.`, { who: "" });
   WARRIOR.rankUp(2, "a retainer, trusted with real work");
@@ -190,7 +193,8 @@ WARRIOR.runStory = async function () {
   await W.say(`A woman in grey finds you — Aya, who deals in the work done after dark. "A rival captain holds the river fort. Tonight he dies, and the fort opens. You have a talent for staying alive; prove you have one for endings."`, { who: "Aya" });
   await W.say(`She nods to the treeline. "Over the wall. Quiet as you can — but if they wake, cut your way through."`, { who: "Aya" });
   await W.goto(2, -14, "the fort wall");
-  await W.say(`A gate guard turns at the last instant. Take him — fast.`, { who: "" });
+  W.landmark("fort", 2, -18);
+  await W.say(`The palisade looms — a torch-lit fort gate. A guard turns at the last instant. Take him — fast.`, { who: "" });
   await WARRIOR.battle([WARRIOR.foe("guard", "Gate Guard")]);
   await W.say(`Inside, the captain is already on his feet, blade drawn. He is fast, and he is not afraid.`, { who: "" });
   await WARRIOR.battle([WARRIOR.foe("captain", "Guard Captain")]);
