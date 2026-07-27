@@ -5365,7 +5365,7 @@ WARRIOR3D.enter = function (opts) {
     mode: "explore", foe: null, queue: [], waypoint: null, fightRes: null, onContinue: null, tutorial: false,
     // input
     px: 0, pz: 0, km: {}, joy: { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 }, look: { active: false, id: null, lx: 0, ly: 0 },
-    yaw: 0, pitch: 0, yawTarget: 0, pitchTarget: 0,
+    viewYaw: 0, viewPitch: 0,
     vmClip: "idle", vmT: 0, blocking: false, aiming: false, aimT: 0, dodgeT: 0, dodgeDir: 1, shake: 0, hitFlash: 0,
     winded: 0, vulnT: 0, combo: 0, fov: 72, fovTarget: 72,
     particles: [], arrows: [],
@@ -5616,7 +5616,11 @@ WARRIOR3D._nextFoe = function (E) {
   const def = E.queue.shift();
   if (!def) { E.mode = "explore"; document.getElementById("w3-foewrap").classList.remove("on"); WARRIOR3D._prompt(E, "", ""); const r = E.fightRes; E.fightRes = null; if (r) r(true); return; }
   const mesh = WARRIOR3D._makeFoe(def); const ang = (Math.random() - 0.5) * 0.5;
-  mesh.position.set(E.px + Math.sin(ang) * 7, 0, E.pz - 9); mesh.rotation.y = Math.PI; E.scene.add(mesh);
+  // spawn ahead of where you're facing, and turn to look at him
+  const fwx = -Math.sin(E.viewYaw), fwz = -Math.cos(E.viewYaw);
+  mesh.position.set(E.px + fwx * 9 + Math.cos(E.viewYaw) * Math.sin(ang) * 3, 0, E.pz + fwz * 9 - Math.sin(E.viewYaw) * Math.sin(ang) * 3);
+  mesh.rotation.y = Math.PI; E.scene.add(mesh);
+  E.viewYaw = -Math.atan2(mesh.position.x - E.px, -(mesh.position.z - E.pz));
   const wf = E.tutorial ? 1.7 : 1;
   E.foe = { def, mesh, hp: def.hp, hpMax: def.hp, dmg: def.dmg, skill: def.skill || 0.7, aggr: def.aggr || 0.6,
     state: "approach", stateT: 0, dir: null, defended: false, hitReact: 0, walkPhase: 0, dead: false, openSide: null,
@@ -5823,11 +5827,16 @@ WARRIOR3D._updateViewmodel = function (E, dt) {
 
 WARRIOR3D._updateCamera = function (E, dt) {
   const cam = E.camera, f = E.foe;
-  let baseYaw = 0;
-  if (f && f.mesh) baseYaw = -Math.atan2(f.mesh.position.x - E.px, -(f.mesh.position.z - E.pz));
-  E.yaw += (E.yawTarget - E.yaw) * Math.min(1, dt * 10); E.pitch += (E.pitchTarget - E.pitch) * Math.min(1, dt * 10);
-  E.yawTarget *= (1 - Math.min(1, dt * 1.4)); E.pitchTarget *= (1 - Math.min(1, dt * 1.4));
-  const camYaw = baseYaw + E.yaw;
+  // FREE LOOK: E.viewYaw is your persistent facing (set by right-drag / mouse).
+  // In a fight, gently steer it toward the foe so combat stays framed — but you
+  // can still turn freely; in the open world there is no auto-turn at all.
+  if (E.mode === "fight" && f && f.mesh && !f.dead) {
+    const foeYaw = -Math.atan2(f.mesh.position.x - E.px, -(f.mesh.position.z - E.pz));
+    let diff = foeYaw - E.viewYaw; while (diff > Math.PI) diff -= 2 * Math.PI; while (diff < -Math.PI) diff += 2 * Math.PI;
+    E.viewYaw += diff * Math.min(1, dt * (E.look.active ? 0.5 : 2.2));
+  }
+  const camYaw = E.viewYaw;
+  // movement, relative to where you are actually looking
   let mx = (E.km.d ? 1 : 0) - (E.km.a ? 1 : 0), my = (E.km.w ? 1 : 0) - (E.km.s ? 1 : 0);
   if (E.joy.active) { mx = E.joy.x; my = E.joy.y; }
   const ml = Math.hypot(mx, my); if (ml > 1) { mx /= ml; my /= ml; }
@@ -5839,7 +5848,7 @@ WARRIOR3D._updateCamera = function (E, dt) {
   if (E.dodgeT > 0) { E.dodgeT = Math.max(0, E.dodgeT - dt); const s = Math.sin((0.4 - E.dodgeT) / 0.4 * Math.PI); strafe = (E.dodgeDir || 1) * s * 0.7; dip = -s * 0.12; }
   let sh = 0; if (E.shake > 0) { E.shake = Math.max(0, E.shake - dt * 2.2); sh = E.shake; }
   E.fov += (E.fovTarget - E.fov) * Math.min(1, dt * 8); cam.fov = E.fov; cam.updateProjectionMatrix();
-  cam.rotation.set(E.pitch + (Math.random() - 0.5) * sh * 0.04, camYaw + (Math.random() - 0.5) * sh * 0.04, 0, "YXZ");
+  cam.rotation.set(E.viewPitch + (Math.random() - 0.5) * sh * 0.04, camYaw + (Math.random() - 0.5) * sh * 0.04, 0, "YXZ");
   const rgtX = Math.cos(camYaw), rgtZ = -Math.sin(camYaw);
   cam.position.set(E.px + rgtX * strafe, 1.66 + dip, E.pz + rgtZ * strafe);
 };
@@ -5874,7 +5883,7 @@ WARRIOR3D._bindControls = function (E) {
   const doMove = (x, y) => { let dx = x - E.joy.ox, dy = y - E.joy.oy; const d = Math.hypot(dx, dy); if (d > R) { dx *= R / d; dy *= R / d; } E.joy.x = dx / R; E.joy.y = -dy / R; if (knob) knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
   const endMove = () => { E.joy.active = false; E.joy.x = 0; E.joy.y = 0; if (joyEl) joyEl.classList.remove("on"); };
   const start = (x, y, id) => { if (x < halfW()) startMove(x, y, id); else { look.active = true; look.id = id; look.lx = x; look.ly = y; } };
-  const moveTo = (x, y, id) => { if (E.joy.active && E.joy.id === id) doMove(x, y); else if (look.active && look.id === id) { E.yawTarget = THREE.MathUtils.clamp(E.yawTarget + (x - look.lx) * -0.006, -1.5, 1.5); E.pitchTarget = THREE.MathUtils.clamp(E.pitchTarget + (y - look.ly) * -0.005, -0.5, 0.5); look.lx = x; look.ly = y; } };
+  const moveTo = (x, y, id) => { if (E.joy.active && E.joy.id === id) doMove(x, y); else if (look.active && look.id === id) { E.viewYaw -= (x - look.lx) * 0.006; E.viewPitch = THREE.MathUtils.clamp(E.viewPitch - (y - look.ly) * 0.005, -0.5, 0.5); look.lx = x; look.ly = y; } };
   const end = (id) => { if (E.joy.id === id) endMove(); if (look.id === id) look.active = false; };
   cv.addEventListener("mousedown", e => start(e.clientX, e.clientY, "m"));
   window.addEventListener("mousemove", e => moveTo(e.clientX, e.clientY, "m"));
