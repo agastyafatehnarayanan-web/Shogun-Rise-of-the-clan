@@ -598,7 +598,17 @@ WARRIOR3D._dir = function (E, d) {
     E.vulnT = 0.42; E.shake = Math.max(E.shake, 0.18); E.combo = 0;
     if (Math.random() < f.aggr * 0.5) { f.state = "recover"; f.stateT = 0; WARRIOR3D._foeHits(E, 0.5); WARRIOR3D._prompt(E, "🛡️ He turns your blade and counters! Bait his attack, parry, punish.", "warn"); }
     else WARRIOR3D._prompt(E, "🛡️ He turns your blade — swinging blind won't break him. Wait for his cut.", "warn");
-  } else { f.poise -= 1; WARRIOR3D._damageFoe(E, Math.max(1, Math.round(E.atk * 0.3 * E.weapon.atkMult)), false);
+  } else {                                                 // the swing lands clean — WHERE you cut still matters mid-fight
+    f.poise -= 1; let dm = Math.max(1, Math.round(E.atk * 0.35 * E.weapon.atkMult));
+    if (d === "down" && !f.crippled && Math.random() < 0.55) {          // hack at his legs — take one
+      WARRIOR3D._crippleLeg(E, f); WARRIOR3D._damageFoe(E, dm, false);
+      if (!f.dead) WARRIOR3D._prompt(E, "🦵 <b>You hew his leg away — he crumples!</b>", "good"); return; }
+    if ((d === "left" || d === "right") && !f.disarmed && Math.random() < 0.42 && WARRIOR3D._disarm(E, f)) {   // open his arm — disarm
+      WARRIOR3D._damageFoe(E, dm, false); if (!f.dead) WARRIOR3D._prompt(E, "🩸 <b>You open his arm — his blade drops!</b>", "good"); return; }
+    if (d === "up") dm = Math.round(dm * 1.4);            // head — more damage
+    else if (d === "thrust") dm += 3;                     // pierce
+    if (d === "up" && f.hp - dm <= 0) { WARRIOR3D._behead(E, f); return; }   // a killing overhead takes the head
+    WARRIOR3D._damageFoe(E, dm, false);
     if (!f.dead && f.poise <= 0) { f.state = "staggered"; f.stateT = 0; f.openSide = d; f.poise = f.poiseMax; WARRIOR3D._prompt(E, "💥 <b>Guard broken!</b> Strike the opening!", "good"); }
     else if (!f.dead) WARRIOR3D._prompt(E, `⚔️ You batter his guard — poise ${Math.max(0, f.poise)}. Watch for his cut.`, ""); }
 };
