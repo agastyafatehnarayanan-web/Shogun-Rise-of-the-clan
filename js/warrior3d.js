@@ -234,13 +234,13 @@ WARRIOR3D._structures = function (E, theme, add) {
   const red = new THREE.MeshStandardMaterial({ color: 0x9a4030, roughness: 0.9 }), stone = new THREE.MeshStandardMaterial({ color: 0x8a8a80, roughness: 1, flatShading: true });
   const S = (m) => { m.castShadow = true; m.receiveShadow = true; return m; };
   const hut = (x, z) => { const g = new THREE.Group(); const b = S(new THREE.Mesh(new THREE.BoxGeometry(3, 2, 3), wood)); b.position.y = 1; g.add(b);
-    const r = S(new THREE.Mesh(new THREE.ConeGeometry(2.6, 1.4, 4), dark)); r.position.y = 2.7; r.rotation.y = Math.PI / 4; g.add(r); g.position.set(x, 0, z); add(g); WARRIOR3D._solid(E, x, z, 1.6, 1.6); };
-  const tent = (x, z) => { const b = S(new THREE.Mesh(new THREE.ConeGeometry(1.7, 2.2, 4), new THREE.MeshStandardMaterial({ color: 0x7a6440, roughness: 1 }))); b.position.set(x, 1.1, z); b.rotation.y = Math.PI / 4; add(b); WARRIOR3D._solid(E, x, z, 1.1, 1.1); };
-  const torii = (x, z) => { const g = new THREE.Group(); [-1.4, 1.4].forEach(px => { const p = S(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 5, 10), red)); p.position.set(px, 2.5, 0); g.add(p); });
+    const r = S(new THREE.Mesh(new THREE.ConeGeometry(2.6, 1.4, 4), dark)); r.position.y = 2.7; r.rotation.y = Math.PI / 4; g.add(r); g.position.set(x, 0, z); add(g); WARRIOR3D._solid(E, x, z, 1.3, 1.3); };
+  const tent = (x, z) => { const b = S(new THREE.Mesh(new THREE.ConeGeometry(1.7, 2.2, 4), new THREE.MeshStandardMaterial({ color: 0x7a6440, roughness: 1 }))); b.position.set(x, 1.1, z); b.rotation.y = Math.PI / 4; add(b); WARRIOR3D._solid(E, x, z, 0.9, 0.9); };
+  const torii = (x, z) => { const g = new THREE.Group(); [-1.4, 1.4].forEach(px => { const p = S(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 5, 10), red)); p.position.set(px, 2.5, 0); g.add(p); WARRIOR3D._solid(E, x + px, z, 0.3, 0.3); });
     const t = S(new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.4, 0.5), red)); t.position.y = 5; g.add(t); g.position.set(x, 0, z); add(g); };
   if (theme.props === "village") { hut(-10, -13); hut(9, -16); hut(-15, -22); }
   else if (theme.props === "camp") { tent(-8, -12); tent(-11, -15); tent(9, -13); }
-  else if (theme.props === "forest") { for (let i = 0; i < 5; i++) { const s = S(new THREE.Mesh(new THREE.DodecahedronGeometry(0.8 + Math.random(), 0), stone)); s.position.set((Math.random() - 0.5) * 24, 0.5, -8 - Math.random() * 18); add(s); } }
+  else if (theme.props === "forest") { for (let i = 0; i < 5; i++) { const rr = 0.8 + Math.random(); const s = S(new THREE.Mesh(new THREE.DodecahedronGeometry(rr, 0), stone)); const sx = (Math.random() - 0.5) * 24, sz = -8 - Math.random() * 18; s.position.set(sx, 0.5, sz); add(s); WARRIOR3D._solid(E, sx, sz, rr * 0.8, rr * 0.8); } }
   else { torii(0, -20); }
 };
 WARRIOR3D._props = function (E, theme, add) {
@@ -406,7 +406,7 @@ WARRIOR3D.goto = function (x, z, label, type) {
     const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 6, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.28, side: THREE.DoubleSide, fog: false, depthWrite: false }));
     beam.position.y = 3; mk.add(beam);
     mk.position.set(x, 0, z); E.scene.add(mk);
-    E.waypoint = { x, z, r: 1.9, mk, resolve, label: label || "" };
+    E.waypoint = { x, z, r: 3.2, mk, resolve, label: label || "" };
     WARRIOR3D._prompt(E, `↳ walk to <b>${label || "the marker"}</b>`, "");
   });
 };
@@ -450,22 +450,23 @@ WARRIOR3D._dest = function (type, x, z) {
   if (type === "shrine") {
     const red = new THREE.MeshStandardMaterial({ color: 0x9a4030, roughness: 0.9 }), dark = new THREE.MeshStandardMaterial({ color: 0x2f2416, roughness: 1 }), stone = new THREE.MeshStandardMaterial({ color: 0x8a8a80, roughness: 1, flatShading: true });
     const g = new THREE.Group();
-    [-1.5, 1.5].forEach(px => { const p = S(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 5, 10), red)); p.position.set(px, 2.5, 0); g.add(p); });
+    [-1.5, 1.5].forEach(px => { const p = S(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 5, 10), red)); p.position.set(px, 2.5, 0); g.add(p); WARRIOR3D._solid(E, x + px, z, 0.3, 0.3); });   // gate pillars (walk through the middle)
     g.add(S(WARRIOR3D._m(new THREE.BoxGeometry(4.6, 0.4, 0.5), red, [0, 5, 0])));
     g.add(S(WARRIOR3D._m(new THREE.BoxGeometry(3.9, 0.28, 0.4), dark, [0, 4.4, 0])));
     for (let i = 0; i < 3; i++) { const stp = S(new THREE.Mesh(new THREE.BoxGeometry(4 - i * 0.6, 0.35, 1.2), stone)); stp.position.set(0, 0.18 + i * 0.35, -1.6 - i * 0.6); g.add(stp); }
     g.position.set(x, 0, z); add(g);
   } else if (type === "muster") {
-    for (let i = 0; i < 3; i++) { const t = S(new THREE.Mesh(new THREE.ConeGeometry(1.4, 1.9, 4), new THREE.MeshStandardMaterial({ color: 0x7a6440, roughness: 1 }))); t.position.set(x + (i - 1) * 3, 0.95, z - Math.abs(i - 1) * 1.4); t.rotation.y = Math.PI / 4; add(t); }
+    // tents pulled off to the sides/back so the marker itself stays clear
+    [[-3.6, 0.4], [3.6, 0.4], [0, -3.4]].forEach(([tx, tz]) => { const t = S(new THREE.Mesh(new THREE.ConeGeometry(1.4, 1.9, 4), new THREE.MeshStandardMaterial({ color: 0x7a6440, roughness: 1 }))); t.position.set(x + tx, 0.95, z + tz); t.rotation.y = Math.PI / 4; add(t); WARRIOR3D._solid(E, x + tx, z + tz, 1.0, 1.0); });
     [-2.6, 2.6].forEach(bx => { const pole = S(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 4, 6), new THREE.MeshStandardMaterial({ color: 0x2a1f14 }))); pole.position.set(x + bx, 2, z + 1); add(pole);
       const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 2.2), new THREE.MeshStandardMaterial({ color: 0x9a2b1e, side: THREE.DoubleSide, roughness: 1 })); flag.position.set(x + bx + 0.45, 2.6, z + 1); flag.userData.flag = 1; add(flag); });
   } else if (type === "village") {
     const wall = new THREE.MeshStandardMaterial({ color: 0x6b5433, roughness: 1 }), thatch = new THREE.MeshStandardMaterial({ color: 0x8a7038, roughness: 1, flatShading: true });
     const g = new THREE.Group();
-    [[-3.2, 0.4, 0], [2.8, -0.6, 0.5], [0.2, 2.6, -0.3]].forEach(([hx, hz, r]) => {
+    [[-4.4, 0.6, 0], [4.2, -0.6, 0.5], [0.4, 4.2, -0.3]].forEach(([hx, hz, r]) => {
       const h = S(new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.6, 2.2), wall)); h.position.set(hx, 0.8, hz); h.rotation.y = r; g.add(h);
-      const roof = S(new THREE.Mesh(new THREE.ConeGeometry(1.9, 1.2, 4), thatch)); roof.position.set(hx, 2.2, hz); roof.rotation.y = Math.PI / 4 + r; g.add(roof); WARRIOR3D._solid(E, x + hx, z + hz, 1.3, 1.3); });
-    const well = S(new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, 0.7, 10), new THREE.MeshStandardMaterial({ color: 0x777069, roughness: 1 }))); well.position.set(0, 0.35, 1.6); g.add(well); WARRIOR3D._solid(E, x, z + 1.6, 0.6, 0.6);
+      const roof = S(new THREE.Mesh(new THREE.ConeGeometry(1.9, 1.2, 4), thatch)); roof.position.set(hx, 2.2, hz); roof.rotation.y = Math.PI / 4 + r; g.add(roof); WARRIOR3D._solid(E, x + hx, z + hz, 1.05, 1.05); });
+    const well = S(new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, 0.7, 10), new THREE.MeshStandardMaterial({ color: 0x777069, roughness: 1 }))); well.position.set(0, 0.35, 2.6); g.add(well); WARRIOR3D._solid(E, x, z + 2.6, 0.55, 0.55);
     g.position.set(x, 0, z); add(g);
   } else if (type === "bridge") {
     const wood = new THREE.MeshStandardMaterial({ color: 0x5a4326, roughness: 1 }), dark = new THREE.MeshStandardMaterial({ color: 0x3a2c18, roughness: 1 });
@@ -520,7 +521,7 @@ WARRIOR3D._nextFoe = function (E) {
   E.foe = { def, mesh, hp: def.hp, hpMax: def.hp, dmg: def.dmg, skill: def.skill || 0.7, aggr: def.aggr || 0.6,
     state: "approach", stateT: 0, dir: null, defended: false, hitReact: 0, walkPhase: 0, dead: false, openSide: null,
     poise: pz, poiseMax: pz, winMs: Math.max(380, 1000 - (def.skill || 0.7) * 560) * wf, feint: false,
-    crippled: false, disarmed: false };
+    crippled: false, disarmed: false, stuckT: 0 };
   document.getElementById("w3-foename").textContent = def.name;
   WARRIOR3D._updateMeters(E);
 };
@@ -812,14 +813,17 @@ WARRIOR3D._updateFoe = function (E, dt) {
   if (f.state === "approach") {
     f.walkPhase += dt * (f.crippled ? 4 : 7);
     if (dist > 2.4) { const dx = E.camera.position.x - m.position.x, dz = E.camera.position.z - m.position.z, len = Math.hypot(dx, dz) || 1;
-      const spd = 2.0 * (f.crippled ? 0.5 : 1);
+      const spd = 2.0 * (f.crippled ? 0.5 : 1); const preDist = Math.hypot(dx, dz);
       m.position.x += (dx / len) * dt * spd; m.position.z += (dz / len) * dt * spd;
-      const c = WARRIOR3D._collide(E, m.position.x, m.position.z, 0.4); m.position.x = c.x; m.position.z = c.z;   // foes can't cross walls either
+      // foes respect walls too — but if one is blocked too long, it latches into "phase through" so a fight can never stall
+      if (!f.phasing) { const c = WARRIOR3D._collide(E, m.position.x, m.position.z, 0.4); m.position.x = c.x; m.position.z = c.z; }
+      const postDist = Math.hypot(E.camera.position.x - m.position.x, E.camera.position.z - m.position.z);
+      if (postDist < preDist - 0.004) f.stuckT = 0; else { f.stuckT = (f.stuckT || 0) + dt; if (f.stuckT > 0.8) f.phasing = true; }
       if (u.lLeg && u.rLeg) { u.lLeg.rotation.x = Math.sin(f.walkPhase) * 0.6; u.rLeg.rotation.x = -Math.sin(f.walkPhase) * 0.6; }
       if (u.rArm) u.rArm.rotation.x = -0.3 + Math.sin(f.walkPhase) * 0.2; m.position.y = Math.abs(Math.sin(f.walkPhase)) * 0.04;
       // face the player
       m.rotation.y = Math.atan2(E.camera.position.x - m.position.x, E.camera.position.z - m.position.z) + Math.PI;
-    } else { if (u.lLeg && u.rLeg) { u.lLeg.rotation.x *= 0.8; u.rLeg.rotation.x *= 0.8; } m.position.y = f.crippled ? -0.28 : 0; f.state = "guard"; f.stateT = 0; }
+    } else { if (u.lLeg && u.rLeg) { u.lLeg.rotation.x *= 0.8; u.rLeg.rotation.x *= 0.8; } m.position.y = f.crippled ? -0.28 : 0; f.state = "guard"; f.stateT = 0; f.phasing = false; f.stuckT = 0; }
   } else if (f.state === "guard") {
     if (u.rArm) u.rArm.rotation.x = -0.3 + Math.sin(E.clock / 300) * 0.08;
     m.rotation.y = Math.atan2(E.camera.position.x - m.position.x, E.camera.position.z - m.position.z) + Math.PI;
@@ -924,7 +928,9 @@ WARRIOR3D._updateCamera = function (E, dt) {
     E.px += (rgtX * mx + fwdX * my) * spd * dt; E.pz += (rgtZ * mx + fwdZ * my) * spd * dt;
     const r = Math.hypot(E.px, E.pz); if (r > 13) { E.px *= 13 / r; E.pz *= 13 / r; } }
   if (f && f.mesh && !f.dead) { const dx = E.px - f.mesh.position.x, dz = E.pz - f.mesh.position.z, d = Math.hypot(dx, dz) || 1; if (d < 1.5) { E.px = f.mesh.position.x + dx / d * 1.5; E.pz = f.mesh.position.z + dz / d * 1.5; } }
-  { const c = WARRIOR3D._collide(E, E.px, E.pz, 0.42); E.px = c.x; E.pz = c.z; }   // no walking through walls
+  // no walking through walls — but never let a structure fence off the checkpoint you're told to reach
+  const nearMarker = E.waypoint && Math.hypot(E.px - E.waypoint.x, E.pz - E.waypoint.z) < E.waypoint.r + 1.6;
+  if (!nearMarker) { const c = WARRIOR3D._collide(E, E.px, E.pz, 0.42); E.px = c.x; E.pz = c.z; }
   let strafe = 0, dip = 0;
   if (E.dodgeT > 0) { E.dodgeT = Math.max(0, E.dodgeT - dt); const s = Math.sin((0.4 - E.dodgeT) / 0.4 * Math.PI); strafe = (E.dodgeDir || 1) * s * 0.7; dip = -s * 0.12; }
   let sh = 0; if (E.shake > 0) { E.shake = Math.max(0, E.shake - dt * 2.2); sh = E.shake; }
